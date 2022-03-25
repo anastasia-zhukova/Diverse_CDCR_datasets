@@ -1,3 +1,4 @@
+from operator import attrgetter
 import xml.etree.ElementTree as ET
 import os
 import json
@@ -26,6 +27,13 @@ nlp = spacy.load('en_core_web_sm')
 
 with open(path_sample, "r") as file:
     newsplease_format = json.load(file)
+
+
+def mean(numbers):
+    a = 0
+    for n in numbers:
+        a = a + n
+    return a/len(numbers)
 
 
 def convert_files(topic_number_to_convert=3, check_with_list=True):
@@ -101,8 +109,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                             t_id = 0
 
                         # fill the token-dictionary with fitting attributes
-                        token_dict[elem.attrib["t_id"]] = {"text": elem.text, "sent": elem.attrib["sentence"],
-                                                           "id": t_id}
+                        token_dict[elem.attrib["t_id"]] = {"text": elem.text, "sent": elem.attrib["sentence"], "id": t_id}
 
                         prev_word = ""
                         if t_id >= 0:
@@ -171,6 +178,21 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                 if mention_ner == "":
                                     mention_ner = "O"
 
+                                #get the context
+                                tokens_int = [int(x) for x in tokens]
+
+                                context_min_id = int(min(tokens_int)) - 250
+                                context_max_id = int(max(tokens_int)) + 250
+                                if context_min_id < 0:
+                                    context_min_id = 0
+                                if context_max_id > len(token_dict):
+                                    context_max_id = len(token_dict)-1
+
+                                mention_context_str = []
+                                for t in root:
+                                    if t.tag == "token" and int(t.attrib["t_id"]) >= context_min_id and int(t.attrib["t_id"]) <= context_max_id:
+                                        mention_context_str.append(t.text)
+
 
                                 # "type":subelm.tag(e.g.:"HUMAN_PART_PER")
                                 # "text":"textposToken1 token_dict+" "+TextposToken2 of tokendict..."
@@ -187,6 +209,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                                                     "token_numbers": [int(token_dict[t]["id"]) for t in tokens],
                                                                     "doc_id": topic_file.split(".")[0],
                                                                     "sent_id": sent_id,
+                                                                    "mention_context": mention_context_str,
                                                                     "topic": t_subt}
                                 #print("-----------------------")
                                 #print(mentions)
@@ -308,6 +331,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
             entity_mentions_local = []
             event_mentions_local = []
+            mentions_local = []
             for chain_id, chain_vals in coref_dict.items():
                 for m in chain_vals["mentions"]:
 
@@ -352,6 +376,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                 "mention_full_type": m["type"],
                                 "score": -1.0,
                                 "sent_id": sent_id,
+                                "mention_context": m["mention_context"],
                                 "tokens_number": token_numbers,
                                 "tokens_str": m["text"],
                                 "topic_id": topic_name,
@@ -365,6 +390,8 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                     # else add the "mention" to the array "event_mentions_local" and add the following values to the DF "summary_df"
                     else:
                         entity_mentions_local.append(mention)
+
+                    mentions_local.append(mention)
 
                     summary_df = summary_df.append(pd.DataFrame({
                         "doc_id": m["doc_id"],
@@ -478,13 +505,27 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
             with open(os.path.join(annot_path, f'{topic_name}.conll'), "w", encoding='utf-8') as file:
                 file.write(outputdoc_str)
 
+            #Determine the lexical diversity and the average unique head lemmas
+
+            #Average number of unique head lemmas within a cluster
+            #(excluding singletons for fair comparison)
+            for m in mentions_local:
+                head_lemmas = [m["mention_head_lemma"]]
+                uniques = 1
+                for m2 in mentions_local:
+                    if m2["mention_head_lemma"] not in head_lemmas and m2["tokens_str"] == m["tokens_str"] and m2["topic_id"] == m["topic_id"]:
+                        head_lemmas.append(m["mention_head_lemma"])
+                        uniques = uniques+1
+                m["mention_head_lemma_uniques"] = uniques
+
             summary_conversion_df = summary_conversion_df.append(pd.DataFrame({
                 "files": len(annot_folders),
                 "tokens": len(conll_topic_df),
                 "chains": len(coref_dict),
                 "event_mentions_local": len(event_mentions_local),
                 "entity_mentions_local": len(entity_mentions_local),
-                "singletons": sum([v["is_singleton"] for v in event_mentions_local]) + sum([v["is_singleton"] for v in entity_mentions_local])
+                "singletons": sum([v["is_singleton"] for v in event_mentions_local]) + sum([v["is_singleton"] for v in entity_mentions_local]),
+                "avg_unique_head_lemmas": mean([v["mention_head_lemma_uniques"] for v in mentions_local])
             }, index=[topic_name]))
 
             a = 1
