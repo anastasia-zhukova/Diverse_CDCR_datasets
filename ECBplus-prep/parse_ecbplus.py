@@ -1,4 +1,5 @@
 from operator import attrgetter
+from pickle import NONE
 import xml.etree.ElementTree as ET
 import os
 import json
@@ -56,6 +57,10 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
     final_output_str = ""
     entity_mentions= []
     event_mentions = []
+    topic_names = []
+
+    totalsum_1 = 0
+    totalsum_2 = 0
 
     for topic_folder in selected_topics:
         print(f'Converting {topic_folder}')
@@ -72,6 +77,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
             t_number = annot_folders[0].split(".")[0].split("_")[0]
             t_name = re.search(r'[a-z]+', annot_folders[0].split(".")[0])[0]
             topic_name = t_number + t_name
+            topic_names.append(topic_name)
             coref_dict = {}
             doc_sent_map = {}
             IS_TEXT, TEXT = "is_text", "text"
@@ -166,11 +172,22 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                                 iterationsWithFittingToken = iterationsWithFittingToken + 1
 
                                 doc = nlp(sentence)
-
+                                #print(sentence)
+                                #print(doc)
                                 #missing: code, mention_ner, mention_head_pos, mention_head_lemma, mention_head, coref_link (same as code), mention_context
                                 #(mention_head_lemma_uniques), (tokens_amount)
                                 
-                                mention_head = doc[token_dict[tokens[0]]["id"]].head
+                                #print(tokens[0])
+                                #print(token_dict[tokens[0]])
+
+                                mention_head = None
+                                for t in doc:
+                                    if token_dict[tokens[0]]["text"] in t.text or t.text in token_dict[tokens[0]]["text"]:
+                                        mention_head = t.head
+                                        break
+
+                                #print(mention_head)
+                                #mention_head = doc[int(token_dict[tokens[0]]["id"])].head
                                 mention_head_lemma = mention_head.lemma_
                                 mention_head_pos = mention_head.pos_
                                 
@@ -332,6 +349,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
             entity_mentions_local = []
             event_mentions_local = []
             mentions_local = []
+
             for chain_id, chain_vals in coref_dict.items():
                 for m in chain_vals["mentions"]:
 
@@ -391,7 +409,8 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                     else:
                         entity_mentions_local.append(mention)
 
-                    mentions_local.append(mention)
+                    if not mention["is_singleton"]:
+                        mentions_local.append(mention)
 
                     summary_df = summary_df.append(pd.DataFrame({
                         "doc_id": m["doc_id"],
@@ -518,6 +537,43 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                         uniques = uniques+1
                 m["mention_head_lemma_uniques"] = uniques
 
+
+            #Calculate the PD as in https://arxiv.org/pdf/2109.05250.pdf
+            print("Going to process " + str(len(mentions_local)) + " mentions to calculate the PD (lexical diversity).")
+
+            not_unique_heads = []
+            for row in mentions_local:
+                if row["topic_id"] == topic_name:
+                    not_unique_heads.append(row["mention_head_lemma"])
+            unique_heads = list(set(not_unique_heads))
+
+            sum_1 = 0
+            sum_2 = 0
+            m_c = 0
+            for h in unique_heads:
+                not_unique_phrases = []
+                m_c = 0
+                for m in mentions_local:
+                    if m["topic_id"] == topic_name:
+                        m_c = m_c + 1
+                        if m["mention_head_lemma"] == h:
+                            not_unique_phrases.append(m["tokens_str"])
+                unique_phrases = list(set(not_unique_phrases))
+
+                a_h = len(not_unique_phrases)
+                u_h = len(unique_phrases)
+                #print("a_h " +  str(a_h))
+                #print("u_h " +  str(u_h))
+                sum_1 = sum_1 + u_h/a_h
+                sum_2 = sum_2 + u_h
+
+            pd_c = (sum_1 + sum_2) / m_c
+            #print(m_c)
+            print("SOLUTION PDC: " + str(pd_c))
+
+            totalsum_1 = totalsum_1 + m_c * pd_c
+            totalsum_2 = totalsum_2 + m_c
+
             summary_conversion_df = summary_conversion_df.append(pd.DataFrame({
                 "files": len(annot_folders),
                 "tokens": len(conll_topic_df),
@@ -525,13 +581,18 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                 "event_mentions_local": len(event_mentions_local),
                 "entity_mentions_local": len(entity_mentions_local),
                 "singletons": sum([v["is_singleton"] for v in event_mentions_local]) + sum([v["is_singleton"] for v in entity_mentions_local]),
-                "avg_unique_head_lemmas": mean([v["mention_head_lemma_uniques"] for v in mentions_local])
+                "avg_unique_head_lemmas": mean([v["mention_head_lemma_uniques"] for v in mentions_local]),
+                "lexical_diversity": pd_c
             }, index=[topic_name]))
-
-            a = 1
+                
+            #summary_conversion_df["lexical_diversity"] = pd_total_list
 
             #break for testing
-            break
+            #break
+
+    #calculate total PD (phrasing diversity):
+    pd_total = totalsum_1 / totalsum_2
+    print("total PD for the dataset: " + str(pd_total))
 
     now = datetime.now()
 
