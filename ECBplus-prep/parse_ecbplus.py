@@ -1,3 +1,4 @@
+#from curses import ncurses_version
 from operator import attrgetter
 from pickle import NONE
 import xml.etree.ElementTree as ET
@@ -12,6 +13,8 @@ import numpy as np
 from datetime import datetime
 from config import DATA_PATH, TMP_PATH
 from insert_whitespace import append_text
+from nltk import Tree
+from itertools import chain
 
 #missing: code, mention_ner, mention_head_pos, mention_head_lemma, mention_head, coref_link (same as code), mention_context
 #(mention_hhead_lemma_uniques), (tokens_amount)
@@ -19,6 +22,7 @@ from insert_whitespace import append_text
 ECB_PARSING_FOLDER = os.path.join(DATA_PATH, "ECBplus-prep")
 ECBPLUS = "ecbplus.xml"
 ECB = "ecb.xml"
+CONTEXT_RANGE = 250
 
 source_path = os.path.join(ECB_PARSING_FOLDER, "ECB+")
 result_path = os.path.join(ECB_PARSING_FOLDER, "test_parsing")
@@ -35,6 +39,12 @@ def mean(numbers):
     for n in numbers:
         a = a + n
     return a/len(numbers)
+
+def to_nltk_tree(node):
+    if node.n_lefts + node.n_rights > 0:
+        return Tree(node.orth_, [to_nltk_tree(child) for child in node.children])
+    else:
+        return node.orth_
 
 
 def convert_files(topic_number_to_convert=3, check_with_list=True):
@@ -61,6 +71,10 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
     totalsum_1 = 0
     totalsum_2 = 0
+    pd_c_list = []
+    m_c_list = []
+    pd_c_dict = {}
+    processed_chains = []
 
     for topic_folder in selected_topics:
         print(f'Converting {topic_folder}')
@@ -170,24 +184,92 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                             if t.text != "``" and t.text != "''":     
                                                 sentence = sentence + str(t.text)
                                                 iterationsWithFittingToken = iterationsWithFittingToken + 1
-
+                                sentence = sentence.replace("  ", " ")
                                 doc = nlp(sentence)
-                                #print(sentence)
-                                #print(doc)
-                                #missing: code, mention_ner, mention_head_pos, mention_head_lemma, mention_head, coref_link (same as code), mention_context
-                                #(mention_head_lemma_uniques), (tokens_amount)
+                                tokens_str = []
+
+                                first_token = token_dict[tokens[0]]["text"]
+
+                                if first_token[0] == "'":
+                                    first_token = first_token[1:]
+                                if first_token[-1] == "'":
+                                    first_token = first_token[:-1]
+                                if first_token[-1] == '"':
+                                    first_token = first_token[:-1]
+                                if first_token[0] == '"':
+                                    first_token = first_token[1:]
+
+                                first_token = first_token.replace(",", " ,").replace("'", " '").replace("\'", " '").replace("#", "# ").replace(":", " :").replace("-", " - ").replace("\t", "").replace("(", "( ").replace(")", " )")
+                                if len(first_token) > 2:
+                                    first_token = first_token.replace(".", " .")  
+
+                                indiv_tokens = first_token.split(" ")
+                                for it in indiv_tokens:
+                                    if it != "":
+                                        tokens_str.append(it)
+                                    
+
+                                token_ids_in_doc = []
+                                #print(tokens)
                                 
-                                #print(tokens[0])
-                                #print(token_dict[tokens[0]])
-
-                                mention_head = None
-                                for t in doc:
-                                    if token_dict[tokens[0]]["text"] in t.text or t.text in token_dict[tokens[0]]["text"]:
-                                        mention_head = t.head
+                                #Redetermine the ids of the token within the sentence because it is not guaranteed that "numbers" from the ECB+ XML does match the spacy interpretation of tokenization
+                                for t_id in tokens[1:]:
+                                    t = token_dict[t_id]
+                                    if t["text"] != "``" and t["text"] != "''":
+                                        t["text"] = t["text"].replace(",", " ,").replace("'", " '").replace("\'", " '").replace("#", "# ").replace(":", " :").replace("-", " - ").replace("\t", "").replace("(", "( ").replace(")", " )")
+                                        if len(t["text"])>2 and t["text"] != "p.m." and t["text"] != "a.m.":    #account for name abbreviations, i.e. "Robert R."
+                                            t["text"] = t["text"].replace(".", " .")
+                                        indiv_tokens = t["text"].split(" ")
+                                        for it in indiv_tokens:
+                                            if it != "":
+                                                tokens_str.append(it)
+                                    
+                                for to in doc:
+                                    if len(token_ids_in_doc) == len(tokens):
                                         break
+                                    for ts in tokens_str:
+                                        if len(token_ids_in_doc) == len(tokens):
+                                            break
+                                        if (to.text.startswith(ts) or to.text.endswith(ts)):
 
-                                #print(mention_head)
-                                #mention_head = doc[int(token_dict[tokens[0]]["id"])].head
+                                            if len(token_ids_in_doc) > 0:
+                                                if (to.i not in token_ids_in_doc and abs(to.i - token_ids_in_doc[-1]) <= 2):  #account for small differences in tokenization 
+                                                    token_ids_in_doc.append(to.i)
+                                                if abs(to.i - token_ids_in_doc[-1]) > 2 and len(token_ids_in_doc) < len(tokens):
+                                                    #print("RESET NECCESARY AT ID " + str(to.i))
+                                                    token_ids_in_doc = [to.i]   #reset
+                                            else:
+                                                token_ids_in_doc.append(to.i)
+
+                                #this can be used to track issues with the retokenization
+                                #if len(token_ids_in_doc) != len(tokens):
+                                    #print("UNEQUAL LENGTH")
+                                    #print(sentence)
+                                    #[to_nltk_tree(sent.root).pretty_print() for sent in doc.sents]
+                                    #print(tokens_str)
+                                    #print(doc)
+                                    #print(token_ids_in_doc)
+                                    #print(tokens)
+                                
+                                for i in token_ids_in_doc:
+                                    ancestors_in_mention = 0
+                                    for a in doc[i].ancestors:
+                                        if a.i in token_ids_in_doc:
+                                            ancestors_in_mention = ancestors_in_mention + 1
+                                            break   #one is enough to make the token unviable as a head
+                                    if ancestors_in_mention == 0:
+                                        #head within the mention
+                                        mention_head = doc[i]
+
+                                #print("---------------------------------")
+                                #[to_nltk_tree(sent.root).pretty_print() for sent in doc.sents]
+                                #print(tokens_str)
+                                #print(doc)
+                                #print(token_ids_in_doc)
+                                #print(tokens)
+                                #print("head: " + mention_head.text)
+                                #print(mention_head.i)
+
                                 mention_head_lemma = mention_head.lemma_
                                 mention_head_pos = mention_head.pos_
                                 
@@ -198,13 +280,15 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                 #get the context
                                 tokens_int = [int(x) for x in tokens]
 
-                                context_min_id = int(min(tokens_int)) - 250
-                                context_max_id = int(max(tokens_int)) + 250
+                                context_min_id = int(min(tokens_int)) - CONTEXT_RANGE
+                                context_max_id = int(max(tokens_int)) + CONTEXT_RANGE
                                 if context_min_id < 0:
                                     context_min_id = 0
                                 if context_max_id > len(token_dict):
                                     context_max_id = len(token_dict)-1
 
+                                context_min_id , context_max_id = [0 if int(min(tokens_int)) - CONTEXT_RANGE < 0 else int(min(tokens_int)) - CONTEXT_RANGE, len(token_dict)-1 if int(max(tokens_int)) + CONTEXT_RANGE > len(token_dict) else int(max(tokens_int)) + CONTEXT_RANGE]
+                              
                                 mention_context_str = []
                                 for t in root:
                                     if t.tag == "token" and int(t.attrib["t_id"]) >= context_min_id and int(t.attrib["t_id"]) <= context_max_id:
@@ -351,6 +435,11 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
             mentions_local = []
 
             for chain_id, chain_vals in coref_dict.items():
+
+                sum_1 = 0
+                sum_2 = 0	
+                not_unique_heads = []
+
                 for m in chain_vals["mentions"]:
 
                     if ECBPLUS.split(".")[0] not in m['doc_id']:
@@ -366,16 +455,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                     mention_id = m["doc_id"] + "_" + str(chain_id) + "_" + str(m["sent_id"]) + "_" + str(
                         m["token_numbers"][0])
 
-                    #determine missing values--------------------------------------------------------------------------------------------------------------------------------------------------------
-                    #code, mention_ner, mention_head_pos, mention_head_lemma, mention_head, coref_link (same as code), mention_context
-                    #(mention_hhead_lemma_uniques), (tokens_amount)
-
-                    #for t in tokens:
-                    #    if t.head.ent_type_ != "":
-                    #        mention_ner = t.head.ent_type_
-                    #if mention_ner == "":
-                    #    mention_ner = "O"
-
+                    not_unique_heads.append(m["mention_head_lemma"])
 
                     #create the dict. "mention" with all corresponding values
                     #print(m)
@@ -487,6 +567,38 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
                     a = 0
 
+                #calculate the pd for the specific chain (PD_c) (excluding singletons)
+                if chain_id not in processed_chains:
+                    processed_chains.append(chain_id)
+                    unique_heads = list(set(not_unique_heads))
+                    sum_1 = 0
+                    sum_2 = 0
+
+                    for h in unique_heads:
+                        if len(chain_vals["mentions"]) > 1:     #exclude singletons
+                            not_unique_phrases = []
+                            for m in chain_vals["mentions"]:
+                                if m["mention_head_lemma"] == h: 
+                                    not_unique_phrases.append(m["text"])
+
+                            unique_phrases = list(set(not_unique_phrases))
+
+                            sum_1 = sum_1 + (len(unique_phrases)/len(not_unique_phrases))
+                            sum_2 = sum_2 + len(unique_phrases)
+                    
+                    m_c = len(chain_vals["mentions"])
+                    pd_c = (sum_1 * sum_2) / m_c
+                    #print("PDc : " + str(pd_c))
+                    pd_c_list.append(pd_c)
+                    m_c_list.append(m_c)
+
+                    pd_c_dict[chain_id] = {
+                        "pd_c": pd_c,
+                        "mentions": chain_vals["mentions"]
+                    }
+            
+                   
+
             # create annot_path and file-structure (if not already) for the output of the annotations
             annot_path = os.path.join(result_path, topic_name, "annotation", "original")
             # ->root/data/ECBplus-prep/test_parsing/topicName/annotation/original
@@ -536,43 +648,30 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                         head_lemmas.append(m["mention_head_lemma"])
                         uniques = uniques+1
                 m["mention_head_lemma_uniques"] = uniques
+           
+            pd_topic = 0
+            sum_total_1 = 0
+            sum_total_2 = 0
+            chainsCounter = 0
 
-
-            #Calculate the PD as in https://arxiv.org/pdf/2109.05250.pdf
-            print("Going to process " + str(len(mentions_local)) + " mentions to calculate the PD (lexical diversity).")
-
-            not_unique_heads = []
-            for row in mentions_local:
-                if row["topic_id"] == topic_name:
-                    not_unique_heads.append(row["mention_head_lemma"])
-            unique_heads = list(set(not_unique_heads))
-
-            sum_1 = 0
-            sum_2 = 0
-            m_c = 0
-            for h in unique_heads:
-                not_unique_phrases = []
+            for chain in coref_dict:
+                chainsCounter = chainsCounter + 1
                 m_c = 0
-                for m in mentions_local:
-                    if m["topic_id"] == topic_name:
-                        m_c = m_c + 1
-                        if m["mention_head_lemma"] == h:
-                            not_unique_phrases.append(m["tokens_str"])
-                unique_phrases = list(set(not_unique_phrases))
+                if len(pd_c_dict[chain]["mentions"]) > 1:   #exclude singletons
+                    for m in pd_c_dict[chain]["mentions"]:
+                        if m["topic"].split("/")[0] == topic_name:
+                            m_c = m_c + 1
+                            pd_c = pd_c_dict[chain]["pd_c"]
 
-                a_h = len(not_unique_phrases)
-                u_h = len(unique_phrases)
-                #print("a_h " +  str(a_h))
-                #print("u_h " +  str(u_h))
-                sum_1 = sum_1 + u_h/a_h
-                sum_2 = sum_2 + u_h
+                if m_c >= 1:
+                    sum_total_1 = sum_total_1 + m_c * pd_c
+                    sum_total_2 = sum_total_2 + m_c
+            
+            pd_topic = sum_total_1/sum_total_2
+            print("Calculated PD for " + topic_name)
+            print(pd_topic)
 
-            pd_c = (sum_1 + sum_2) / m_c
-            #print(m_c)
-            print("SOLUTION PDC: " + str(pd_c))
 
-            totalsum_1 = totalsum_1 + m_c * pd_c
-            totalsum_2 = totalsum_2 + m_c
 
             summary_conversion_df = summary_conversion_df.append(pd.DataFrame({
                 "files": len(annot_folders),
@@ -582,7 +681,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                 "entity_mentions_local": len(entity_mentions_local),
                 "singletons": sum([v["is_singleton"] for v in event_mentions_local]) + sum([v["is_singleton"] for v in entity_mentions_local]),
                 "avg_unique_head_lemmas": mean([v["mention_head_lemma_uniques"] for v in mentions_local]),
-                "lexical_diversity": pd_c
+                "lexical diversity": pd_topic
             }, index=[topic_name]))
                 
             #summary_conversion_df["lexical_diversity"] = pd_total_list
@@ -590,7 +689,13 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
             #break for testing
             #break
 
-    #calculate total PD (phrasing diversity):
+    #calculate total PD (phrasing diversity) for the whole dataset:
+    totalsum_1 = 0
+    totalsum_2 = 0
+    for it, mc in enumerate(m_c_list):
+        totalsum_1 = totalsum_1 + mc * pd_c_list[it]
+        totalsum_2 = totalsum_2 + mc
+
     pd_total = totalsum_1 / totalsum_2
     print("total PD for the dataset: " + str(pd_total))
 
