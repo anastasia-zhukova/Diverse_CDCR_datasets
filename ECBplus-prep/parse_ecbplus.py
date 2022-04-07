@@ -69,14 +69,9 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
     event_mentions = []
     topic_names = []
 
-    totalsum_1 = 0
-    totalsum_2 = 0
-    pd_c_list = []
-    m_c_list = []
-    pd_c_dict = {}
-    processed_chains = []
-
     for topic_folder in selected_topics:
+        #if int(topic_folder) > 2:
+        #    break
         print(f'Converting {topic_folder}')
         diff_folders = {ECB: [], ECBPLUS: []}
 
@@ -290,7 +285,9 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                                                     "mention_head_pos": mention_head_pos,
                                                                     "mention_head_lemma": mention_head_lemma,
                                                                     "mention_head": mention_head.text,
+                                                                    "mention_head_id": mention_head.i,
                                                                     "token_numbers": [int(token_dict[t]["id"]) for t in tokens],
+                                                                    "token_doc_numbers": token_ids_in_doc,
                                                                     "doc_id": topic_file.split(".")[0],
                                                                     "sent_id": sent_id,
                                                                     "mention_context": mention_context_str,
@@ -445,7 +442,8 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                 "mention_head_pos": m["mention_head_pos"],
                                 "mention_head_lemma": m["mention_head_lemma"],
                                 "mention_head": m["mention_head"],
-                                "doc_id": m["doc_id"],
+                                "mention_head_id": m["mention_head_id"],
+                                "doc_id_full": m["doc_id"],
                                 "is_continuous": True if token_numbers == list(
                                     range(token_numbers[0], token_numbers[-1] + 1))
                                 else False,
@@ -456,7 +454,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                 "score": -1.0,
                                 "sent_id": sent_id,
                                 "mention_context": m["mention_context"],
-                                "tokens_number": token_numbers,
+                                "tokens_number": m["token_doc_numbers"],    #now the token numbers based on spacy tokenization, not ecb+ tokenization
                                 "tokens_str": m["text"],
                                 "topic_id": topic_name,
                                 "coref_type": chain_vals["coref_type"],
@@ -545,42 +543,6 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                     len(token_numbers) - 1]) &
                                                    (conll_df['topic/subtopic_name'] == t_subt), 'coref'].values[
                                     0]) + '| ' + str(mark_counter) + ')'
-
-                    a = 0
-
-                #calculate the pd for the specific chain (PD_c) (excluding singletons)
-                if chain_id not in processed_chains:
-                    processed_chains.append(chain_id)
-                    unique_heads = list(set(not_unique_heads))
-                    sum_1 = 0
-                    sum_2 = 0
-                    m_c = len(chain_vals["mentions"])
-
-                    if not chain_id.startswith("Singleton"):
-                        for h in unique_heads:
-                            not_unique_phrases = []
-                            for m in chain_vals["mentions"]:
-                                if m["mention_head_lemma"] == h: 
-                                    not_unique_phrases.append(m["text"])
-
-                            unique_phrases = list(set(not_unique_phrases))
-
-                            sum_1 = sum_1 + len(unique_phrases)/len(not_unique_phrases)
-                            sum_2 = sum_2 + len(unique_phrases)
-                        
-                        m_c = len(chain_vals["mentions"])
-                        #print(chain_vals["mentions"])
-                        #print(m_c)
-                        pd_c = (sum_1 * sum_2) / m_c
-                        #print("PDc : " + str(pd_c))
-                        pd_c_list.append(pd_c)
-                        m_c_list.append(m_c)
-
-                        pd_c_dict[chain_id] = {
-                            "pd_c": pd_c,
-                            "mentions": chain_vals["mentions"]
-                        }
-            
                    
 
             # create annot_path and file-structure (if not already) for the output of the annotations
@@ -620,8 +582,6 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
             with open(os.path.join(annot_path, f'{topic_name}.conll'), "w", encoding='utf-8') as file:
                 file.write(outputdoc_str)
 
-            #Determine the lexical diversity and the average unique head lemmas
-
             #Average number of unique head lemmas within a cluster
             #(excluding singletons for fair comparison)
             for m in mentions_local:
@@ -633,50 +593,11 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                         uniques = uniques+1
                 m["mention_head_lemma_uniques"] = uniques
            
-            pd_topic = 0
-            sum_total_1 = 0
-            sum_total_2 = 0
-            chainsCounter = 0
-
-            for chain in coref_dict:
-                chainsCounter = chainsCounter + 1
-                m_c = 0
-                if not chain.startswith("Singleton"):   #exclude singletons
-                    for m in pd_c_dict[chain]["mentions"]:
-                        if m["topic"].split("/")[0] == topic_name:
-                            m_c = m_c + 1
-                            pd_c = pd_c_dict[chain]["pd_c"]
-
-                sum_total_1 = sum_total_1 + m_c * pd_c
-                sum_total_2 = sum_total_2 + m_c
-            
-            pd_topic = sum_total_1/sum_total_2
-            print("Calculated PD for " + topic_name)
-            print(pd_topic)
-
-            summary_conversion_df = summary_conversion_df.append(pd.DataFrame({
-                "files": len(annot_folders),
-                "tokens": len(conll_topic_df),
-                "chains": len(coref_dict),
-                "event_mentions_local": len(event_mentions_local),
-                "entity_mentions_local": len(entity_mentions_local),
-                "singletons": sum([v["is_singleton"] for v in event_mentions_local]) + sum([v["is_singleton"] for v in entity_mentions_local]),
-                "avg_unique_head_lemmas": mean([v["mention_head_lemma_uniques"] for v in mentions_local]),
-                "lexical diversity": pd_topic
-            }, index=[topic_name]))
-
-    #calculate total PD (phrasing diversity) for the whole dataset:
-    totalsum_1 = 0
-    totalsum_2 = 0
-    for it, mc in enumerate(m_c_list):
-        if mc > 1:  #exclude singletons
-            totalsum_1 = totalsum_1 + mc * pd_c_list[it]
-            totalsum_2 = totalsum_2 + mc
-
-    pd_total = totalsum_1 / totalsum_2
-    print("total PD for the dataset: " + str(pd_total))
 
     now = datetime.now()
+
+    with open(os.path.join(result_path, now.strftime("%Y-%m-%d_%H-%M") + "_" + "conll_as_json" + ".json"), "w", encoding='utf-8') as file:
+        json.dump(conll_df.to_dict('records'), file)
 
     with open(os.path.join(result_path, now.strftime("%Y-%m-%d_%H-%M") + "_" + 'ecbplus.conll'), "w", encoding='utf-8') as file:
         file.write(final_output_str)

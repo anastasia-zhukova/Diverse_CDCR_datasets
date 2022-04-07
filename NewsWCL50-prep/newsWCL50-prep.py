@@ -2,6 +2,7 @@ CONTEXT_RANGE = 250
 PATH = 'test_parsing_no_annotations'  
 PATH_ANNOTATIONS = '2019_annot/'   
 AGGR_FILENAME = 'aggr_m_conceptcategorization.csv'     
+OUT_DIR = 'output_data/'    #the directory to output data to
 
 import spacy
 import glob
@@ -11,7 +12,6 @@ import pandas as pd
 import shortuuid
 import ujson
 from tqdm import tqdm
-from spacy import displacy
 
 def get_context(doc, fitting_tokens_docID):
     context_min_id = min(fitting_tokens_docID) - CONTEXT_RANGE
@@ -87,6 +87,8 @@ for i, row in df_annotations.iterrows():
 
 df_annotations["coref_chain"] = chains_list
 
+print(df_annotations)
+
 df_preparation_list = []
 tokens_amount = 0
 prev_doc = 0
@@ -117,107 +119,111 @@ for i, row in tqdm(df.iterrows()):
     for j, sentence in enumerate(doc.sents):
         for anno_i, row_anno in df_annotations.iterrows():
             if doc_id_full == row_anno["Document name"]:
-                if row_anno["Segment"] in sentence.text:
+                #if row_anno["Segment"] in sentence.text:
 
-                    fitting_tokens = []
-                    fitting_tokens_docID = []
-                    fitting_token_str = []
-                    seg_token = 0
-                    iterations_without_token_match = 0
-                
-                    segment_doc = nlp(row_anno["Segment"])
-                    segment_tokenized = []
+                fitting_tokens = []
+                fitting_tokens_docID = []
+                fitting_token_str = []
+                seg_token = 0
+                iterations_without_token_match = 0
+            
+                #tokenize the segment
+                segment_doc = nlp(row_anno["Segment"])
+                segment_tokenized = []
+                for t in segment_doc:
+                    segment_tokenized.append(t)
 
-                    for t in segment_doc:
-                        segment_tokenized.append(t)
+                for token in sentence:
 
-                    for token in sentence:
+                    if len(segment_tokenized) <= seg_token:
+                        #add to the list
+                        if seg_token >= 1:
+                            sent_id = j
+                            text = row["text"]
+                            code = row_anno["Code"].replace("\\", " ")
+                            segment = row_anno["Segment"]
+                            score = -1  #not row_anno["Weight score"], not that important (legacy)
+                            is_continuous = checkContinuous(tokens_number[:])
+                            is_singleton = False    #placeholder
+                            mention_id = doc_unique_id+"_"+str(sent_id)+"_"+str(tokens_number[0])
 
-                        if len(segment_tokenized) <= seg_token:
-                            #add to the list
-                            if seg_token >= 1:
-                                sent_id = j
-                                text = row["text"]
-                                code = row_anno["Code"].replace("\\", " ")
-                                segment = row_anno["Segment"]
-                                score = -1  #not row_anno["Weight score"], not that important (legacy)
-                                is_continuous = checkContinuous(tokens_number[:])
-                                is_singleton = False    #placeholder
-                                mention_id = doc_unique_id+"_"+str(sent_id)+"_"+str(tokens_number[0])
+                            #determine the head
+                            for t_id in fitting_tokens_docID:
+                                ancestors_in_mention = 0
+                                for a in doc[t_id].ancestors:
+                                    if a.i in fitting_tokens_docID:
+                                        ancestors_in_mention = ancestors_in_mention + 1
+                                        break   #one is enough to make the token unviable as a head
+                                if ancestors_in_mention == 0:
+                                    #head within the mention
+                                    mention_head = doc[t_id]
 
-                                #determine the head
-                                for t_id in fitting_tokens_docID:
-                                    ancestors_in_mention = 0
-                                    for a in doc[t_id].ancestors:
-                                        if a.i in fitting_tokens_docID:
-                                            ancestors_in_mention = ancestors_in_mention + 1
-                                            break   #one is enough to make the token unviable as a head
-                                    if ancestors_in_mention == 0:
-                                        #head within the mention
-                                        mention_head = doc[t_id]
+                            head_pos = mention_head.pos_
+                            head_lemma = mention_head.lemma_
+                            head_str = mention_head.text
+                            coref_type = "STRICT"
 
-                                head_pos = mention_head.pos_
-                                head_lemma = mention_head.lemma_
-                                head_str = mention_head.text
-                                coref_type = "STRICT"
+                            mention_context_str = get_context(doc, fitting_tokens_docID)
+                            
+                            mention_ner = mention_head.ent_type_
+                            if mention_ner == "":
+                                mention_ner = "O"
 
-                                mention_context_str = get_context(doc, fitting_tokens_docID)
-                                
-                                mention_ner = mention_head.ent_type_
-                                if mention_ner == "":
-                                    mention_ner = "O"
+                            coref_chain = row_anno["coref_chain"]
+                            mention_type = row_anno["type"]
+                            
+                            if iterations_without_token_match >= 1:
+                                print("Warning: the segment does not match 100%: " + segment)
+                                print("Sentence: " + str(sentence))
 
-                                coref_chain = row_anno["coref_chain"]
-                                mention_type = row_anno["type"]
-                                
-                                if iterations_without_token_match >= 1:
-                                    print("Warning: the segment does not match 100%: " + segment)
-                                    print("Sentence: " + str(sentence))
+                            df_preparation_list.append([coref_chain, code, segment, tokens_amount, mention_ner, head_pos, head_lemma, mention_head.text, code, doc_unique_id, doc_id, pol_direction, is_continuous, is_singleton, text, sentence.text, mention_id, mention_type, mention_type, score, sent_id, mention_context_str, fitting_tokens, fitting_token_str, row_anno["Segment"], filename.split("_")[0], coref_type, code, head_str, mention_head.i])
+                            break   #only one mention of the same kind per sentence is valid
 
-                                df_preparation_list.append([coref_chain, code, segment, tokens_amount, mention_ner, head_pos, head_lemma, mention_head.text, code, doc_unique_id, doc_id, pol_direction, is_continuous, is_singleton, text, sentence.text, mention_id, mention_type, mention_type, score, sent_id, mention_context_str, fitting_tokens, fitting_token_str, row_anno["Segment"], filename.split("_")[0], coref_type, code, head_str, mention_head.i])
-                                #break   #only one mention of the same kind per sentence is valid
+                        fitting_tokens = []
+                        fitting_tokens_docID = []
+                        fitting_token_str = []
+                        seg_token = 0
 
-                            fitting_tokens = []
-                            fitting_tokens_docID = []
-                            fitting_token_str = []
-                            seg_token = 0
+                    if token.text == segment_tokenized[seg_token].text:
+                        if seg_token == 0:
+                            iterations_without_token_match = 0
+                        seg_token = seg_token + 1
+                        fitting_tokens.append(token.i - sentence.start)     #the id of the token within a sentence
+                        fitting_tokens_docID.append(token.i)
+                        fitting_token_str.append(token.text)
 
-                        if token.text == segment_tokenized[seg_token].text:
-                            if seg_token == 0:
-                                iterations_without_token_match = 0
-                            seg_token = seg_token + 1
-                            fitting_tokens.append(token.i - sentence.start)     #the id of the token within a sentence
-                            fitting_tokens_docID.append(token.i)
-                            fitting_token_str.append(token.text)
-
+                        tokens = []
+                        tokens_str = ""
+                        tokens_number = []
+                        for t in token.head.subtree:
+                            tokens.append(t)
+                            tokens_str = tokens_str + " " + t.text
+                            tokens_number.append(t.i)
+                    else:
+                        iterations_without_token_match = iterations_without_token_match + 1
+                        if iterations_without_token_match > 1:
+                            #reset detection if the tokens are spread to far (not exact matching +-1)
                             tokens = []
                             tokens_str = ""
                             tokens_number = []
-                            for t in token.head.subtree:
-                                tokens.append(t)
-                                tokens_str = tokens_str + " " + t.text
-                                tokens_number.append(t.i)
-                        else:
-                            iterations_without_token_match = iterations_without_token_match + 1
-                            if iterations_without_token_match > 1:
-                                #reset detection if the tokens are spread to far (not exact matching +-1)
-                                tokens = []
-                                tokens_str = ""
-                                tokens_number = []
-                                fitting_tokens = []
-                                fitting_tokens_docID = []
-                                fitting_token_str = []
-                                iterations_without_token_match = 0
-                                seg_token = 0
+                            fitting_tokens = []
+                            fitting_tokens_docID = []
+                            fitting_token_str = []
+                            iterations_without_token_match = 0
+                            seg_token = 0
+    #if i > 3:
+    #    break
                 
-mentions_df = pd.DataFrame(df_preparation_list, columns=["coref_chain", "code", "segment", "tokens_amount", "mention_ner", "mention_head_pos", "mention_head_lemma", "mention_head", "coref_link", "doc_id_full","doc_id", "pol_direction", "is_continuous", "is_singleton", "text", "sentence", "mention_id", "mention_type", "mention_full_type", "score", "sent_id", "mention_context", "tokens_number", "fitting_tokens", "tokens_str", "topic_id", "coref_type", "description", "head_str", "head_id"])
+mentions_df = pd.DataFrame(df_preparation_list, columns=["coref_chain", "code", "segment", "tokens_amount", "mention_ner", "mention_head_pos", "mention_head_lemma", "mention_head", "coref_link", "doc_id_full","doc_id", "pol_direction", "is_continuous", "is_singleton", "text", "sentence", "mention_id", "mention_type", "mention_full_type", "score", "sent_id", "mention_context", "tokens_number", "fitting_tokens", "tokens_str", "topic_id", "coref_type", "description", "head_str", "mention_head_id"])
 
 #determine average number of unique head lemmas within a cluster
 #(excluding singletons for fair comparison)
+print(len(mentions_df))
 
 mentions_df = mentions_df.join(mentions_df.groupby(['topic_id', 'segment'])["mention_head_lemma"].nunique(), on=['topic_id', 'segment'], rsuffix='_uniques')
 #remove rows from dataframe with duplicate code possibilities (just take the first one)
-mentions_df = mentions_df.drop_duplicates(subset=['segment', 'doc_id_full', 'sent_id', 'tokens_str'], keep='first')
+print(len(mentions_df))
+mentions_df = mentions_df.drop_duplicates(subset=['doc_id_full', 'sent_id', 'coref_chain'], keep='first')   #mention_head_id
 #print(len(mentions_df))
 
 #determine singletons
@@ -228,57 +234,10 @@ for i, row in tqdm(mentions_df.iterrows()):
         mentions_df.at[i, "is_singleton"] = True
 
 print("Singletons: " + str(len(mentions_df[ mentions_df.is_singleton == True ])))
-
-#Calculate the PD_c as in https://arxiv.org/pdf/2109.05250.pdf
-#create a unique list of coref_chains
-coref_chains = []
-pd_c_dict = {}
-
-for i, row in mentions_df.iterrows():
-    coref_chains.append(row["coref_chain"])
-    
-coref_chains = list(set(coref_chains))  #uniques
-
-for c in coref_chains:
-    not_unique_heads = []
-    
-    #find unique heads:
-    for i, m in mentions_df[(mentions_df.coref_chain == c) & (mentions_df.is_singleton == False)].iterrows():
-        not_unique_heads.append(m["mention_head_lemma"])
-    unique_heads = list(set(not_unique_heads))
-
-    sum_1 = 0
-    sum_2 = 0
-    for h in unique_heads:
-        not_unique_phrases = []
-        topic_id = mentions_df[mentions_df.coref_chain == c].iloc[0]["topic_id"]
-        for i, m in mentions_df[(mentions_df.coref_chain == c) & (mentions_df.is_singleton == False)].iterrows():
-            if m["mention_head_lemma"] == h: 
-                not_unique_phrases.append(m["tokens_str"])
-
-        unique_phrases = list(set(not_unique_phrases))
-        sum_1 = sum_1 + len(unique_phrases)/len(not_unique_phrases)
-        sum_2 = sum_2 + len(unique_phrases)
-    
-    m_c = len(mentions_df[mentions_df.coref_chain == c])
-    pd_c = (sum_1 * sum_2) / m_c
-    pd_c_dict[c] = {"pd_c": pd_c, "m_c": m_c, "topic_id": topic_id}
-    print(pd_c_dict[c])
-
-#Calculate the PD for the total dataset
-totalsum_1 = 0
-totalsum_2 = 0
-for chain in pd_c_dict:
-    totalsum_1 = totalsum_1 + pd_c_dict[chain]["m_c"] * pd_c_dict[chain]["pd_c"]
-    totalsum_2 = totalsum_2 + pd_c_dict[chain]["m_c"]
-
-total_pd = totalsum_1 / totalsum_2
 print("Amount of mentions: " + str(len(mentions_df))) 
-print("Amount of chains processed: " + str(len(pd_c_dict)))
-print("The total PD for the whole dataset is: " + str(total_pd))
 
 #drop unwanted columns for the output
-mentions_df = mentions_df.drop(["segment", "text", "sentence", "fitting_tokens", "head_id", "head_str"], axis = 1)
+mentions_df = mentions_df.drop(["segment", "text", "sentence", "fitting_tokens", "head_str"], axis = 1)
 mentions_df.reset_index(drop=True,inplace=True)
 
 with open(f'./mentions_df.json', 'w', encoding='utf-8') as f:
@@ -299,11 +258,11 @@ for i, row in mentions_df.iterrows():
 df_entities.drop(columns= ["tokens_amount", "mention_head_lemma_uniques"], inplace = True)
 df_events.drop(columns= ["tokens_amount", "mention_head_lemma_uniques"], inplace = True)
 
-with open(f'./entity_mentions.json', 'w', encoding='utf-8') as f:
-    f.write(ujson.dumps(df_entities.to_dict('index'), indent=4, ensure_ascii=False, escape_forward_slashes=False))
+with open(OUT_DIR +'entity_mentions.json', 'w', encoding='utf-8') as f:
+    f.write(ujson.dumps(df_entities.to_dict('records'), indent=4, ensure_ascii=False, escape_forward_slashes=False))
 
-with open(f'./event_mentions.json', 'w', encoding='utf-8') as f:
-    f.write(ujson.dumps(df_events.to_dict('index'), indent=4, ensure_ascii=False, escape_forward_slashes=False))
+with open(OUT_DIR +'event_mentions.json', 'w', encoding='utf-8') as f:
+    f.write(ujson.dumps(df_events.to_dict('records'), indent=4, ensure_ascii=False, escape_forward_slashes=False))
 
 #also make a all_mentions csv file
 df_all_mentions = mentions_df.drop(columns=["is_continuous", "is_singleton", "score", "sent_id", "tokens_amount", "tokens_number", "topic_id", "coref_type", "mention_context", "mention_ner", "mention_head_pos", "mention_head_lemma", "coref_link", "tokens_amount", "code", "mention_head", "mention_head_lemma_uniques"]).rename(index = mentions_df.mention_id)
@@ -312,7 +271,7 @@ df_all_mentions.to_csv(path_or_buf="all_mentions.csv", sep=",", na_rep="")
 
 #generate conll file
 print("Generating conll...")
-df_conll = pd.DataFrame(columns = {"doc_identifier", "sent_id", "token_id", "text", "reference"})
+df_conll = pd.DataFrame(columns = {"topic_id", "doc_identifier", "sent_id", "token_id", "token", "reference"})
 
 for i, row in tqdm(df.iterrows()):
     for sentence_id, sentence in enumerate(row["doc"].sents):
@@ -320,9 +279,11 @@ for i, row in tqdm(df.iterrows()):
             if token.text != "\n":
                 doc_id_full = row["source_domain"]
                 doc_unique_id = doc_id_full+"_"+str(i)
+                topic_subtopic = doc_id_full.split("_")[0] + "_" + doc_id_full.split("_")[1]
 
-                df_conll = df_conll.append( {"doc_identifier": doc_unique_id, "sent_id": sentence_id, "token_id": token_id, "text": token.text, "reference": ""}, ignore_index=True)
-
+                df_conll = df_conll.append( {"topic/subtopic_name": topic_subtopic, "doc_identifier": doc_unique_id, "sent_id": sentence_id, "token_id": token_id, "token": token.text, "reference": ""}, ignore_index=True)
+    #if i > 3:
+    #    break
 added_corefs = []
 
 print("Processing " + str(len(df_conll)) + " df_conll rows...")
@@ -349,11 +310,16 @@ for i, row_conll in tqdm(df_conll.iterrows()):
     if row_conll["reference"] != "":
         if row_conll["reference"][0] == "|":    #remove first | from string
             df_conll.at[i, "reference"] = row_conll["reference"][2:]
+    #if i > 500:
+    #    break
 
 df_conll.reset_index(drop=True,inplace=True)
 
 with open(f'./conll_test.json', 'w', encoding='utf-8') as f:
     f.write(ujson.dumps(df_conll.to_dict('index'), indent=4, ensure_ascii=False, escape_forward_slashes=False))
+
+with open(os.path.join(OUT_DIR, "conll_as_json" + ".json"), "w", encoding='utf-8') as file:
+    json.dump(df_conll.to_dict('records'), file)
 
 #Make the conll file from the dataframe
 dfAsString = ""
@@ -372,9 +338,9 @@ with open(f'./newswcl50.conll', 'w', encoding='utf-8') as f:
             dfAsString = dfAsString + "#begin document " + row["doc_identifier"] + "; part 000" + "\n"
 
         if row['reference'] != "":
-            dfAsString = dfAsString + row['doc_identifier'] + '\t' + str(row['sent_id']) + '\t' + str(row['token_id']) + '\t' + row['text'] + '\t' + row['reference'] + "\n"
+            dfAsString = dfAsString + row['doc_identifier'] + '\t' + str(row['sent_id']) + '\t' + str(row['token_id']) + '\t' + row['token'] + '\t' + row['reference'] + "\n"
         else:
-            dfAsString = dfAsString + row['doc_identifier'] + '\t' + str(row['sent_id']) + '\t' + str(row['token_id']) + '\t' + row['text'] + '\t' + "-" + "\n"
+            dfAsString = dfAsString + row['doc_identifier'] + '\t' + str(row['sent_id']) + '\t' + str(row['token_id']) + '\t' + row['token'] + '\t' + "-" + "\n"
         previous_sentence = row["sent_id"]
         previous_doc = row["doc_identifier"]
     f.write(dfAsString)
@@ -385,7 +351,6 @@ print("(: " + str(dfAsString.count("(")))
 print("): " + str(dfAsString.count(")")))
 
 #generate a dataset summary
-
 df_summary = mentions_df.groupby(by = ["doc_id"], as_index=False).agg(
     {
         'doc_id_full': ["nunique"],
@@ -396,23 +361,9 @@ df_summary = mentions_df.groupby(by = ["doc_id"], as_index=False).agg(
         'mention_head_lemma_uniques': ["mean"]
     }
 )
-#calculate the pd per topic
-print("Calculating PDs per topic...")
-pd_total_list = []
-for topic in topics:
-    sumtotal_1 = 0
-    sumtotal_2 = 0
-    for chain in pd_c_dict:
-        if int(pd_c_dict[chain]["topic_id"]) == topic:
-            sumtotal_1 = sumtotal_1 + pd_c_dict[chain]["m_c"] * pd_c_dict[chain]["pd_c"] 
-            sumtotal_2 = sumtotal_2 + pd_c_dict[chain]["m_c"]
-    
-    pd_total_list.append(sumtotal_1 / sumtotal_2)
 
-print(pd_total_list)
 df_summary.columns = df_summary.columns.droplevel(0)
 df_summary.columns = ["doc_id", "files", "chains", "tokens", "event_mentions", "entity_mentions", "is_singleton", "avg_unique_head_lemmas"]
-df_summary["lexical_diversity"] = pd_total_list
 
 df_summary.reset_index(drop=True,inplace=True)
 df_summary.rename(index = df_summary["doc_id"], inplace = True)
