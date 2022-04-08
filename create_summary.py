@@ -20,6 +20,7 @@ for dir in DIRECTORIES_TO_SUMMARIZE:
     events_df = pd.DataFrame()
     entities_df = pd.DataFrame()
     dataset_mentions_dicts = []
+    dataset_mentions_dicts_including_singletons = []
 
     print("Reading in files from folder: " + dir + OUTPUT_FOLDER_NAME)
     for full_filename in glob.glob(os.path.join(dir + OUTPUT_FOLDER_NAME, "*.json")):    #iterate through every file
@@ -64,33 +65,50 @@ for dir in DIRECTORIES_TO_SUMMARIZE:
         #print("Summarizing topic " + str(topic) + "...")
         #make a list of dicts
         dicts = []
+        dicts_including_singletons = []
         coref_chains = []
+        coref_chains_including_singletons = []
         pd_c_dicts = []
+        pd_c_dicts_including_singletons = []
     
-        for i, row in df[~df.is_singleton].iterrows():
-            if(row["topic_id"] == topic):
+        for i, row in df[df.topic_id == topic].iterrows():
+            coref_chains_including_singletons.append(row["coref_chain"])
+            mention = {
+                    "coref_chain": row["coref_chain"],
+                    "sentence": row["sent_id"], 
+                    "id": row["topic_id"], 
+                    "tokens": row["tokens_number"],
+                    "tokens_text": row["tokens_text"],
+                    "text": row["tokens_str"], 
+                    "head_token_index": row["mention_head_id"], 
+                    "mention_head": row["mention_head"]
+                }
+            dicts_including_singletons.append( mention )
+            dataset_mentions_dicts_including_singletons.append( mention )
+            if(row["is_singleton"] == False):
                 coref_chains.append(row["coref_chain"])
-                mention = {
-                        "coref_chain": row["coref_chain"],
-                        "sentence": row["sent_id"], 
-                        "id": row["topic_id"], 
-                        "tokens": row["tokens_number"],
-                        "tokens_text": row["tokens_text"],
-                        "text": row["tokens_str"], 
-                        "head_token_index": row["mention_head_id"], 
-                        "mention_head": row["mention_head"]
-                    }
                 dicts.append( mention )
                 dataset_mentions_dicts.append( mention )
         
         coref_chains = list(set(coref_chains))  #make unique
+        coref_chains_including_singletons = list(set(coref_chains_including_singletons))  #make unique
 
-        #calculate pd_c per chain
+        #calculate pd_c per chain (excluding singletons)
         for c in coref_chains:
             d_c = [d for d in dicts if d["coref_chain"] == c]
             pd_c = phrasing_complexity_calc(d_c)
             m_c = len(d_c)
             pd_c_dicts.append({
+                "m_c": m_c,
+                "pd_c": pd_c
+            })
+        
+        #calculate pd_c per chain (including singletons)
+        for c in coref_chains_including_singletons:
+            d_c = [d for d in dicts_including_singletons if d["coref_chain"] == c]
+            pd_c = phrasing_complexity_calc(d_c)
+            m_c = len(d_c)
+            pd_c_dicts_including_singletons.append({
                 "m_c": m_c,
                 "pd_c": pd_c
             })
@@ -101,10 +119,18 @@ for dir in DIRECTORIES_TO_SUMMARIZE:
         for p in pd_c_dicts:
             pd_total_1 = pd_total_1 + p["m_c"] * p["pd_c"]
             pd_total_2 = pd_total_2 + p["m_c"]
-           
-        print(pd_c_dicts)
-
         result_pd = pd_total_1 / pd_total_2
+
+        pd_total_1 = 0
+        pd_total_2 = 0
+        for p in pd_c_dicts_including_singletons:
+            pd_total_1 = pd_total_1 + p["m_c"] * p["pd_c"]
+            pd_total_2 = pd_total_2 + p["m_c"]
+        result_pd_including_singletons = pd_total_1 / pd_total_2
+
+        #arithmetic mean
+        result_pd_mean = sum(list(map(lambda x : x['pd_c'], pd_c_dicts)))/len(pd_c_dicts)
+        result_pd_including_singletons_mean = sum(list(map(lambda x : x['pd_c'], pd_c_dicts_including_singletons)))/len(pd_c_dicts_including_singletons)
         #print("Result PD for the topic: " +  str(result_pd))
         
         #print(dicts)
@@ -118,14 +144,20 @@ for dir in DIRECTORIES_TO_SUMMARIZE:
                 "event_mentions": len(events_df[events_df.topic_id == topic]),
                 "entity_mentions": len(entities_df[entities_df.topic_id == topic]),
                 "singletons": df[df.topic_id == topic]["is_singleton"].values.sum(),
-                "lexical_diversity": result_pd 
+                "lexical_diversity_wheighted_nosingl": format(result_pd, '.3f'),
+                "lexical_diversity_mean_nosingl": format(result_pd_mean, '.3f'),
+                "lexical_diversity_wheighted_singl": format(result_pd_including_singletons, '.3f'),
+                "lexical_diversity_mean_singl": format(result_pd_including_singletons_mean, '.3f')
             },
             index = [str(dir).split("-")[0] + "_" + str(topic)]
         ))
        
     #calculate the overall statistics for the whole dataset (not just per topic)
     pd_c_dicts = []
-    print(len(dataset_mentions_dicts))
+    pd_c_dicts_including_singletons = []
+
+    print("Calculating PD_c values for the dataset...")
+    
     for c in list(set(df[~df.is_singleton]["coref_chain"])):     #iterate over all unique chains in the dataset (excluding singletons)
         d_c = [d for d in dataset_mentions_dicts if d["coref_chain"] == c]
         pd_c = phrasing_complexity_calc(d_c)
@@ -134,18 +166,35 @@ for dir in DIRECTORIES_TO_SUMMARIZE:
             "m_c": m_c,
             "pd_c": pd_c
         })
-        #print("PD_c for chain: " + str(pd_c))
-        #print("m_c: " + str(m_c))
+    for c in list(set(df["coref_chain"])):     #iterate over all unique chains in the dataset (including singletons)
+        d_c = [d for d in dataset_mentions_dicts_including_singletons if d["coref_chain"] == c]
+        pd_c = phrasing_complexity_calc(d_c)
+        m_c = len(d_c)
+        pd_c_dicts_including_singletons.append({
+            "m_c": m_c,
+            "pd_c": pd_c
+        })
     
+    
+    print("Calculating the wheighted average and arithmetic mean...")
+
     pd_total_1 = 0
     pd_total_2 = 0
     for p in pd_c_dicts:
         pd_total_1 = pd_total_1 + p["m_c"] * p["pd_c"]
         pd_total_2 = pd_total_2 + p["m_c"]
-    result_total_pd_dataset = pd_total_1 / pd_total_2
+    result_total_pd = pd_total_1 / pd_total_2
+    result_total_pd_mean = sum(list(map(lambda x : x['pd_c'], pd_c_dicts)))/len(pd_c_dicts)
+
+    pd_total_1 = 0
+    pd_total_2 = 0
+    for p in pd_c_dicts_including_singletons:
+        pd_total_1 = pd_total_1 + p["m_c"] * p["pd_c"]
+        pd_total_2 = pd_total_2 + p["m_c"]
+    result_total_pd_including_singletons = pd_total_1 / pd_total_2
+    result_total_pd_including_singletons_mean = sum(list(map(lambda x : x['pd_c'], pd_c_dicts_including_singletons)))/len(pd_c_dicts_including_singletons)
         
     #create total row in summary df
-
     summary_df = summary_df.append(pd.DataFrame({
         "dataset": str(dir).split("-")[0],
         "topic_name": "total",
@@ -155,7 +204,10 @@ for dir in DIRECTORIES_TO_SUMMARIZE:
         "event_mentions": len(events_df),
         "entity_mentions": len(entities_df),
         "singletons": df["is_singleton"].values.sum(),
-        "lexical_diversity": result_total_pd_dataset
+        "lexical_diversity_wheighted_nosingl": format(result_total_pd, '.3f'),
+        "lexical_diversity_mean_nosingl": format(result_total_pd_mean, '.3f'),
+        "lexical_diversity_wheighted_singl": format(result_total_pd_including_singletons, '.3f'),
+        "lexical_diversity_mean_singl": format(result_total_pd_including_singletons_mean, '.3f')
         },
         index = [str(dir).split("-")[0] + "_" + str(topic)]
     ))

@@ -26,6 +26,7 @@ CONTEXT_RANGE = 250
 
 source_path = os.path.join(ECB_PARSING_FOLDER, "ECB+")
 result_path = os.path.join(ECB_PARSING_FOLDER, "test_parsing")
+out_path = os.path.join(ECB_PARSING_FOLDER, "output_data")
 path_sample = os.path.join(DATA_PATH, "_sample.json")
 
 nlp = spacy.load('en_core_web_sm')
@@ -596,21 +597,21 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
     now = datetime.now()
 
-    with open(os.path.join(result_path, now.strftime("%Y-%m-%d_%H-%M") + "_" + "conll_as_json" + ".json"), "w", encoding='utf-8') as file:
+    with open(os.path.join(out_path, "conll_as_json" + ".json"), "w", encoding='utf-8') as file:
         json.dump(conll_df.to_dict('records'), file)
 
-    with open(os.path.join(result_path, now.strftime("%Y-%m-%d_%H-%M") + "_" + 'ecbplus.conll'), "w", encoding='utf-8') as file:
+    with open(os.path.join(out_path, 'ecbplus.conll'), "w", encoding='utf-8') as file:
         file.write(final_output_str)
 
-    with open(os.path.join(result_path, now.strftime("%Y-%m-%d_%H-%M") + "_" + "entity_mentions_" + ".json"), "w", encoding='utf-8') as file:
+    with open(os.path.join(out_path, "entity_mentions" + ".json"), "w", encoding='utf-8') as file:
         json.dump(entity_mentions, file)
 
-    with open(os.path.join(result_path, now.strftime("%Y-%m-%d_%H-%M") + "_" + "event_mentions_" + ".json"), "w", encoding='utf-8') as file:
+    with open(os.path.join(out_path, "event_mentions" + ".json"), "w", encoding='utf-8') as file:
         json.dump(event_mentions, file)
 
-    # create a csv. file out of the summary_df ->root/data/ECBplus-prep/test_parsing with the dateTime in the name
-    summary_df.to_csv(os.path.join(result_path, now.strftime("%Y-%m-%d_%H-%M") + "_" + "all_mentions.csv"))
-    summary_conversion_df.to_csv(os.path.join(result_path, now.strftime("%Y-%m-%d_%H-%M") + "_" + "dataset_summary.csv"))
+    # create a csv. file out of the summary_df
+    summary_df.to_csv(os.path.join(out_path, "all_mentions.csv"))
+    #summary_conversion_df.to_csv(os.path.join(out_path, now.strftime("%Y-%m-%d_%H-%M") + "_" + "dataset_summary.csv"))
 
 
 # main function for the input which topics of the ecb corpus are to be converted
