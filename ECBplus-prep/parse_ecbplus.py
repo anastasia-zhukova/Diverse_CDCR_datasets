@@ -59,8 +59,9 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
     for i in range(topic_number_to_convert + 1):
         for j in os.listdir(source_path):
-            if i == int(j):
-                selected_topics.append(str(i))
+            if "gitkeep" not in str(j):
+                if i == int(j):
+                    selected_topics.append(str(i))
 
     summary_df = pd.DataFrame()
     summary_conversion_df = pd.DataFrame()

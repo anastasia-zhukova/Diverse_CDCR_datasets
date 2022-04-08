@@ -256,7 +256,7 @@ mentions_df = mentions_df.drop(["segment", "text", "sentence", "fitting_tokens",
 mentions_df.reset_index(drop=True,inplace=True)
 
 #output all mentions into json
-with open(f'./mentions_df.json', 'w', encoding='utf-8') as f:
+with open(OUT_DIR +'mentions_df.json', 'w', encoding='utf-8') as f:
     f.write(ujson.dumps(mentions_df.to_dict('index'), indent=4, ensure_ascii=False, escape_forward_slashes=False))
 
 #define entities and event mentions to generate two different json files
@@ -282,7 +282,7 @@ with open(OUT_DIR +'event_mentions.json', 'w', encoding='utf-8') as f:
 #also make a all_mentions csv file
 df_all_mentions = mentions_df.drop(columns=["is_continuous", "is_singleton", "score", "sent_id", "tokens_amount", "tokens_number", "topic_id", "coref_type", "mention_context", "mention_ner", "mention_head_pos", "mention_head_lemma", "coref_link", "tokens_amount", "code", "mention_head", "mention_head_lemma_uniques"]).rename(index = mentions_df.mention_id)
 df_all_mentions = df_all_mentions.drop(columns = ["mention_id"])
-df_all_mentions.to_csv(path_or_buf="all_mentions.csv", sep=",", na_rep="")
+df_all_mentions.to_csv(path_or_buf=OUT_DIR +"all_mentions.csv", sep=",", na_rep="")
 
 #generate conll file
 print("Generating conll...")
