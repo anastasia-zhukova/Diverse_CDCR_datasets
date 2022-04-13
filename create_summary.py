@@ -81,7 +81,8 @@ for dir in DIRECTORIES_TO_SUMMARIZE:
                     "tokens_text": row["tokens_text"],
                     "text": row["tokens_str"], 
                     "head_token_index": row["mention_head_id"], 
-                    "mention_head": row["mention_head"]
+                    "mention_head": row["mention_head"],
+                    "mention_head_lemma": row["mention_head_lemma"]
                 }
             dicts_including_singletons.append( mention )
             dataset_mentions_dicts_including_singletons.append( mention )
@@ -132,7 +133,12 @@ for dir in DIRECTORIES_TO_SUMMARIZE:
         result_pd_mean = sum(list(map(lambda x : x['pd_c'], pd_c_dicts)))/len(pd_c_dicts)
         result_pd_including_singletons_mean = sum(list(map(lambda x : x['pd_c'], pd_c_dicts_including_singletons)))/len(pd_c_dicts_including_singletons)
         #print("Result PD for the topic: " +  str(result_pd))
-        
+
+        #Calculate the average number oof unique heads (lemmas) per chain
+        unique_heads_per_chain = df[topic == df.topic_id].groupby(by = ["coref_chain"] )["mention_head_lemma"].nunique()
+        avg_unique_lemmas = sum(unique_heads_per_chain)/len(unique_heads_per_chain)
+
+
         #print(dicts)
         #add the values for the summary per topic
         summary_df = summary_df.append(pd.DataFrame({
@@ -147,7 +153,8 @@ for dir in DIRECTORIES_TO_SUMMARIZE:
                 "lexical_diversity_wheighted_nosingl": format(result_pd, '.3f'),
                 "lexical_diversity_mean_nosingl": format(result_pd_mean, '.3f'),
                 "lexical_diversity_wheighted_singl": format(result_pd_including_singletons, '.3f'),
-                "lexical_diversity_mean_singl": format(result_pd_including_singletons_mean, '.3f')
+                "lexical_diversity_mean_singl": format(result_pd_including_singletons_mean, '.3f'),
+                "avg_unique_head_lemmas": format(avg_unique_lemmas, '.3f')
             },
             index = [str(dir).split("-")[0] + "_" + str(topic)]
         ))
@@ -193,6 +200,10 @@ for dir in DIRECTORIES_TO_SUMMARIZE:
         pd_total_2 = pd_total_2 + p["m_c"]
     result_total_pd_including_singletons = pd_total_1 / pd_total_2
     result_total_pd_including_singletons_mean = sum(list(map(lambda x : x['pd_c'], pd_c_dicts_including_singletons)))/len(pd_c_dicts_including_singletons)
+
+    #Calculate the average number oof unique heads (lemmas) per dataset
+    unique_heads_per_chain = df.groupby(by = ["coref_chain"] )["mention_head_lemma"].nunique()
+    avg_unique_lemmas = sum(unique_heads_per_chain)/len(unique_heads_per_chain)
         
     #create total row in summary df
     summary_df = summary_df.append(pd.DataFrame({
@@ -207,7 +218,8 @@ for dir in DIRECTORIES_TO_SUMMARIZE:
         "lexical_diversity_wheighted_nosingl": format(result_total_pd, '.3f'),
         "lexical_diversity_mean_nosingl": format(result_total_pd_mean, '.3f'),
         "lexical_diversity_wheighted_singl": format(result_total_pd_including_singletons, '.3f'),
-        "lexical_diversity_mean_singl": format(result_total_pd_including_singletons_mean, '.3f')
+        "lexical_diversity_mean_singl": format(result_total_pd_including_singletons_mean, '.3f'),
+        "avg_unique_head_lemmas": format(avg_unique_lemmas, '.3f')
         },
         index = [str(dir).split("-")[0] + "_" + str(topic)]
     ))
