@@ -21,6 +21,7 @@ for dir in DIRECTORIES_TO_SUMMARIZE:
     entities_df = pd.DataFrame()
     dataset_mentions_dicts = []
     dataset_mentions_dicts_including_singletons = []
+    chains_dicts = []
 
     print("Reading in files from folder: " + dir + OUTPUT_FOLDER_NAME)
     for full_filename in glob.glob(os.path.join(dir + OUTPUT_FOLDER_NAME, "*.json")):    #iterate through every file
@@ -47,13 +48,9 @@ for dir in DIRECTORIES_TO_SUMMARIZE:
         print("Opening conll json...")
         jo = json.loads(json_file.read())
         conll_df = pd.DataFrame(jo)
-        print(conll_df)
-    
 
     #get the list of topics
     topics = sorted(list(set(df["topic_id"].tolist())))
-
-    print(df)
 
     #make list of tokens_str to make it suitable for the PD function
     tokens_texts = []
@@ -178,10 +175,10 @@ for dir in DIRECTORIES_TO_SUMMARIZE:
         pd_c = phrasing_complexity_calc(d_c)
         m_c = len(d_c)
         pd_c_dicts_including_singletons.append({
+            "chain": c,
             "m_c": m_c,
             "pd_c": pd_c
         })
-    
     
     print("Calculating the wheighted average and arithmetic mean...")
 
@@ -205,6 +202,32 @@ for dir in DIRECTORIES_TO_SUMMARIZE:
     unique_heads_per_chain = df.groupby(by = ["coref_chain"] )["mention_head_lemma"].nunique()
     avg_unique_lemmas = sum(unique_heads_per_chain)/len(unique_heads_per_chain)
         
+    #Calculate statistics for each chain
+    print("Calculating the chain statistics...")
+    chain_summary_df = pd.DataFrame()
+    chains = list(set(df["coref_chain"].to_list()))
+    for chain in tqdm(chains):
+        unique_lemmas = df[df.coref_chain == chain]["mention_head_lemma"].nunique()
+        size = len(df[df.coref_chain == chain])
+
+        #get the PD_c
+        p_diversity_per_chain = 0
+        for pd_c in pd_c_dicts_including_singletons:
+            if pd_c["chain"] == chain:
+                p_diversity_per_chain = pd_c["pd_c"]
+                break
+
+        chain_summary_df = chain_summary_df.append(pd.DataFrame({
+            "size": size,   #the amount of mentions with that chain id
+            "unique_lemmas": unique_lemmas,         #the amount of unique head lemmas within the chains mentions
+            "lexical_diversity": p_diversity_per_chain      #the prhasing diversity metric for that specific chain
+            },
+            index = [chain]
+        ))
+
+    #outpput the chains statistics
+    chain_summary_df.to_csv(path_or_buf="chains_"+dir[:7]+".csv", sep=",", na_rep="")
+
     #create total row in summary df
     summary_df = summary_df.append(pd.DataFrame({
         "dataset": str(dir).split("-")[0],
@@ -228,3 +251,5 @@ for dir in DIRECTORIES_TO_SUMMARIZE:
 print(summary_df)
 
 summary_df.to_csv(path_or_buf="dataset_summary.csv", sep=",", na_rep="")
+
+print("Done.")
