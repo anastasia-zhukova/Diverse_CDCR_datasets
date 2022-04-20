@@ -232,7 +232,6 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                                 if (to.i not in token_ids_in_doc and abs(to.i - token_ids_in_doc[-1]) <= 2):  #account for small differences in tokenization 
                                                     token_ids_in_doc.append(to.i)
                                                 if abs(to.i - token_ids_in_doc[-1]) > 2 and len(token_ids_in_doc) < len(tokens):
-                                                    #print("RESET NECCESARY AT ID " + str(to.i))
                                                     token_ids_in_doc = [to.i]   #reset
                                             else:
                                                 token_ids_in_doc.append(to.i)
@@ -247,6 +246,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                     #print(token_ids_in_doc)
                                     #print(tokens)
                                 
+                                #determine the head
                                 for i in token_ids_in_doc:
                                     ancestors_in_mention = 0
                                     for a in doc[i].ancestors:

@@ -1,6 +1,7 @@
-DIRECTORIES_TO_SUMMARIZE = ["ECBplus-prep/", "NewsWCL50-prep/"]
+DIRECTORIES_TO_SUMMARIZE = ["ECBplus-prep/", "NewsWCL50-prep/", "MEANTIME-prep/"]
 OUTPUT_FOLDER_NAME = "output_data"
 CONLL_JSON = "conll_as_json.json"
+SUMMARIES_DIRECTORY = "summary"
 
 import pandas as pd
 import spacy
@@ -13,9 +14,9 @@ from pd_metric import phrasing_complexity_calc
 summary_df = pd.DataFrame()
 
 for dir in DIRECTORIES_TO_SUMMARIZE:
-    #if "ECB" in str(dir):
-    #    print("Skipping")
-    #    continue
+    #if "ECB" in str(dir) or "WCL" in str(dir):
+        #print("Skipping")
+        #continue
     df = pd.DataFrame()
     events_df = pd.DataFrame()
     entities_df = pd.DataFrame()
@@ -26,7 +27,7 @@ for dir in DIRECTORIES_TO_SUMMARIZE:
     print("Reading in files from folder: " + dir + OUTPUT_FOLDER_NAME)
     for full_filename in glob.glob(os.path.join(dir + OUTPUT_FOLDER_NAME, "*.json")):    #iterate through every file
         if "conll" in full_filename:
-            #do not process the jsonified conll (yet):
+            #do not process the jsonified conll:
             continue
 
         print("Executing code for ", str(full_filename))
@@ -226,7 +227,7 @@ for dir in DIRECTORIES_TO_SUMMARIZE:
         ))
 
     #outpput the chains statistics
-    chain_summary_df.to_csv(path_or_buf="chains_"+dir[:7]+".csv", sep=",", na_rep="")
+    chain_summary_df.to_csv(path_or_buf=os.path.join(SUMMARIES_DIRECTORY, "chains_"+dir[:7]+".csv"), sep=",", na_rep="")
 
     #create total row in summary df
     summary_df = summary_df.append(pd.DataFrame({
@@ -244,12 +245,12 @@ for dir in DIRECTORIES_TO_SUMMARIZE:
         "lexical_diversity_mean_singl": format(result_total_pd_including_singletons_mean, '.3f'),
         "avg_unique_head_lemmas": format(avg_unique_lemmas, '.3f')
         },
-        index = [str(dir).split("-")[0] + "_" + str(topic)]
+        index = [str(dir).split("-")[0] + "_" + "total"]
     ))
 
 #Output final result
 print(summary_df)
 
-summary_df.to_csv(path_or_buf="dataset_summary.csv", sep=",", na_rep="")
+summary_df.to_csv(path_or_buf=os.path.join(SUMMARIES_DIRECTORY, "dataset_summary.csv"), sep=",", na_rep="")
 
 print("Done.")
