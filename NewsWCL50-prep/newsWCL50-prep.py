@@ -1,7 +1,7 @@
 CONTEXT_RANGE = 250
 PATH = 'test_parsing_no_annotations'  
 PATH_ANNOTATIONS = '2019_annot/'   
-AGGR_FILENAME = 'aggr_m_conceptcategorization.csv'     
+AGGR_FILENAME = '2019_annot/aggr_m_conceptcategorization.csv'
 OUT_DIR = 'output_data/'    #the directory to output data to
 
 import spacy
@@ -13,9 +13,18 @@ import shortuuid
 import ujson
 from tqdm import tqdm
 
-#used to get the context within the doc for a specific range of tokens 
-#fitting_tokens_doc_id is provided as list of ints
+
 def get_context(doc, fitting_tokens_docID):
+    """
+    Used to get the context within the doc for a specific range of tokens fitting_tokens_doc_id is provided as list of
+    ints.
+    Args:
+        doc:
+        fitting_tokens_docID:
+
+    Returns:
+
+    """
     context_min_id = min(fitting_tokens_docID) - CONTEXT_RANGE
     context_max_id = max(fitting_tokens_docID) + CONTEXT_RANGE
     if context_min_id < 0:
