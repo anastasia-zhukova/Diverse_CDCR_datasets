@@ -14,14 +14,14 @@ import spacy
 from insert_whitespace import append_text
 from config import DATA_PATH, TMP_PATH
 
-path_sample = os.path.join(DATA_PATH, "_sample.json")  # ->root/data/original/_sample.json
+path_sample = os.path.join(DATA_PATH, "_sample_doc.json")  # ->root/data/original/_sample_doc.json
 MEANTIME_PARSING_FOLDER = os.path.join(DATA_PATH, "MEANTIME-prep")
 OUT_PATH = os.path.join(TMP_PATH, "output_data")
 CONTEXT_RANGE = 250
 
 nlp = spacy.load('en_core_web_sm')
 
-# opens and loads the newsplease-format out of the json file: _sample.json
+# opens and loads the newsplease-format out of the json file: _sample_doc.json
 with open(path_sample, "r") as file:
     newsplease_format = json.load(file)
 
