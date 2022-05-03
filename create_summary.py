@@ -29,6 +29,9 @@ F1 = "F1"
 TRUE_LABEL, PRED_LABEL = "label_true", "label_pred"
 TMP_PATH = os.path.join(os.getcwd(), "tmp")
 
+with open(os.path.join(os.getcwd(), SAMPLE_MENTION_JSON), "r") as file:
+    sample_mention = json.load(file)
+
 
 def phrasing_diversity_calc(mentions: List[Dict]) -> float:
     """
@@ -63,7 +66,7 @@ def phrasing_diversity_calc(mentions: List[Dict]) -> float:
 
         if mention[MENTION_HEAD] not in headwords_phrase_tree:
             headwords_phrase_tree[mention[MENTION_HEAD]] = {"set": {mention_wordset},
-                                                                 "list": [mention_wo_stopwords]}
+                                                            "list": [mention_wo_stopwords]}
         else:
             # set ensures unique phrases
             headwords_phrase_tree[mention[MENTION_HEAD]]["set"].add(mention_wordset)
@@ -80,7 +83,14 @@ def phrasing_diversity_calc(mentions: List[Dict]) -> float:
     return float(format(score, '.3f'))
 
 
-def conll_lemma_baseline(mentions):
+def conll_lemma_baseline(mentions: List[dict]) -> float:
+    """
+    Calculates ConLL F1 for a simple same-lemma CDCR baseline. Uses official perl script from CoNLL.
+    Args:
+        mentions: a list of mentions
+
+    Returns: float, calculated F1 CoNll
+    """
     resolved_mentions_dict = {}
     pred_true_df = pd.DataFrame()
 
@@ -170,13 +180,24 @@ def conll_lemma_baseline(mentions):
 
 
 if __name__ == '__main__':
+    for i, dataset in enumerate(DIRECTORIES_TO_SUMMARIZE):
+        print(f'{i}: {dataset.split("-")[0]}')
+
+    input_str = input("List dataset IDs with comma separation which to include into the summary or print \"all\" to summarize all: ")
+    if "all" in input_str:
+        selected_dir_to_summarize = DIRECTORIES_TO_SUMMARIZE
+    else:
+        selected_dataset_ids = [int(part.strip()) for part in input_str.split(',')]
+        selected_dir_to_summarize = [DIRECTORIES_TO_SUMMARIZE[i] for i in selected_dataset_ids]
+
+    LOGGER.info(f'Selected dataset to summarize: {selected_dir_to_summarize}')
 
     summary_df = pd.DataFrame()
     chain_df_all = pd.DataFrame()
     all_mentions_list = []
 
     # read annotated mentions and corresponding texts
-    for dataset_folder in DIRECTORIES_TO_SUMMARIZE:
+    for dataset_folder in selected_dir_to_summarize:
         mentions_df = pd.DataFrame()
 
         LOGGER.info(f'Reading files with mentions for {dataset_folder} dataset..')
@@ -185,9 +206,13 @@ if __name__ == '__main__':
             with open(full_filename, encoding='utf-8', mode='r') as file:
                 mentions_read_list = json.load(file)
 
-            # remove list attributes that can't fit a dataframe
-            mentions_read_list_filt = [v for v in mentions_read_list if type(v) != list]
-            df_tmp = pd.DataFrame(mentions_read_list_filt, index=list(range(len(mentions_read_list_filt))))
+            for v in mentions_read_list:
+                missed_attributes = set(v.keys()) - set(sample_mention.keys())
+                if len(missed_attributes):
+                    LOGGER.warning(f'Dataset {dataset_folder.split("-")[0]} misses mentions\' attributes {missed_attributes} '
+                                   f'and this may cause troubles in the script execution')
+
+            df_tmp = pd.DataFrame(mentions_read_list, index=list(range(len(mentions_read_list))))
             df_tmp[TYPE] = [mention_type] * len(df_tmp)
             # kick out "prep" from the name
             df_tmp[DATASET_NAME] = [dataset_folder.split("-")[0]] * len(df_tmp)
@@ -246,7 +271,6 @@ if __name__ == '__main__':
                 summary_dict[PHRASING_DIVERSITY + WEIGHTED + suff] = float(format(sum([row[PHRASING_DIVERSITY] * row[MENTIONS]
                                                                   for index, row in selected_chains_df.iterrows()]) / \
                                                                      sum(selected_chains_df[MENTIONS].values), '.3f'))
-                # summary_dict[PHRASING_DIVERSITY + MEAN + suff] = float(format(np.mean(selected_chains_df[PHRASING_DIVERSITY].values), '.3f'))
                 summary_dict[UNIQUE_LEMMAS + suff] = float(format(np.mean(selected_chains_df[UNIQUE_LEMMAS].values), '.3f'))
 
                 if topic:
@@ -261,9 +285,9 @@ if __name__ == '__main__':
             summary_df = pd.concat([summary_df, pd.DataFrame(summary_dict, index=[f'{dataset}\\{topic}'])], axis=0)
         chain_df_all = pd.concat([chain_df_all, chain_df], axis=0)
 
-        #outpput the chains statistics
+        #output the chains statistics
     chain_df_all.reset_index().to_csv(os.path.join(os.getcwd(), SUMMARY_FOLDER, SUMMARY_CHAINS_CSV))
     summary_df.to_csv(os.path.join(os.getcwd(), SUMMARY_FOLDER, SUMMARY_TOPICS_CSV))
 
-    LOGGER.info(f'Summary computation over {len(DIRECTORIES_TO_SUMMARIZE)} datasets ({DIRECTORIES_TO_SUMMARIZE}) '
+    LOGGER.info(f'Summary computed over {len(DIRECTORIES_TO_SUMMARIZE)} datasets ({DIRECTORIES_TO_SUMMARIZE}) '
                 f'is completed.')
