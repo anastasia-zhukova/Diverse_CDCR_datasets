@@ -28,6 +28,9 @@ path_sample = os.path.join(os.getcwd(), "..", SAMPLE_DOC_JSON)
 
 nlp = spacy.load('en_core_web_sm')
 
+validated_sentences_df = pd.read_csv(os.path.join(ECB_PARSING_FOLDER, ECBPLUS_FOLDER_NAME,
+                              "ECBplus_coreference_sentences.csv")).set_index(["Topic", "File", "Sentence Number"])
+
 with open(path_sample, "r") as file:
     newsplease_format = json.load(file)
 
@@ -52,6 +55,13 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
     topic_names = []
 
     for topic_folder in selected_topics:
+        if topic_folder == "__MACOSX":
+            continue
+
+        # if a file with confirmed sentences
+        if os.path.isfile(os.path.join(source_path, topic_folder)):
+            continue
+
         LOGGER.info(f'Converting topic {topic_folder}')
         diff_folders = {ECB_FILE: [], ECBPLUS_FILE: []}
 
@@ -72,6 +82,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
             # for every themed-file in "commentated files"
             for topic_file in tqdm(annot_folders):
+                doc_name_ecb = topic_file.split(".")[0].split("_")[-1]
                 mention_counter_got, mentions_counter_found = 0, 0
                 info_t_name = re.search(r'[\d+]+', topic_file.split(".")[0].split("_")[1])[0]
                 t_subt = f'{topic_folder}/{topic_name}/{info_t_name}'
@@ -143,6 +154,10 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                             if len(tokens):
                                 mention_counter_got += 1
                                 sent_id = int(token_dict[tokens[0]][SENT])
+
+                                # take only validated sentences
+                                if (int(t_number), doc_name_ecb, sent_id) not in validated_sentences_df.index:
+                                    continue
 
                                 #generate sentence doc with spacy
                                 sentence = ""
@@ -381,6 +396,9 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
             for chain_id, chain_vals in coref_dict.items():
                 not_unique_heads = []
+
+                if MENTIONS not in chain_vals:
+                    continue
 
                 for m in chain_vals[MENTIONS]:
 

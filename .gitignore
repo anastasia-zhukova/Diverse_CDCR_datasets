@@ -6,6 +6,7 @@ ECBplus-prep/ECB+.zip
 .venv
 venv/
 .idea
+tmp/
 __pycache__/
 
 # User-specific stuff

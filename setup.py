@@ -73,6 +73,7 @@ TOPIC_SUBTOPIC = "topic/subtopic_name"
 
 # summary fields
 DATASET_NAME = "dataset"
+TOPICS = "topics"
 ENTITY = "entity"
 EVENT = "event"
 MENTIONS = "mentions"
@@ -104,15 +105,23 @@ if __name__ == '__main__':
     import zipfile
     import os
 
-    spacy.cli.download('en_core_web_sm')
-    links = ["https://github.com/cltl/ecbPlus/raw/master/ECB%2B_LREC2014/ECB%2B.zip",
-             "https://drive.google.com/u/1/uc?id=1ZcTnDeY85iIeUX0nvg3cypnRq87tVSVo&export=download"]
-    zip_files = [os.path.join(os.getcwd(), ECB_PLUS, ECBPLUS_FOLDER_NAME + ".zip"),
-                 os.path.join(os.getcwd(), NEWSWCL50, NEWSWCL50_FOLDER_NAME + ".zip")]
-    destination_folders = [os.path.join(os.getcwd(), ECB_PLUS),
-                           os.path.join(os.getcwd(), NEWSWCL50)]
+    FOLDER = "folder"
+    ZIP = "zip"
+    LINK = "link"
 
-    for link, zip_, folder in zip(links, zip_files, destination_folders):
-        gdown.download(link, zip_, quiet=False)
-        with zipfile.ZipFile(zip_, 'r') as zip_ref:
-            zip_ref.extractall(folder)
+    spacy.cli.download('en_core_web_sm')
+    datasets = {ECB_PLUS: {LINK: "https://github.com/cltl/ecbPlus/raw/master/ECB%2B_LREC2014/ECB%2B.zip",
+                           ZIP: os.path.join(os.getcwd(), ECB_PLUS, ECBPLUS_FOLDER_NAME + ".zip"),
+                           FOLDER: os.path.join(os.getcwd(), ECB_PLUS)},
+                NEWSWCL50: {LINK: "https://drive.google.com/u/1/uc?id=1ZcTnDeY85iIeUX0nvg3cypnRq87tVSVo&export=download",
+                            ZIP: os.path.join(os.getcwd(), NEWSWCL50, NEWSWCL50_FOLDER_NAME + ".zip"),
+                            FOLDER: os.path.join(os.getcwd(), NEWSWCL50)}}
+
+    for dataset, values in datasets.items():
+        gdown.download(values[LINK], values[ZIP], quiet=False)
+        with zipfile.ZipFile(values[ZIP], 'r') as zip_ref:
+            zip_ref.extractall(values[FOLDER])
+
+        if dataset == ECB_PLUS:
+            gdown.download("https://raw.githubusercontent.com/cltl/ecbPlus/master/ECB%2B_LREC2014/ECBplus_coreference_sentences.csv",
+                           os.path.join(os.getcwd(), ECB_PLUS, ECBPLUS_FOLDER_NAME, "ECBplus_coreference_sentences.csv"), quiet=False)

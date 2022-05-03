@@ -29,7 +29,8 @@ The parsed datasets are available in this repository in the folders listed below
 
 2) !!! Recommended to create a venv.
 3) Install libraries: ```pip install -r requirements.txt```
-4) Download the datasets and required libraries from spacy: ```python setup.py``` 
+4) Download the datasets and required libraries from spacy: ```python setup.py```
+5) Download and install [Perl](https://strawberryperl.com/). Add perl to PATH, restart your computer, and check that perl has been correctly installed.
 
 ## Dataset information 
 
@@ -160,3 +161,5 @@ The following values enable comparison of the CDCR datasets on dataset and topic
 | unique_lemmas_wo_singl               | float    | -//- Calculated on non-singleton chains.  |
 | phrasing_diversity_weighted_all      | float    | Lexical diversity measurement: phrasing diversity (see LREC paper). Measures diversity of the mentions given variation and frequency of the chains' mentions. Calculated on all mentions.     |
 | phrasing_diversity_weighted_wo_singl | float    | -//- Calculated on non-singleton chains. |
+| F1_CONLL_all                         | float    | F1 CoNLL (average of B3, MUC, and CEAF_e) calculated on the simple same-lemma baseline. Calculated on all coref chains.   |
+| F1_CONLL_wo_singl                    | float    | -//- Calculated on non-singleton chains.   |
