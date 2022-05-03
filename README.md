@@ -45,7 +45,7 @@ The parsing scripts and output folders are located  here:
 
 ## CoNLL format (simplified)
 
-CoNLL format is a standard imput format for within-document [coreference resolution](https://paperswithcode.com/dataset/conll-2012-1). The original format contains multiple columns that contain information per each token, e.g., POS tags, NER labels. We use a simplified format that contains tokens, their identifiers in the text (e.g., doc_id, sent_id), and labels of coref chains: 
+CoNLL format is a standard input format for within-document [coreference resolution](https://paperswithcode.com/dataset/conll-2012-1). The original format contains multiple columns that contain information per each token, e.g., POS tags, NER labels. We use a simplified format (based on the format of input filed used by [Barhom et al. 2019](https://github.com/shanybar/event_entity_coref_ecb_plus/tree/master/data/interim/cybulska_setup)) that contains tokens, their identifiers in the text (e.g., doc_id, sent_id), and labels of coref chains: 
 
 | Column ID       | Type     | Description     |
 | :---        |    :----:   |          :--- |
@@ -87,7 +87,7 @@ Example:
 
 
 ## Mentions.json
-The format is adapted and extended from [WEC-Eng](https://huggingface.co/datasets/Intel/WEC-Eng) and from the mention format used by [Barhom et al. 2019](https://github.com/shanybar/event_entity_coref_ecb_plus). 
+The format is adapted and extended from [WEC-Eng](https://huggingface.co/datasets/Intel/WEC-Eng) and from the mention format used by [Barhom et al. 2019](https://github.com/shanybar/event_entity_coref_ecb_plus/tree/master/data/interim/cybulska_setup). 
 
 | Field             | Type            | Description     |
 | :---              | :----:          | :--- |
