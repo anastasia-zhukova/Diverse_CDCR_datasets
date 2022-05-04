@@ -262,12 +262,12 @@ if __name__ == '__main__':
                 f'{EVENT}_{MENTIONS}': len(group_df[group_df[TYPE] == EVENT]),
                 f'{ENTITY}_{MENTIONS}': len(group_df[group_df[TYPE] == ENTITY]),
                 SINGLETONS: len(group_df[group_df[IS_SINGLETON]]),
-                AVERAGE_SIZE: float(format(np.mean(chain_df.loc[coref_chains][MENTIONS].values), '.3f')),
             }
 
             # various for, of lexical diversity that depend on the presence/absence of singletons
             for suff, filt_criteria in zip([ALL, WO_SINGL], [0, 1]):
                 selected_chains_df = chain_df[(chain_df[MENTIONS] > filt_criteria) & (chain_df.index.isin(coref_chains))]
+                summary_dict[AVERAGE_SIZE + suff] = float(format(np.mean(selected_chains_df[MENTIONS].values), '.3f'))
                 summary_dict[PHRASING_DIVERSITY + WEIGHTED + suff] = float(format(sum([row[PHRASING_DIVERSITY] * row[MENTIONS]
                                                                   for index, row in selected_chains_df.iterrows()]) / \
                                                                      sum(selected_chains_df[MENTIONS].values), '.3f'))
