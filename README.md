@@ -15,13 +15,7 @@ Please use this .bib to cite the paper:
 
 The repository contains a code that parses original formats of CDCR datasets into the same format (conll format for coreference resolution and a separate list of mentions) and calculates summary values that enable comparison of the datasets.
 
-Parsing scripts per dataset are contained in each separate folder, whereas the summary script is located in the root folder. 
-
-The parsed datasets are available in this repository in the folders listed below. Each dataset contains three files: 
-
-1) ```*dataset_name*.conll```
-2) ```entity_mentions.json```
-3) ```event_mentions.json```
+Parsing scripts per dataset are contained in each separate folder, whereas the summary script is located in the root folder. The parsed datasets are available in this repository in the folders listed below. 
 
 ## Installation 
 
@@ -41,7 +35,11 @@ The parsing scripts and output folders are located  here:
 | ECB+      |  ```ECBplus-prep/parse_ecbplus.py```      |  ```ECBplus-prep/output_data```  |
 | NewsWCL50   | ```NewsWCL50-prep/parse_newswcl50.py```        | ```NewsWCL50-prep/output_data```      |
 
+Each dataset contains three output files suitable for a CDCR model: 
 
+1) ```*dataset_name*.conll```
+2) ```entity_mentions.json```
+3) ```event_mentions.json```
 
 ## CoNLL format (simplified)
 
