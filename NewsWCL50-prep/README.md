@@ -1,4 +1,4 @@
-#Parsing NewsWCL50
+# Parsing NewsWCL50
 
 Original repository of NewsWCL50: https://github.com/fhamborg/NewsWCL50. 
 
