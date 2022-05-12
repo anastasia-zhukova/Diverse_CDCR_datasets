@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 from insert_whitespace import append_text
 from nltk import Tree
+from nltk.tokenize.treebank import TreebankWordDetokenizer
 from tqdm import tqdm
 import warnings
 
@@ -27,7 +28,7 @@ result_path = os.path.join(ECB_PARSING_FOLDER, OUTPUT_FOLDER_NAME, "test_parsing
 out_path = os.path.join(ECB_PARSING_FOLDER, OUTPUT_FOLDER_NAME)
 path_sample = os.path.join(os.getcwd(), "..", SAMPLE_DOC_JSON)
 
-nlp = spacy.load('en_core_web_sm')
+nlp = spacy.load(r'C:\Users\snake\Documents\GitHub\Diverse_CDCR_datasets\venv\Lib\site-packages\en_core_web_sm\en_core_web_sm-3.2.0')
 
 validated_sentences_df = pd.read_csv(os.path.join(ECB_PARSING_FOLDER, ECBPLUS_FOLDER_NAME,
                                                   "ECBplus_coreference_sentences.csv")).set_index(
@@ -162,94 +163,72 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                     continue
 
                                 # generate sentence doc with spacy
-                                sentence = ""
-                                iterationsWithFittingToken = 0
-                                for t in root:
-                                    if t.tag == TOKEN:
-                                        if t.attrib[SENTENCE] == str(sent_id):
-                                            if iterationsWithFittingToken != 0 and t.text != "'s" and t.text != "." and \
-                                                    t.text != "'" and t.text != "\"" and t.text != "," and t.text != ":" \
-                                                    and t.text != ";" and t.text != "'s" and t.text != "?" and t \
-                                                    .text != "!":
-                                                sentence = sentence + " "
-                                            if t.text != "``" and t.text != "''":
-                                                sentence = sentence + str(t.text)
-                                                iterationsWithFittingToken = iterationsWithFittingToken + 1
-                                sentence = sentence.replace("  ", " ")
-                                doc = nlp(sentence)
-                                tokens_str = []
+                                sentence_tokenized = [t for t in root if (t.tag == TOKEN and t.attrib[SENTENCE] == str(sent_id))]
+                                sentence_str = TreebankWordDetokenizer().detokenize(t.text for t in root if (t.tag == TOKEN and t.attrib[SENTENCE] == str(sent_id)))
 
-                                first_token = token_dict[tokens[0]][TEXT]
+                                doc = nlp(sentence_str)
+                                doc_tokenized = []
+                                for t in doc:
+                                    doc_tokenized.append(t)
 
-                                if first_token[0] == "'":
-                                    first_token = first_token[1:]
-                                if first_token[-1] == "'":
-                                    first_token = first_token[:-1]
-                                if first_token[-1] == '"':
-                                    first_token = first_token[:-1]
-                                if first_token[0] == '"':
-                                    first_token = first_token[1:]
+                                mention_tokenized = []
 
-                                first_token = first_token.replace(",", " ,").replace("'", " '").replace("\'",
-                                                                                                        " '").replace(
-                                    "#", "# ").replace(":", " :").replace("-", " - ").replace("\t", "").replace("(",
-                                                                                                                "( ").replace(
-                                    ")", " )")
-                                if len(first_token) > 2:
-                                    first_token = first_token.replace(".", " .")
+                                for t_id in tokens:
+                                    mention_tokenized.append(token_dict[t_id])
 
-                                indiv_tokens = first_token.split(" ")
-                                for it in indiv_tokens:
-                                    if it != "":
-                                        tokens_str.append(it)
+                                #print("-------------")
+                                #[to_nltk_tree(sent.root).pretty_print() for sent in doc.sents]
+                                #print(mention_text)
+                                #print(sentence_str)
 
-                                token_ids_in_doc = []
+                                mention_doc_ids = []
 
-                                # Redetermine the ids of the token within the sentence because it is not guaranteed that "numbers" from the ECB+ XML does match the spacy interpretation of tokenization
-                                for t_id in tokens[1:]:
-                                    t = token_dict[t_id]
-                                    if t[TEXT] != "``" and t[TEXT] != "''":
-                                        t[TEXT] = t[TEXT].replace(",", " ,").replace("'", " '").replace("\'",
-                                                                                                        " '").replace(
-                                            "#", "# ").replace(":", " :").replace("-", " - ").replace("\t", "").replace(
-                                            "(", "( ").replace(")", " )")
-                                        # account for name abbreviations, i.e. "Robert R."
-                                        if len(t[TEXT]) > 2 and t[TEXT] != "p.m." and t[TEXT] != "a.m.":
-                                            t[TEXT] = t[TEXT].replace(".", " .")
-                                        indiv_tokens = t[TEXT].split(" ")
-                                        for it in indiv_tokens:
-                                            if it != "":
-                                                tokens_str.append(it)
+                                first_char_of_mention = sentence_str.find(mention_text.split(string.punctuation + " ")[0])  # counting character up to the first character of the mention within the sentence
+                                last_char_of_mention = sentence_str.find(mention_text.split(string.punctuation)[-1]) + len(mention_text.split(string.punctuation)[-1])
 
-                                for to in doc:
-                                    if len(token_ids_in_doc) == len(tokens):
+                                while True:
+                                    #print(first_char_of_mention)
+                                    #print(last_char_of_mention)
+
+                                    if last_char_of_mention == len(sentence_str) or sentence_str[last_char_of_mention] in string.punctuation or sentence_str[last_char_of_mention] == " ":
+                                        # The end of the sentence was reached or the next character is a punctuation
                                         break
-                                    for ts in tokens_str:
-                                        if len(token_ids_in_doc) == len(tokens):
-                                            break
-                                        if (to.text.startswith(ts) or to.text.endswith(ts)):
+                                    else:
+                                        # The next char is not a punctuation, so it therefore it is just a part of a bigger word
+                                        first_char_of_mention = sentence_str.find(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[0], last_char_of_mention)
+                                        last_char_of_mention = sentence_str.find(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1], last_char_of_mention) + len(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1])
 
-                                            if len(token_ids_in_doc) > 0:
-                                                if (to.i not in token_ids_in_doc and abs(
-                                                        to.i - token_ids_in_doc[-1]) <= 2):
-                                                    # account for small differences in tokenization
-                                                    token_ids_in_doc.append(to.i)
-                                                if abs(to.i - token_ids_in_doc[-1]) > 2 and len(token_ids_in_doc) < len(
-                                                        tokens):
-                                                    token_ids_in_doc = [to.i]  # reset
-                                            else:
-                                                token_ids_in_doc.append(to.i)
+                                #get the tokens within the spacy doc
+                                processed_chars = 0
+                                added_spaces = 0
 
-                                # determine the head
-                                for i in token_ids_in_doc:
+                                for t in doc:
+                                    processed_chars = processed_chars + len(t.text)
+                                    spaces = sentence_str[:processed_chars].count(" ") - added_spaces
+                                    added_spaces = added_spaces + spaces
+                                    processed_chars = processed_chars + spaces
+
+                                    if last_char_of_mention >= processed_chars >= first_char_of_mention:
+                                        #mention token detected
+                                        mention_doc_ids.append(t.i)
+                                    elif processed_chars > last_char_of_mention:
+                                        break
+
+                                #print(mention_doc_ids)
+
+                                # mention string processed, look for the head
+                                for i in mention_doc_ids:
                                     ancestors_in_mention = 0
                                     for a in doc[i].ancestors:
-                                        if a.i in token_ids_in_doc:
+                                        if a.i in mention_doc_ids:
                                             ancestors_in_mention = ancestors_in_mention + 1
-                                            break  # one is enough to make the token unviable as a head
+                                            break  # one is enough to make the token inviable as a head
                                     if ancestors_in_mention == 0:
                                         # head within the mention
                                         mention_head = doc[i]
+
+                                #print(mention_head)
+                                #print(mention_head.i)
 
                                 mention_head_lemma = mention_head.lemma_
                                 mention_head_pos = mention_head.pos_
@@ -284,7 +263,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                                                   TOKENS_NUMBER: [int(token_dict[t][ID]) for t in
                                                                                   tokens],
                                                                   TOKENS_TEXT: [token_dict[t][TEXT] for t in tokens],
-                                                                  "token_doc_numbers": token_ids_in_doc,
+                                                                  "token_doc_numbers": mention_doc_ids,     #PLACEHOLDER, REMAP
                                                                   DOC_ID: topic_file.split(".")[0],
                                                                   SENT_ID: sent_id,
                                                                   MENTION_CONTEXT: mention_context_str,
@@ -569,6 +548,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
             LOGGER.info("Checking equal brackets in conll (if unequal, the result may be incorrect):")
             try:
+                #print(final_output_str)
                 assert final_output_str.count("(") == final_output_str.count(")")
             except AssertionError:
                 LOGGER.warning(f'Number of opening and closing brackets in conll does not match! ')
