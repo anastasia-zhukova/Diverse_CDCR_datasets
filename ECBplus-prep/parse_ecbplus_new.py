@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 import os
 import json
+import sys
 import string
 import spacy
 import copy
@@ -176,24 +177,34 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                 for t_id in tokens:
                                     mention_tokenized.append(token_dict[t_id])
 
-                                #print("-------------")
-                                #[to_nltk_tree(sent.root).pretty_print() for sent in doc.sents]
-                                #print(mention_text)
-                                #print(sentence_str)
+                                print("-------------")
+                                [to_nltk_tree(sent.root).pretty_print() for sent in doc.sents]
+                                print(mention_text)
+                                print(sentence_str)
 
                                 mention_doc_ids = []
 
-                                first_char_of_mention = sentence_str.find(mention_text.split(string.punctuation + " ")[0])  # counting character up to the first character of the mention within the sentence
-                                last_char_of_mention = sentence_str.find(mention_text.split(string.punctuation)[-1]) + len(mention_text.split(string.punctuation)[-1])
+                                first_char_of_mention = sentence_str.find(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[0])  # counting character up to the first character of the mention within the sentence
+                                last_char_of_mention = sentence_str.find(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1]) + len(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1])  #count up to the end of the mention
+                                if last_char_of_mention == 0:   #last char cant be first char of string (handle special case if the last punctuation is part of mention)
+                                    last_char_of_mention = -1
+
+
+                                counter = 0
 
                                 while True:
-                                    #print(first_char_of_mention)
-                                    #print(last_char_of_mention)
+                                    if counter > 8:
+                                        sys.exit()
 
-                                    if last_char_of_mention == len(sentence_str) or sentence_str[last_char_of_mention] in string.punctuation or sentence_str[last_char_of_mention] == " ":
+                                    if last_char_of_mention >= len(sentence_str) or sentence_str[last_char_of_mention] in string.punctuation or sentence_str[last_char_of_mention] == " ":
                                         # The end of the sentence was reached or the next character is a punctuation
+                                        print(str(first_char_of_mention))
+                                        print(str(last_char_of_mention))
                                         break
                                     else:
+                                        counter = counter + 1
+                                        print(str(first_char_of_mention) + ": " + sentence_str[first_char_of_mention])
+                                        print(str(last_char_of_mention) + ": " + sentence_str[last_char_of_mention])
                                         # The next char is not a punctuation, so it therefore it is just a part of a bigger word
                                         first_char_of_mention = sentence_str.find(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[0], last_char_of_mention)
                                         last_char_of_mention = sentence_str.find(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1], last_char_of_mention) + len(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1])
@@ -214,7 +225,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                     elif processed_chars > last_char_of_mention:
                                         break
 
-                                #print(mention_doc_ids)
+                                print(mention_doc_ids)
 
                                 # mention string processed, look for the head
                                 for i in mention_doc_ids:
@@ -227,8 +238,8 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                         # head within the mention
                                         mention_head = doc[i]
 
-                                #print(mention_head)
-                                #print(mention_head.i)
+                                print(mention_head)
+                                print(mention_head.i)
 
                                 mention_head_lemma = mention_head.lemma_
                                 mention_head_pos = mention_head.pos_
