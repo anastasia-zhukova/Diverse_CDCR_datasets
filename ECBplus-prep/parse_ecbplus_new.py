@@ -184,10 +184,12 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
                                 mention_doc_ids = []
 
+
+                                #print(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1])
                                 first_char_of_mention = sentence_str.find(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[0])  # counting character up to the first character of the mention within the sentence
-                                last_char_of_mention = sentence_str.find(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1]) + len(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1])  #count up to the end of the mention
+                                last_char_of_mention = sentence_str.find(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1], len(sentence_str[:first_char_of_mention]) + len(mention_text) - len(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1])) + len(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1])  #count up to the end of the mention
                                 if last_char_of_mention == 0:   #last char cant be first char of string (handle special case if the last punctuation is part of mention)
-                                    last_char_of_mention = -1
+                                    last_char_of_mention = len(sentence_str)
 
 
                                 counter = 0
@@ -196,7 +198,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                     if counter > 8:
                                         sys.exit()
 
-                                    if last_char_of_mention >= len(sentence_str) or sentence_str[last_char_of_mention] in string.punctuation or sentence_str[last_char_of_mention] == " ":
+                                    if len(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)) < len(re.split("\s|(?<!\d)[,.](?!\d)", sentence_str[first_char_of_mention:last_char_of_mention])) + 1 and ( last_char_of_mention >= len(sentence_str) or sentence_str[last_char_of_mention] in string.punctuation or sentence_str[last_char_of_mention] == " " ):
                                         # The end of the sentence was reached or the next character is a punctuation
                                         print(str(first_char_of_mention))
                                         print(str(last_char_of_mention))
@@ -205,9 +207,10 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                         counter = counter + 1
                                         print(str(first_char_of_mention) + ": " + sentence_str[first_char_of_mention])
                                         print(str(last_char_of_mention) + ": " + sentence_str[last_char_of_mention])
+                                        print(re.split("\s|(?<!\d)[,.](?!\d)", sentence_str[first_char_of_mention:last_char_of_mention]))
                                         # The next char is not a punctuation, so it therefore it is just a part of a bigger word
                                         first_char_of_mention = sentence_str.find(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[0], last_char_of_mention)
-                                        last_char_of_mention = sentence_str.find(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1], last_char_of_mention) + len(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1])
+                                        last_char_of_mention = sentence_str.find(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1], first_char_of_mention+len(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[0])) + len(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1])
 
                                 #get the tokens within the spacy doc
                                 processed_chars = 0
