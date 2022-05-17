@@ -21,6 +21,7 @@ MENTIONS_ENTITIES_JSON = "entities_mentions.json"
 CONLL_CSV = "conll.csv"
 SUMMARY_CHAINS_CSV = "summary_chains.csv"
 SUMMARY_TOPICS_CSV = "summary_dataset_topics.csv"
+MANUAL_REVIEW_FILE = "manual_review_needed.json"
 
 # coref types
 STRICT = "STRICT"

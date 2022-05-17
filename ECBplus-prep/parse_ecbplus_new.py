@@ -57,6 +57,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
     entity_mentions = []
     event_mentions = []
     topic_names = []
+    need_manual_review_mention_head = []
 
     for topic_folder in selected_topics:
         if topic_folder == "__MACOSX":
@@ -182,12 +183,11 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                 print(mention_text)
                                 print(sentence_str)
 
-                                mention_doc_ids = []
-
 
                                 #print(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1])
-                                first_char_of_mention = sentence_str.find(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[0])  # counting character up to the first character of the mention within the sentence
-                                last_char_of_mention = sentence_str.find(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1], len(sentence_str[:first_char_of_mention]) + len(mention_text) - len(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1])) + len(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1])  #count up to the end of the mention
+                                split_mention_text = re.split("\s|(?<!\d)[,.](?!\d)", mention_text)
+                                first_char_of_mention = sentence_str.find(split_mention_text[0])  # counting character up to the first character of the mention within the sentence
+                                last_char_of_mention = sentence_str.find(split_mention_text[-1], len(sentence_str[:first_char_of_mention]) + len(mention_text) - len(split_mention_text[-1])) + len(split_mention_text[-1])  #count up to the end of the mention
                                 if last_char_of_mention == 0:   #last char cant be first char of string (handle special case if the last punctuation is part of mention)
                                     last_char_of_mention = len(sentence_str)
 
@@ -195,40 +195,72 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                 counter = 0
 
                                 while True:
-                                    if counter > 8:
-                                        sys.exit()
+                                    if counter > 100:
+                                        need_manual_review_mention_head.append(subelem.attrib[M_ID])
+                                        LOGGER.info("Mention with ID " + str(subelem.attrib[M_ID]) + " needs manual review. Could not determine the mention head automatically.")
+                                        break
 
-                                    if len(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)) < len(re.split("\s|(?<!\d)[,.](?!\d)", sentence_str[first_char_of_mention:last_char_of_mention])) + 1 and ( last_char_of_mention >= len(sentence_str) or sentence_str[last_char_of_mention] in string.punctuation or sentence_str[last_char_of_mention] == " " ):
+                                    if sentence_str[-1] not in string.punctuation:
+                                        print("adding .")
+                                        sentence_str = sentence_str+"."     #if the sentence does not end with a ".", we have to add one for the algorithm to understand the sentence (this "." isnt represented in the output later)
+
+                                    char_after_first_token = sentence_str[first_char_of_mention+len(split_mention_text[0])]
+
+
+                                    if len(split_mention_text) < len(re.split("\s|(?<!\d)[,.](?!\d)", sentence_str[first_char_of_mention:last_char_of_mention])) + 1 and ( last_char_of_mention >= len(sentence_str) or sentence_str[last_char_of_mention] in string.punctuation or sentence_str[last_char_of_mention] == " ") and str(sentence_str[first_char_of_mention-1]) in str(string.punctuation+" ") and char_after_first_token in str(string.punctuation+" "):
                                         # The end of the sentence was reached or the next character is a punctuation
                                         print(str(first_char_of_mention))
                                         print(str(last_char_of_mention))
-                                        break
+
+                                        # get the tokens within the spacy doc
+                                        processed_chars = 0
+                                        added_spaces = 0
+                                        mention_doc_ids = []
+
+                                        for t in doc:
+                                            processed_chars = processed_chars + len(t.text)
+                                            spaces = sentence_str[:processed_chars].count(" ") - added_spaces
+                                            added_spaces = added_spaces + spaces
+                                            processed_chars = processed_chars + spaces
+
+                                            if last_char_of_mention >= processed_chars >= first_char_of_mention:
+                                                # mention token detected
+                                                mention_doc_ids.append(t.i)
+                                            elif processed_chars > last_char_of_mention:
+                                                break
+
+                                        print(re.split("\s|(?<!\d)[,.](?!\d)", sentence_str[first_char_of_mention:last_char_of_mention]))
+                                        print(tokens)
+                                        print(mention_doc_ids)
+                                        if abs(len(re.split("\s|(?<!\d)[,.](?!\d)", sentence_str[first_char_of_mention:last_char_of_mention])) - len(tokens)) <= 2:
+                                            print("Difference OK. Breaking")
+                                            break
+                                        else:
+                                            print("Difference too big, continue")
+                                            counter = counter + 1
+                                            print(str(first_char_of_mention) + ": " + sentence_str[first_char_of_mention])
+                                            print(str(last_char_of_mention) + ": " + sentence_str[last_char_of_mention])
+                                            print(re.split("\s|(?<!\d)[,.](?!\d)",
+                                                           sentence_str[first_char_of_mention:last_char_of_mention]))
+                                            # The next char is not a punctuation, so it therefore it is just a part of a bigger word
+                                            first_char_of_mention = sentence_str.find(
+                                                re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[0],
+                                                first_char_of_mention + 2)
+                                            last_char_of_mention = sentence_str.find(
+                                                re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1],
+                                                first_char_of_mention + len(
+                                                    re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[0])) + len(
+                                                re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1])
+
                                     else:
                                         counter = counter + 1
                                         print(str(first_char_of_mention) + ": " + sentence_str[first_char_of_mention])
                                         print(str(last_char_of_mention) + ": " + sentence_str[last_char_of_mention])
                                         print(re.split("\s|(?<!\d)[,.](?!\d)", sentence_str[first_char_of_mention:last_char_of_mention]))
                                         # The next char is not a punctuation, so it therefore it is just a part of a bigger word
-                                        first_char_of_mention = sentence_str.find(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[0], last_char_of_mention)
+                                        first_char_of_mention = sentence_str.find(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[0], first_char_of_mention + 2 )
                                         last_char_of_mention = sentence_str.find(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1], first_char_of_mention+len(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[0])) + len(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1])
 
-                                #get the tokens within the spacy doc
-                                processed_chars = 0
-                                added_spaces = 0
-
-                                for t in doc:
-                                    processed_chars = processed_chars + len(t.text)
-                                    spaces = sentence_str[:processed_chars].count(" ") - added_spaces
-                                    added_spaces = added_spaces + spaces
-                                    processed_chars = processed_chars + spaces
-
-                                    if last_char_of_mention >= processed_chars >= first_char_of_mention:
-                                        #mention token detected
-                                        mention_doc_ids.append(t.i)
-                                    elif processed_chars > last_char_of_mention:
-                                        break
-
-                                print(mention_doc_ids)
 
                                 # mention string processed, look for the head
                                 for i in mention_doc_ids:
@@ -242,7 +274,6 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                         mention_head = doc[i]
 
                                 print(mention_head)
-                                print(mention_head.i)
 
                                 mention_head_lemma = mention_head.lemma_
                                 mention_head_pos = mention_head.pos_
@@ -250,6 +281,23 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                 mention_ner = mention_head.ent_type_
                                 if mention_ner == "":
                                     mention_ner = "O"
+
+                                # remap the mention head back to the ecb+ original tokenization to get the ID
+                                mention_head_id = None
+                                mention_head_text = mention_head.text
+
+                                for t in tokens:
+                                    print(token_dict[t][TEXT])
+                                    if str(token_dict[t][TEXT]) == mention_head_text:
+                                        mention_head_id = token_dict[t][ID]
+
+                                if not mention_head_id and len(tokens) == 1:
+                                    mention_head_id = token_dict[tokens[0]][ID]
+
+
+                                print(mention_head_id)
+                                if mention_head_id == None:
+                                    sys.exit()
 
                                 # get the context
                                 tokens_int = [int(x) for x in tokens]
@@ -272,8 +320,8 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                                                   MENTION_NER: mention_ner,
                                                                   MENTION_HEAD_POS: mention_head_pos,
                                                                   MENTION_HEAD_LEMMA: mention_head_lemma,
-                                                                  MENTION_HEAD: mention_head.text,
-                                                                  MENTION_HEAD_ID: mention_head.i,
+                                                                  MENTION_HEAD: mention_head_text,
+                                                                  MENTION_HEAD_ID: mention_head_id,
                                                                   TOKENS_NUMBER: [int(token_dict[t][ID]) for t in
                                                                                   tokens],
                                                                   TOKENS_TEXT: [token_dict[t][TEXT] for t in tokens],
@@ -541,6 +589,10 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
             entity_mentions.extend(entity_mentions_local)
 
             with open(os.path.join(annot_path, f'{EVENT}_{MENTIONS}_{topic_name}.json'), "w") as file:
+                json.dump(event_mentions_local, file)
+            event_mentions.extend(event_mentions_local)
+
+            with open(os.path.join(annot_path, MANUAL_REVIEW_FILE), "w") as file:
                 json.dump(event_mentions_local, file)
             event_mentions.extend(event_mentions_local)
 
