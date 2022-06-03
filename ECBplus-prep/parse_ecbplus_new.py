@@ -152,6 +152,12 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
                         for i, subelem in enumerate(elem):
                             tokens = [token.attrib[T_ID] for token in subelem]
+
+                            # skip if the token is contained more than once within the same mention
+                            # (i.e. ignore entries with error in ecb+ tokenization)
+                            if len(tokens) != len(list(set(tokens))):
+                                continue
+
                             mention_text = ""
                             for t in tokens:
                                 mention_text, _, _ = append_text(mention_text, token_dict[t][TEXT])
@@ -178,10 +184,10 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                 for t_id in tokens:
                                     mention_tokenized.append(token_dict[t_id])
 
-                                print("-------------")
-                                [to_nltk_tree(sent.root).pretty_print() for sent in doc.sents]
-                                print(mention_text)
-                                print(sentence_str)
+                                #print("-------------")
+                                #[to_nltk_tree(sent.root).pretty_print() for sent in doc.sents]
+                                #print(mention_text)
+                                #print(sentence_str)
 
 
                                 #print(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1])
@@ -196,12 +202,12 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
                                 while True:
                                     if counter > 100:
-                                        need_manual_review_mention_head.append(subelem.attrib[M_ID])
-                                        LOGGER.info("Mention with ID " + str(subelem.attrib[M_ID]) + " needs manual review. Could not determine the mention head automatically.")
+                                        need_manual_review_mention_head.append(str(t_subt) + "_" + str(mention_text))
+                                        LOGGER.info("Mention with ID " + str(t_subt) + "_" + str(mention_text) + " needs manual review. Could not determine the mention head automatically.")
                                         break
 
-                                    if sentence_str[-1] not in string.punctuation:
-                                        print("adding .")
+                                    if sentence_str[-1] not in ".!?" or mention_text[-1] == ".":      #not string.punctuation because ecp+ tokenization sometimes includes ' etc in the token
+                                        #print("adding .")
                                         sentence_str = sentence_str+"."     #if the sentence does not end with a ".", we have to add one for the algorithm to understand the sentence (this "." isnt represented in the output later)
 
                                     char_after_first_token = sentence_str[first_char_of_mention+len(split_mention_text[0])]
@@ -209,8 +215,8 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
                                     if len(split_mention_text) < len(re.split("\s|(?<!\d)[,.](?!\d)", sentence_str[first_char_of_mention:last_char_of_mention])) + 1 and ( last_char_of_mention >= len(sentence_str) or sentence_str[last_char_of_mention] in string.punctuation or sentence_str[last_char_of_mention] == " ") and str(sentence_str[first_char_of_mention-1]) in str(string.punctuation+" ") and char_after_first_token in str(string.punctuation+" "):
                                         # The end of the sentence was reached or the next character is a punctuation
-                                        print(str(first_char_of_mention))
-                                        print(str(last_char_of_mention))
+                                        #print(str(first_char_of_mention))
+                                        #print(str(last_char_of_mention))
 
                                         # get the tokens within the spacy doc
                                         processed_chars = 0
@@ -229,19 +235,18 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                             elif processed_chars > last_char_of_mention:
                                                 break
 
-                                        print(re.split("\s|(?<!\d)[,.](?!\d)", sentence_str[first_char_of_mention:last_char_of_mention]))
-                                        print(tokens)
-                                        print(mention_doc_ids)
+                                        #print(re.split("\s|(?<!\d)[,.](?!\d)", sentence_str[first_char_of_mention:last_char_of_mention]))
+                                        #print("tokens ecb: " + str(tokens))
+                                        #print("tokens spacy: " + str(mention_doc_ids))
                                         if abs(len(re.split("\s|(?<!\d)[,.](?!\d)", sentence_str[first_char_of_mention:last_char_of_mention])) - len(tokens)) <= 2:
-                                            print("Difference OK. Breaking")
+                                            #print("Difference OK. Breaking")
                                             break
                                         else:
-                                            print("Difference too big, continue")
+                                            #print("Difference too big, continue")
                                             counter = counter + 1
-                                            print(str(first_char_of_mention) + ": " + sentence_str[first_char_of_mention])
-                                            print(str(last_char_of_mention) + ": " + sentence_str[last_char_of_mention])
-                                            print(re.split("\s|(?<!\d)[,.](?!\d)",
-                                                           sentence_str[first_char_of_mention:last_char_of_mention]))
+                                            #print(str(first_char_of_mention) + ": " + sentence_str[first_char_of_mention])
+                                            #print(str(last_char_of_mention) + ": " + sentence_str[last_char_of_mention])
+                                            #print(re.split("\s|(?<!\d)[,.](?!\d)",sentence_str[first_char_of_mention:last_char_of_mention]))
                                             # The next char is not a punctuation, so it therefore it is just a part of a bigger word
                                             first_char_of_mention = sentence_str.find(
                                                 re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[0],
@@ -254,26 +259,30 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
                                     else:
                                         counter = counter + 1
-                                        print(str(first_char_of_mention) + ": " + sentence_str[first_char_of_mention])
-                                        print(str(last_char_of_mention) + ": " + sentence_str[last_char_of_mention])
-                                        print(re.split("\s|(?<!\d)[,.](?!\d)", sentence_str[first_char_of_mention:last_char_of_mention]))
+                                        #print(str(first_char_of_mention) + ": " + sentence_str[first_char_of_mention])
+                                        #print(str(last_char_of_mention) + ": " + sentence_str[last_char_of_mention])
+                                        #print(re.split("\s|(?<!\d)[,.](?!\d)", sentence_str[first_char_of_mention:last_char_of_mention]))
                                         # The next char is not a punctuation, so it therefore it is just a part of a bigger word
                                         first_char_of_mention = sentence_str.find(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[0], first_char_of_mention + 2 )
                                         last_char_of_mention = sentence_str.find(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1], first_char_of_mention+len(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[0])) + len(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1])
 
 
                                 # mention string processed, look for the head
-                                for i in mention_doc_ids:
-                                    ancestors_in_mention = 0
-                                    for a in doc[i].ancestors:
-                                        if a.i in mention_doc_ids:
-                                            ancestors_in_mention = ancestors_in_mention + 1
-                                            break  # one is enough to make the token inviable as a head
-                                    if ancestors_in_mention == 0:
-                                        # head within the mention
-                                        mention_head = doc[i]
+                                if str(t_subt) + "_" + str(mention_text) not in need_manual_review_mention_head:
+                                    for i in mention_doc_ids:
+                                        ancestors_in_mention = 0
+                                        for a in doc[i].ancestors:
+                                            if a.i in mention_doc_ids:
+                                                ancestors_in_mention = ancestors_in_mention + 1
+                                                break  # one is enough to make the token inviable as a head
+                                        if ancestors_in_mention == 0:
+                                            # head within the mention
+                                            mention_head = doc[i]
+                                else:
+                                    mention_head = doc[0]   #as placeholder for manual checking
 
-                                print(mention_head)
+                                #print("head: " + str(mention_head))
+                                #print("spacy head id: " + str(mention_head.i))
 
                                 mention_head_lemma = mention_head.lemma_
                                 mention_head_pos = mention_head.pos_
@@ -287,7 +296,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                 mention_head_text = mention_head.text
 
                                 for t in tokens:
-                                    print(token_dict[t][TEXT])
+                                    #print(str(token_dict[t][ID]) + ": " + token_dict[t][TEXT])
                                     if str(token_dict[t][TEXT]) == mention_head_text:
                                         mention_head_id = token_dict[t][ID]
 
@@ -295,9 +304,11 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                     mention_head_id = token_dict[tokens[0]][ID]
 
 
-                                print(mention_head_id)
+                                #print("mention head id ecb: " + str(mention_head_id))
                                 if mention_head_id == None:
-                                    sys.exit()
+                                    need_manual_review_mention_head.append(str(t_subt) + "_" + str(mention_text))
+                                    LOGGER.info("Mention with ID " + str(t_subt) + "_" + str(mention_text) + " needs manual review. Could not determine the mention head id automatically.")
+                                    #sys.exit()
 
                                 # get the context
                                 tokens_int = [int(x) for x in tokens]
@@ -444,6 +455,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
                 # LOGGER.info(f'GOT:   {mention_counter_got}')
                 # LOGGER.info(f'FOUND: {mentions_counter_found}\n')
+
             coref_dics[topic_folder] = coref_dict
 
             entity_mentions_local = []
@@ -491,15 +503,16 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                SCORE: -1.0,
                                SENT_ID: sent_id,
                                MENTION_CONTEXT: m[MENTION_CONTEXT],
-                               # now the token numbers based on spacy tokenization, not ecb+ tokenization
-                               TOKENS_NUMBER: m["token_doc_numbers"],
+                               # now the token numbers based on spacy tokenization, not ecb+ tokenization   ("token_doc_numbers") -> changed back to original
+                               TOKENS_NUMBER: token_numbers,
                                TOKENS_STR: m[TOKENS_STR],
                                TOKENS_TEXT: m[TOKENS_TEXT],
                                TOPIC_ID: int(t_number),
                                TOPIC: topic_name,
                                # COREF_TYPE: chain_vals[COREF_TYPE],
                                COREF_TYPE: STRICT,
-                               DESCRIPTION: chain_vals[DESCRIPTION]
+                               DESCRIPTION: chain_vals[DESCRIPTION],
+                               "t_subt": m[TOPIC],
                                }
 
                     # if the first two entries of chain_id are "ACT" or "NEG", add the "mention" to the array "event_mentions_local"
@@ -512,67 +525,30 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                     if not mention[IS_SINGLETON]:
                         mentions_local.append(mention)
 
-                    t_subt = m[TOPIC]
-                    mark_counter = chain_id
-                    # todo: once with (number) as 1st entry the placeholder stays as "- ," before the (number).
-                    if token_numbers[0] == token_numbers[len(token_numbers) - 1]:
-                        if str(conll_df.loc[(conll_df[SENT_ID] == sent_id) & (
-                                conll_df[TOKEN_ID] == token_numbers[0]) & (
-                                                    conll_df[TOPIC_SUBTOPIC] == t_subt), REFERENCE].values[
-                                   0]) == "-":
+            conll_df = conll_df.reset_index(drop=True)
 
-                            conll_df.loc[(conll_df[SENT_ID] == sent_id) & (
-                                    conll_df[TOKEN_ID] == token_numbers[0]) & (
-                                                     conll_df[TOPIC_SUBTOPIC] == t_subt), REFERENCE] = '(' + str(
-                                mark_counter) + ')'
+            for i, row in conll_df.iterrows():
+                reference_str = "-"
+                for mention in [m for m in event_mentions_local+entity_mentions_local if m["t_subt"] == row[TOPIC_SUBTOPIC] and m[SENT_ID] == row[SENT_ID] and row[TOKEN_ID] in m[TOKENS_NUMBER]]:
+                    print(mention)
+                    print(row)
+                    token_numbers = [int(t) for t in mention[TOKENS_NUMBER]]
+                    chain = mention[COREF_CHAIN]
+                    # one and only token
+                    if len(token_numbers) == 1 and token_numbers[0] == row[TOKEN_ID]:
+                        reference_str = reference_str + '| (' + str(chain) + ')'
+                    # one of multiple tokes
+                    elif len(token_numbers) > 1 and token_numbers[0] == row[TOKEN_ID]:
+                        reference_str = reference_str + '| (' + str(chain)
+                    elif len(token_numbers) > 1 and token_numbers[len(token_numbers)-1] == row[TOKEN_ID]:
+                        reference_str = reference_str + '| ' + str(chain) + ')'
 
-                        else:
-                            conll_df.loc[(conll_df[SENT_ID] == sent_id) & (
-                                    conll_df[TOKEN_ID] == token_numbers[0]) & (
-                                                     conll_df[TOPIC_SUBTOPIC] == t_subt), REFERENCE] = str(
-                                conll_df.loc[(conll_df[SENT_ID] == sent_id) & (
-                                        conll_df[TOKEN_ID] == token_numbers[0] & (
-                                        conll_df[TOPIC_SUBTOPIC] == t_subt)), REFERENCE].values[
-                                    0]) + '| (' + str(mark_counter) + ')'
+                if row[DOC_ID] == topic_name:   # do not overwrite conll rows of previous topic iterations
+                    conll_df.at[i, REFERENCE] = reference_str
 
-                    else:
-                        # if there stands "-" at the location with the df with the right token and sentence and topic-file, hence first entry, then for the 1st token of the arrays:
-                        if str(conll_df.loc[(conll_df[SENT_ID] == sent_id) & (
-                                conll_df[TOKEN_ID] == token_numbers[0]) & (
-                                                    conll_df[TOPIC_SUBTOPIC] == t_subt), REFERENCE].values[
-                                   0]) == "-":
-                            conll_df.loc[(conll_df[SENT_ID] == sent_id) & (
-                                    conll_df[TOKEN_ID] == token_numbers[0]) & (
-                                                     conll_df[TOPIC_SUBTOPIC] == t_subt), REFERENCE] = '(' + str(
-                                mark_counter)
-
-                        else:
-                            conll_df.loc[(conll_df[SENT_ID] == sent_id) & (
-                                    conll_df[TOKEN_ID] == token_numbers[0]) & (
-                                                     conll_df[TOPIC_SUBTOPIC] == t_subt), REFERENCE] = str(
-                                conll_df.loc[(conll_df[SENT_ID] == sent_id) & (
-                                        conll_df[TOKEN_ID] == token_numbers[0]) & (
-                                                         conll_df[TOPIC_SUBTOPIC] == t_subt), REFERENCE].values[
-                                    0]) + '| (' + str(mark_counter)
-
-                        # if there stands "-" at the location with the df with the right token and sentence and topic-file, hence first entry, then for the last token of the arrays:
-                        if str(conll_df.loc[(conll_df[SENT_ID] == sent_id) & (
-                                conll_df[TOKEN_ID] == token_numbers[
-                            len(token_numbers) - 1]) & (conll_df[
-                                                            TOPIC_SUBTOPIC] == t_subt), REFERENCE].values[0]) == "-":
-                            conll_df.loc[(conll_df[SENT_ID] == sent_id) & (
-                                    conll_df[TOKEN_ID] == token_numbers[
-                                len(token_numbers) - 1]) & (conll_df[TOPIC_SUBTOPIC] == t_subt), REFERENCE] = str(
-                                mark_counter) + ')'
-                        else:
-                            conll_df.loc[(conll_df[SENT_ID] == sent_id) & (
-                                    conll_df[TOKEN_ID] == token_numbers[len(token_numbers) - 1]) &
-                                         (conll_df[TOPIC_SUBTOPIC] == t_subt), REFERENCE] = str(
-                                conll_df.loc[(conll_df[SENT_ID] == sent_id)
-                                             & (conll_df[TOKEN_ID] == token_numbers[
-                                    len(token_numbers) - 1]) &
-                                             (conll_df[TOPIC_SUBTOPIC] == t_subt), REFERENCE].values[
-                                    0]) + '| ' + str(mark_counter) + ')'
+            for i, row in conll_df.iterrows():  # remove the leading characters if necessary (left from initialization)
+                if row[REFERENCE].startswith("-| "):
+                    conll_df.at[i, REFERENCE] = row[REFERENCE][3:]
 
             # create annot_path and file-structure (if not already) for the output of the annotations
             annot_path = os.path.join(result_path, topic_name, "annotation", "original")
@@ -594,7 +570,6 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
             with open(os.path.join(annot_path, MANUAL_REVIEW_FILE), "w") as file:
                 json.dump(event_mentions_local, file)
-            event_mentions.extend(event_mentions_local)
 
             conll_topic_df = conll_df[conll_df[TOPIC_SUBTOPIC].str.contains(f'{topic_name}/')].drop(columns=[DOC_ID])
 
@@ -612,12 +587,28 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                 outputdoc_str += "#end document\n"
             final_output_str += outputdoc_str
 
-            LOGGER.info("Checking equal brackets in conll (if unequal, the result may be incorrect):")
+            LOGGER.info("Checking equal brackets in conll for " + str(topic_name) +  " (if unequal, the result may be incorrect):")
             try:
-                #print(final_output_str)
-                assert final_output_str.count("(") == final_output_str.count(")")
+                LOGGER.info("Amount of mentions: " + str(len(event_mentions_local+entity_mentions_local)))
+                LOGGER.info("Total mentions parsed (all topics): " + str(len(event_mentions+entity_mentions)))
+                brackets_1 = 0
+                brackets_2 = 0
+                for i, row in conll_df.iterrows():  #only count brackets in reference column (exclude token text)
+                    brackets_1 += str(row[REFERENCE]).count("(")
+                    brackets_2 += str(row[REFERENCE]).count(")")
+                    if str(row[REFERENCE]).count(")") > 1:
+                        LOGGER.info("WARNING at " + str(i))
+                LOGGER.info("brackets: " + str(brackets_1) + " , " + str(brackets_2))
+
+                assert brackets_1 == brackets_2
             except AssertionError:
-                LOGGER.warning(f'Number of opening and closing brackets in conll does not match! ')
+                LOGGER.warning(f'Number of opening and closing brackets in conll does not match! topic: ' + str(topic_name))
+                conll_df.to_csv(os.path.join(out_path, CONLL_CSV))
+                with open(os.path.join(annot_path, f'{topic_name}.conll'), "w", encoding='utf-8') as file:
+                    file.write(outputdoc_str)
+                sys.exit()
+
+            conll_df.to_csv(os.path.join(out_path, CONLL_CSV))
 
             with open(os.path.join(annot_path, f'{topic_name}.conll'), "w", encoding='utf-8') as file:
                 file.write(outputdoc_str)
@@ -635,6 +626,10 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                 m["mention_head_lemma_uniques"] = uniques
 
     conll_df.to_csv(os.path.join(out_path, CONLL_CSV))
+
+    print("THESE NEED MANUAL REVIEW: ")
+    print(len(need_manual_review_mention_head))
+    print(need_manual_review_mention_head)
 
     with open(os.path.join(out_path, ECB_PLUS.split("-")[0] + '.conll'), "w", encoding='utf-8') as file:
         file.write(final_output_str)
