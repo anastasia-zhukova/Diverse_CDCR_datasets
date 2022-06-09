@@ -272,6 +272,8 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                                     - int(subelem[0].attrib[T_ID]) \
                                                     - len(subelem) \
                                                     + 1
+                                        #increase tolerance for every punctuation included in mention text
+                                        tolerance = tolerance + sum([1 for c in mention_text if c in string.punctuation])
 
                                         if abs(len(re.split(" ", sentence_str[first_char_of_mention:last_char_of_mention])) - len(tokens)) <= tolerance and sentence_str[first_char_of_mention-1] in string.punctuation+" " and sentence_str[last_char_of_mention] in string.punctuation+" ":
                                             #print("Difference OK. Breaking")
