@@ -99,6 +99,7 @@ T_ID = "t_id"
 ID = "id"
 SENT = "sent"
 M_ID = "m_id"
+NUM = "number"
 
 if __name__ == '__main__':
     import spacy

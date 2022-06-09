@@ -57,7 +57,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
     entity_mentions = []
     event_mentions = []
     topic_names = []
-    need_manual_review_mention_head = []
+    need_manual_review_mention_head = {}
 
     for topic_folder in selected_topics:
         if topic_folder == "__MACOSX":
@@ -115,7 +115,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                             t_id = 0
 
                         # fill the token-dictionary with fitting attributes
-                        token_dict[elem.attrib[T_ID]] = {TEXT: elem.text, SENT: elem.attrib[SENTENCE], ID: t_id}
+                        token_dict[elem.attrib[T_ID]] = {TEXT: elem.text, SENT: elem.attrib[SENTENCE], ID: t_id, NUM: elem.attrib[NUM]}
 
                         prev_word = ""
                         if t_id >= 0:
@@ -152,6 +152,9 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
                         for i, subelem in enumerate(elem):
                             tokens = [token.attrib[T_ID] for token in subelem]
+                            sent_tokens = [int(token_dict[t][NUM]) for t in tokens]
+                            #print(sent_tokens)
+                            #print(tokens)
 
                             # skip if the token is contained more than once within the same mention
                             # (i.e. ignore entries with error in ecb+ tokenization)
@@ -172,48 +175,63 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
                                 # generate sentence doc with spacy
                                 sentence_tokenized = [t for t in root if (t.tag == TOKEN and t.attrib[SENTENCE] == str(sent_id))]
-                                sentence_str = TreebankWordDetokenizer().detokenize(t.text for t in root if (t.tag == TOKEN and t.attrib[SENTENCE] == str(sent_id)))
-
+                                #sentence_str = TreebankWordDetokenizer().detokenize(t.text for t in root if (t.tag == TOKEN and t.attrib[SENTENCE] == str(sent_id)))
+                                sentence_str = ""
+                                for t in root:
+                                    if t.tag == TOKEN and t.attrib[SENTENCE] == str(sent_id):
+                                        sentence_str, _, _ = append_text(sentence_str, t.text)
                                 doc = nlp(sentence_str)
-                                doc_tokenized = []
-                                for t in doc:
-                                    doc_tokenized.append(t)
 
+                                doc_tokenized = [t for t in doc]
+
+                                # tokenize the mention text
                                 mention_tokenized = []
-
                                 for t_id in tokens:
                                     mention_tokenized.append(token_dict[t_id])
 
+                                # used for debug output
                                 #print("-------------")
                                 #[to_nltk_tree(sent.root).pretty_print() for sent in doc.sents]
                                 #print(mention_text)
                                 #print(sentence_str)
 
+                                # look for a time in the mention text, then format it to match the sentence_str's time format
+                                # (because spaces are sometimes wrong with the treebank detokenizer)
+                                #time_match = re.search("^(([0-1][0-9]|[2][0-3]|[1-9])\s):(\s?([0-5][0-9]))", mention_text)
+                                #if time_match:
+                                    #index_of_first_space = mention_text.find(" ", time_match.span()[0])
+                                    #mention_text = mention_text[:index_of_first_space] + mention_text[index_of_first_space+1:]
+                                    #print("New mention_text: " + mention_text)
 
-                                #print(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1])
-                                split_mention_text = re.split("\s|(?<!\d)[,.](?!\d)", mention_text)
+                                split_mention_text = re.split(" ", mention_text)
                                 first_char_of_mention = sentence_str.find(split_mention_text[0])  # counting character up to the first character of the mention within the sentence
                                 last_char_of_mention = sentence_str.find(split_mention_text[-1], len(sentence_str[:first_char_of_mention]) + len(mention_text) - len(split_mention_text[-1])) + len(split_mention_text[-1])  #count up to the end of the mention
-                                if last_char_of_mention == 0:   #last char cant be first char of string (handle special case if the last punctuation is part of mention)
+                                if last_char_of_mention == 0:   #last char cant be first char of string (handle special case if the last punctuation is part of mention in ecb)
                                     last_char_of_mention = len(sentence_str)
 
-
                                 counter = 0
-
                                 while True:
-                                    if counter > 100:
-                                        need_manual_review_mention_head.append(str(t_subt) + "_" + str(mention_text))
+                                    if counter > 50:    # an error must have occurred, so break and add to manual review
+                                        need_manual_review_mention_head[str(t_subt) + "_" + str(mention_text)] = {
+                                            "mention_text": mention_text,
+                                            "sentence_str": sentence_str,
+                                            "mention_head": str(mention_head),
+                                            "mention_tokens_amount": len(tokens)
+                                            }
+                                        #print(re.split("\s|(?<!\d)[,](?!\d)", mention_text))
                                         LOGGER.info("Mention with ID " + str(t_subt) + "_" + str(mention_text) + " needs manual review. Could not determine the mention head automatically.")
+                                        #if "TMZ.com" and "Horn of Africa" not in mention_text:
+                                        #sys.exit()
                                         break
 
-                                    if sentence_str[-1] not in ".!?" or mention_text[-1] == ".":      #not string.punctuation because ecp+ tokenization sometimes includes ' etc in the token
+                                    if sentence_str[-1] not in ".!?" or mention_text[-1] == ".":      # not string.punctuation because ecb+ tokenization sometimes includes ' etc in the token
                                         #print("adding .")
                                         sentence_str = sentence_str+"."     #if the sentence does not end with a ".", we have to add one for the algorithm to understand the sentence (this "." isnt represented in the output later)
 
                                     char_after_first_token = sentence_str[first_char_of_mention+len(split_mention_text[0])]
 
 
-                                    if len(split_mention_text) < len(re.split("\s|(?<!\d)[,.](?!\d)", sentence_str[first_char_of_mention:last_char_of_mention])) + 1 and ( last_char_of_mention >= len(sentence_str) or sentence_str[last_char_of_mention] in string.punctuation or sentence_str[last_char_of_mention] == " ") and str(sentence_str[first_char_of_mention-1]) in str(string.punctuation+" ") and char_after_first_token in str(string.punctuation+" "):
+                                    if len(split_mention_text) < len(re.split(" ", sentence_str[first_char_of_mention:last_char_of_mention])) + 1 and ( last_char_of_mention >= len(sentence_str) or sentence_str[last_char_of_mention] in string.punctuation or sentence_str[last_char_of_mention] == " ") and str(sentence_str[first_char_of_mention-1]) in str(string.punctuation+" ") and char_after_first_token in str(string.punctuation+" "):
                                         # The end of the sentence was reached or the next character is a punctuation
                                         #print(str(first_char_of_mention))
                                         #print(str(last_char_of_mention))
@@ -232,13 +250,30 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                             if last_char_of_mention >= processed_chars >= first_char_of_mention:
                                                 # mention token detected
                                                 mention_doc_ids.append(t.i)
+                                            # if the whole mention has been processed
                                             elif processed_chars > last_char_of_mention:
                                                 break
 
-                                        #print(re.split("\s|(?<!\d)[,.](?!\d)", sentence_str[first_char_of_mention:last_char_of_mention]))
+                                        #print(re.split(" ", sentence_str[first_char_of_mention:last_char_of_mention]))
                                         #print("tokens ecb: " + str(tokens))
                                         #print("tokens spacy: " + str(mention_doc_ids))
-                                        if abs(len(re.split("\s|(?<!\d)[,.](?!\d)", sentence_str[first_char_of_mention:last_char_of_mention])) - len(tokens)) <= 2:
+
+                                        # allow for dynamic differences in tokenization
+                                        # (longer mention texts may lead to more differences)
+                                        tolerance = len(tokens)/2
+                                        if tolerance > 2:
+                                            tolerance = 2
+                                        # tolerance for website mentions
+                                        if ".com" in mention_text or ".org" in mention_text:
+                                            tolerance = tolerance + 2
+                                        # tolerance when the mention has external tokens inbetween mention tokens
+                                        tolerance = tolerance \
+                                                    + int(subelem[-1].attrib[T_ID]) \
+                                                    - int(subelem[0].attrib[T_ID]) \
+                                                    - len(subelem) \
+                                                    + 1
+
+                                        if abs(len(re.split(" ", sentence_str[first_char_of_mention:last_char_of_mention])) - len(tokens)) <= tolerance and sentence_str[first_char_of_mention-1] in string.punctuation+" " and sentence_str[last_char_of_mention] in string.punctuation+" ":
                                             #print("Difference OK. Breaking")
                                             break
                                         else:
@@ -246,16 +281,16 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                             counter = counter + 1
                                             #print(str(first_char_of_mention) + ": " + sentence_str[first_char_of_mention])
                                             #print(str(last_char_of_mention) + ": " + sentence_str[last_char_of_mention])
-                                            #print(re.split("\s|(?<!\d)[,.](?!\d)",sentence_str[first_char_of_mention:last_char_of_mention]))
+                                            #print(re.split(" ",sentence_str[first_char_of_mention:last_char_of_mention]))
                                             # The next char is not a punctuation, so it therefore it is just a part of a bigger word
                                             first_char_of_mention = sentence_str.find(
-                                                re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[0],
+                                                re.split(" ", mention_text)[0],
                                                 first_char_of_mention + 2)
                                             last_char_of_mention = sentence_str.find(
-                                                re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1],
+                                                re.split(" ", mention_text)[-1],
                                                 first_char_of_mention + len(
-                                                    re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[0])) + len(
-                                                re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1])
+                                                    re.split(" ", mention_text)[0])) + len(
+                                                re.split(" ", mention_text)[-1])
 
                                     else:
                                         counter = counter + 1
@@ -263,8 +298,11 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                         #print(str(last_char_of_mention) + ": " + sentence_str[last_char_of_mention])
                                         #print(re.split("\s|(?<!\d)[,.](?!\d)", sentence_str[first_char_of_mention:last_char_of_mention]))
                                         # The next char is not a punctuation, so it therefore it is just a part of a bigger word
-                                        first_char_of_mention = sentence_str.find(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[0], first_char_of_mention + 2 )
-                                        last_char_of_mention = sentence_str.find(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1], first_char_of_mention+len(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[0])) + len(re.split("\s|(?<!\d)[,.](?!\d)", mention_text)[-1])
+                                        first_char_of_mention = sentence_str.find(re.split(" ", mention_text)[0], first_char_of_mention + 2)
+                                        if len(re.split(" ", mention_text)) == 1:
+                                            last_char_of_mention = first_char_of_mention + len(mention_text)
+                                        else:
+                                            last_char_of_mention = sentence_str.find(re.split(" ", mention_text)[-1], first_char_of_mention+len(re.split(" ", mention_text)[0])) + len(re.split(" ", mention_text)[-1])
 
 
                                 # mention string processed, look for the head
@@ -294,20 +332,36 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                 # remap the mention head back to the ecb+ original tokenization to get the ID
                                 mention_head_id = None
                                 mention_head_text = mention_head.text
-
                                 for t in tokens:
                                     #print(str(token_dict[t][ID]) + ": " + token_dict[t][TEXT])
-                                    if str(token_dict[t][TEXT]) == mention_head_text:
+                                    if str(token_dict[t][TEXT]).startswith(mention_head_text):
                                         mention_head_id = token_dict[t][ID]
-
                                 if not mention_head_id and len(tokens) == 1:
                                     mention_head_id = token_dict[tokens[0]][ID]
+                                elif not mention_head_id:
+                                    for t in tokens:
+                                        if mention_head_text.startswith(str(token_dict[t][TEXT])):
+                                            mention_head_id = token_dict[t][ID]
 
 
                                 #print("mention head id ecb: " + str(mention_head_id))
-                                if mention_head_id == None:
-                                    need_manual_review_mention_head.append(str(t_subt) + "_" + str(mention_text))
-                                    LOGGER.info("Mention with ID " + str(t_subt) + "_" + str(mention_text) + " needs manual review. Could not determine the mention head id automatically.")
+                                # add to manual review if the resulting token is not inside the mention
+                                # (error must have happened)
+                                if mention_head_id not in sent_tokens:  #includes if None
+                                    if str(t_subt) + "_" + str(mention_text) not in need_manual_review_mention_head:
+                                        need_manual_review_mention_head[str(t_subt) + "_" + str(mention_text)] = \
+                                            {
+                                            "mention_text": mention_text,
+                                            "sentence_str": sentence_str,
+                                            "mention_head": str(mention_head),
+                                            "mention_tokens_amount": len(tokens)
+                                            }
+                                        with open(os.path.join(out_path, "manual_review_needed" + '.json'), "w",
+                                                  encoding='utf-8') as file:
+                                            json.dump(need_manual_review_mention_head, file)
+                                        LOGGER.info("Mention with ID " + str(t_subt) + "_" + str(mention_text) + " needs manual review. Could not determine the mention head id automatically.")
+
+                                    #if "TMZ.com" and "Horn of Africa" not in mention_text:
                                     #sys.exit()
 
                                 # get the context
@@ -336,7 +390,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                                                   TOKENS_NUMBER: [int(token_dict[t][ID]) for t in
                                                                                   tokens],
                                                                   TOKENS_TEXT: [token_dict[t][TEXT] for t in tokens],
-                                                                  "token_doc_numbers": mention_doc_ids,     #PLACEHOLDER, REMAP
+                                                                  #"token_doc_numbers": mention_doc_ids,
                                                                   DOC_ID: topic_file.split(".")[0],
                                                                   SENT_ID: sent_id,
                                                                   MENTION_CONTEXT: mention_context_str,
@@ -530,8 +584,8 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
             for i, row in conll_df.iterrows():
                 reference_str = "-"
                 for mention in [m for m in event_mentions_local+entity_mentions_local if m["t_subt"] == row[TOPIC_SUBTOPIC] and m[SENT_ID] == row[SENT_ID] and row[TOKEN_ID] in m[TOKENS_NUMBER]]:
-                    print(mention)
-                    print(row)
+                    #print(mention)
+                    #print(row)
                     token_numbers = [int(t) for t in mention[TOKENS_NUMBER]]
                     chain = mention[COREF_CHAIN]
                     # one and only token
@@ -596,8 +650,6 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                 for i, row in conll_df.iterrows():  #only count brackets in reference column (exclude token text)
                     brackets_1 += str(row[REFERENCE]).count("(")
                     brackets_2 += str(row[REFERENCE]).count(")")
-                    if str(row[REFERENCE]).count(")") > 1:
-                        LOGGER.info("WARNING at " + str(i))
                 LOGGER.info("brackets: " + str(brackets_1) + " , " + str(brackets_2))
 
                 assert brackets_1 == brackets_2
@@ -630,6 +682,9 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
     print("THESE NEED MANUAL REVIEW: ")
     print(len(need_manual_review_mention_head))
     print(need_manual_review_mention_head)
+
+    with open(os.path.join(out_path, "manual_review_needed" + '.json'), "w", encoding='utf-8') as file:
+        json.dump(need_manual_review_mention_head, file)
 
     with open(os.path.join(out_path, ECB_PLUS.split("-")[0] + '.conll'), "w", encoding='utf-8') as file:
         file.write(final_output_str)

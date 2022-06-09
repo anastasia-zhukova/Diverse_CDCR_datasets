@@ -19,7 +19,9 @@ def append_text(text, word) -> Tuple[str, str, bool]:
     space = " " if word in ["-", "(","\""] else space
 
     if len(text):
-        space = "" if text[-1] in ["(", "``", "\"", "["] else space
+        space = " " if text[-1] in ["\""] and text.count("\"") % 2 == 0 else space  # first "
+        space = "" if text[-1] in ["\""] and text.count("\"") % 2 != 0 else space   # second "
+        space = "" if text[-1] in ["(", "``", "["] else space
         space = " " if text[-1] in [".,?!)]`\"\'"] else space
         space = "" if text[-1] in ["\""] and word.istitle() else space
         space = "" if word in ["com", "org"] else space
