@@ -605,9 +605,6 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                 json.dump(event_mentions_local, file)
             event_mentions.extend(event_mentions_local)
 
-            with open(os.path.join(annot_path, MANUAL_REVIEW_FILE), "w") as file:
-                json.dump(event_mentions_local, file)
-
             conll_topic_df = conll_df[conll_df[TOPIC_SUBTOPIC].str.contains(f'{topic_name}/')].drop(columns=[DOC_ID])
 
             outputdoc_str = ""
