@@ -662,7 +662,6 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
     conll_df.to_csv(os.path.join(out_path, CONLL_CSV))
 
     LOGGER.info("Mentions that need manual review to define the head and its attributes have been saved to: " + MANUAL_REVIEW_FILE)
-
     with open(os.path.join(out_path, MANUAL_REVIEW_FILE), "w", encoding='utf-8') as file:
         json.dump(need_manual_review_mention_head, file)
 
