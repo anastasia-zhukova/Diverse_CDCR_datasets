@@ -11,8 +11,11 @@ from nltk.corpus import wordnet
 import sys
 from nltk import Tree
 import spacy
+from tqdm import tqdm
+from setup import *
 from insert_whitespace import append_text
 from config import DATA_PATH, TMP_PATH
+from logger import LOGGER
 
 path_sample = os.path.join(DATA_PATH, "_sample_doc.json")  # ->root/data/original/_sample_doc.json
 MEANTIME_PARSING_FOLDER = os.path.join(DATA_PATH, "MEANTIME-prep")
@@ -54,9 +57,9 @@ def conv_files(path):
     # coref_dics = {}
     entity_mentions = []
     event_mentions = []
-    summary_df = pd.DataFrame()
+    summary_df = pd.DataFrame(columns=[DOC_ID, COREF_CHAIN, DESCRIPTION, MENTION_TYPE, MENTION_FULL_TYPE, TOKENS_STR])
     summary_conversion_df = pd.DataFrame()
-    conll_df = pd.DataFrame()
+    conll_df = pd.DataFrame(columns=[TOPIC_SUBTOPIC, DOC_ID, SENT_ID, TOKEN_ID, TOKEN, REFERENCE])
     final_output_str = ""
 
     dirs = os.listdir(path)
@@ -116,14 +119,15 @@ def conv_files(path):
                         prev_word = root[t_id - 1].text
 
                     if elem.tag == "token":
-                        conll_df = conll_df.append(pd.DataFrame({
-                            "topic/subtopic_name": t_subt,
-                            "sent_id": int(elem.attrib["sentence"]),
-                            "token_id": t_id,
-                            "token": elem.text,
+                        conll_df.loc[len(conll_df)] = {
+                            TOPIC_SUBTOPIC: t_subt,
+                            DOC_ID: topic_name,
+                            SENT_ID: int(elem.attrib["sentence"]),
+                            TOKEN_ID: t_id,
+                            TOKEN: elem.text,
                             # "after": "\"" + append_text(prev_word, elem.text, "space") + "\"",
-                            "coref": "-"
-                        }, index=[0]))
+                            REFERENCE: "-"
+                        }
 
                 except KeyError:
                     pass
@@ -255,17 +259,17 @@ def conv_files(path):
                                                                 "text": " ".join(
                                                                     [token_dict[t]["text"] for t in tokens]),
                                                                 "sent_doc": doc,
-                                                                "mention_ner": mention_ner,
-                                                                "mention_head_pos": mention_head_pos,
-                                                                "mention_head_lemma": mention_head_lemma,
-                                                                "mention_head": mention_head.text,
-                                                                "mention_head_id": mention_head.i,
-                                                                "token_numbers": token_nums,
+                                                                MENTION_NER: mention_ner,
+                                                                MENTION_HEAD_POS: mention_head_pos,
+                                                                MENTION_HEAD_LEMMA: mention_head_lemma,
+                                                                MENTION_HEAD: mention_head.text,
+                                                                MENTION_HEAD_ID: mention_head.i,
+                                                                TOKENS_NUMBER: token_nums,
                                                                 "token_doc_numbers": token_ids_in_doc,
-                                                                "doc_id": topic_file.split(".")[0],
-                                                                "sent_id": int(sen_id),
+                                                                DOC_ID: topic_file.split(".")[0],
+                                                                SENT_ID: int(sen_id),
                                                                 "mention_context": mention_context_str,
-                                                                "topic": t_subt}
+                                                                TOPIC_SUBTOPIC: t_subt}
 
                         else:
                             try:
@@ -337,107 +341,75 @@ def conv_files(path):
                 for m in chain_vals["mentions"]:
 
                     sent_id = m["sent_id"]
-                    t_subt = m["topic"]
 
-                    token_numbers = [int(t) for t in m["token_numbers"]]
+                    token_numbers = [int(t) for t in m[TOKENS_NUMBER]]
                     mention_id = m["doc_id"] + "_" + str(chain_id) + "_" + str(m["sent_id"]) + "_" + str(
-                        m["token_numbers"][0])
-                    mention = { "coref_chain": chain_id,
-                                "mention_ner": m["mention_ner"],
-                                "mention_head_pos": m["mention_head_pos"],
-                                "mention_head_lemma": m["mention_head_lemma"],
-                                "mention_head": m["mention_head"],
-                                "mention_head_id": m["mention_head_id"],
-                                "doc_id_full": m["doc_id"],
-                                "is_continuous": True if token_numbers == list(
+                        m[TOKENS_NUMBER][0])
+                    mention = { COREF_CHAIN: chain_id,
+                                MENTION_NER: m["mention_ner"],
+                                MENTION_HEAD_POS: m["mention_head_pos"],
+                                MENTION_HEAD_LEMMA: m["mention_head_lemma"],
+                                MENTION_HEAD: m["mention_head"],
+                                MENTION_HEAD_ID: m["mention_head_id"],
+                                DOC_ID_FULL: m["doc_id"],
+                                IS_CONTINIOUS: True if token_numbers == list(
                                     range(token_numbers[0], token_numbers[-1] + 1))
                                 else False,
-                                "is_singleton": len(chain_vals["mentions"]) == 1,
-                                "mention_id": mention_id,
-                                "mention_type": chain_id[:3],
-                                "mention_full_type": meantime_types[chain_id[:3]],
-                                "score": -1.0,
-                                "sent_id": sent_id,
-                                "tokens_number": token_numbers,
-                                "tokens_str": m["text"],
-                                "topic_id": t_subt.split("/")[0],
-                                "coref_type": chain_vals["coref_type"],
-                                "decription": chain_vals["descr"]
+                                IS_SINGLETON: len(chain_vals["mentions"]) == 1,
+                                MENTION_ID: mention_id,
+                                MENTION_TYPE: chain_id[:3],
+                                MENTION_FULL_TYPE: meantime_types[chain_id[:3]],
+                                SCORE: -1.0,
+                                SENT_ID: sent_id,
+                                TOKENS_NUMBER: token_numbers,
+                                TOKENS_STR: m["text"],
+                                TOPIC_SUBTOPIC: m[TOPIC_SUBTOPIC],
+                                COREF_TYPE: chain_vals["coref_type"],
+                                DESCRIPTION: chain_vals["descr"]
                                }
                     if "EVENT" in m["type"]:
                         event_mentions_local.append(mention)
                     else:
                         entity_mentions_local.append(mention)
-                    summary_df = summary_df.append(pd.DataFrame({
-                        "doc_id": m["doc_id"],
-                        "coref_chain": chain_id,
-                        "decription": chain_vals["descr"],
-                        "short_type": chain_id[:3],
-                        "full_type": m["type"],
-                        "tokens_str": m["text"]
-                    }, index=[mention_id]))
+                    summary_df.loc[len(summary_df)] = {
+                        DOC_ID: m["doc_id"],
+                        COREF_CHAIN: chain_id,
+                        DESCRIPTION: chain_vals["descr"],
+                        MENTION_TYPE: chain_id[:3],
+                        MENTION_FULL_TYPE: m["type"],
+                        TOKENS_STR: m["text"]
+                    }
 
-                    # mark_counter = subelem.attrib["instance_id"]
-                    mark_counter = chain_id
+        conll_df = conll_df.reset_index(drop=True)
 
-                    if token_numbers[0] == token_numbers[len(token_numbers) - 1]:
-                        # information_df.loc[(information_df['sent_id'] == sen_id) & (information_df['token_id'] == token_nums[0]), 'coref'] = "TESTES!!!"
-                        if str(conll_df.loc[
-                                   (conll_df['sent_id'] == sent_id) & (conll_df['token_id'] == token_numbers[0])
-                                   & (conll_df['topic/subtopic_name'] == t_subt), 'coref'].values[0]) == "-":
-                            conll_df.loc[
-                                (conll_df['sent_id'] == sent_id) & (conll_df['token_id'] == token_numbers[0])
-                                & (conll_df['topic/subtopic_name'] == t_subt), 'coref'] = '(' + str(
-                                mark_counter) + ')'
+        print(conll_df.head(70))
 
-                        else:
-                            conll_df.loc[
-                                (conll_df['sent_id'] == sent_id) & (conll_df['token_id'] == token_numbers[0]) &
-                                (conll_df['topic/subtopic_name'] == t_subt), 'coref'] = str(
-                                conll_df.loc[(conll_df['sent_id'] == sent_id) &
-                                                   (conll_df['token_id'] == token_numbers[0]) & (conll_df[
-                                                    'topic/subtopic_name'] == t_subt), 'coref'].values[
-                                    0]) + '| (' + str(mark_counter) + ')'
+        # create a conll string from the conll_df
+        LOGGER.info("Generating conll string...")
+        for i, row in tqdm(conll_df.iterrows(), total=conll_df.shape[0]):
+            reference_str = "-"
 
-                    else:
-                        if str(conll_df.loc[(conll_df['sent_id'] == sent_id) & (
-                                conll_df['token_id'] == token_numbers[0]) & (conll_df[
-                                                            'topic/subtopic_name'] == t_subt), 'coref'].values[
-                                   0]) == "-":
-                            conll_df.loc[(conll_df['sent_id'] == sent_id) & (
-                                        conll_df['token_id'] == token_numbers[0]) & (conll_df[
-                                                                'topic/subtopic_name'] == t_subt), 'coref'] = '(' + str(
-                                mark_counter)
+            for mention in [m for m in event_mentions_local + entity_mentions_local]:
+                if mention[TOPIC_SUBTOPIC] == row[TOPIC_SUBTOPIC] and mention[SENT_ID] == row[SENT_ID] and row[TOKEN_ID] in mention[TOKENS_NUMBER]:
+                    token_numbers = [int(t) for t in mention[TOKENS_NUMBER]]
+                    chain = mention[COREF_CHAIN]
+                    # one and only token
+                    if len(token_numbers) == 1 and token_numbers[0] == row[TOKEN_ID]:
+                        reference_str = reference_str + '| (' + str(chain) + ')'
+                    # one of multiple tokes
+                    elif len(token_numbers) > 1 and token_numbers[0] == row[TOKEN_ID]:
+                        reference_str = reference_str + '| (' + str(chain)
+                    elif len(token_numbers) > 1 and token_numbers[len(token_numbers) - 1] == row[TOKEN_ID]:
+                        reference_str = reference_str + '| ' + str(chain) + ')'
 
-                        else:
-                            conll_df.loc[
-                                (conll_df['sent_id'] == sent_id) & (conll_df['token_id'] == token_numbers[0])
-                                & (conll_df['topic/subtopic_name'] == t_subt), 'coref'] = \
-                                str(conll_df.loc[(conll_df['sent_id'] == sent_id) & (
-                                            conll_df['token_id'] == token_numbers[0])
-                                                       & (conll_df[
-                                                              'topic/subtopic_name'] == t_subt), 'coref'].values[
-                                        0]) + '| (' + str(mark_counter)
+            if row[DOC_ID] == topic_name:  # do not overwrite conll rows of previous topic iterations
+                conll_df.at[i, REFERENCE] = reference_str
 
-                        if str(conll_df.loc[(conll_df['sent_id'] == sent_id) & (
-                                conll_df['token_id'] == token_numbers[len(token_numbers) - 1])
-                                                  & (conll_df['topic/subtopic_name'] == t_subt), 'coref'].values[
-                                   0]) == "-":
-                            conll_df.loc[(conll_df['sent_id'] == sent_id) & (
-                                        conll_df['token_id'] == token_numbers[len(token_numbers) - 1])
-                                               & (conll_df['topic/subtopic_name'] == t_subt), 'coref'] = str(
-                                mark_counter) + ')'
+        for i, row in conll_df.iterrows():  # remove the leading characters if necessary (left from initialization)
+            if row[REFERENCE].startswith("-| "):
+                conll_df.at[i, REFERENCE] = row[REFERENCE][3:]
 
-                        else:
-                            conll_df.loc[(conll_df['sent_id'] == sent_id) & (
-                                        conll_df['token_id'] == token_numbers[len(token_numbers) - 1]) &
-                                               (conll_df['topic/subtopic_name'] == t_subt), 'coref'] = str(
-                                conll_df.loc[(conll_df['sent_id'] == sent_id) &
-                                                   (conll_df['token_id'] == token_numbers[len(token_numbers) - 1]) & (
-                                                               conll_df[
-                                                                   'topic/subtopic_name'] == t_subt), 'coref'].values[
-                                    0]) + '| ' + str(mark_counter) + ')'
-                        a = 1
+        print(conll_df.head(20))
 
         annot_path = os.path.join(result_path, topic_name, "annotation",
                                   "original")  # ->root/data/MEANTIME-prep/test_parsing/topicName/annotation/original
@@ -457,23 +429,46 @@ def conv_files(path):
         entity_mentions.extend(entity_mentions_local)
         event_mentions.extend(event_mentions_local)
 
-        conll_topic_df = conll_df[conll_df["topic/subtopic_name"].str.contains(f'{topic_dir}/')]
+        conll_topic_df = conll_df[conll_df[TOPIC_SUBTOPIC].str.contains(f'{topic_name}/')].drop(columns=[DOC_ID])
 
         outputdoc_str = ""
-        for (topic_local), topic_df in conll_topic_df.groupby(by=["topic/subtopic_name"]):
+        for (topic_local), topic_df in conll_topic_df.groupby(by=[TOPIC_SUBTOPIC]):
             outputdoc_str += f'#begin document ({topic_local}); part 000\n'
 
-            for (sent_id_local), sent_df in topic_df.groupby(by=["sent_id"], sort=["sent_id"]):
-                np.savetxt(os.path.join(TMP_PATH, "tmp.txt"), sent_df.values, fmt='%s', delimiter="\t",
+            for (sent_id_local), sent_df in topic_df.groupby(by=[SENT_ID], sort=[SENT_ID]):
+                np.savetxt(os.path.join(MEANTIME_PARSING_FOLDER, "tmp.txt"), sent_df.values, fmt='%s', delimiter="\t",
                            encoding="utf-8")
-                with open(os.path.join(TMP_PATH, "tmp.txt"), "r", encoding="utf8") as file:
+                with open(os.path.join(MEANTIME_PARSING_FOLDER, "tmp.txt"), "r", encoding="utf8") as file:
                     saved_lines = file.read()
                 outputdoc_str += saved_lines + "\n"
 
             outputdoc_str += "#end document\n"
         final_output_str += outputdoc_str
 
-        with open(os.path.join(annot_path, f'{topic_name}.conll'), "w") as file:
+        # Check if the brackets ( ) are correct
+        LOGGER.info("Checking equal brackets in conll for " + str(
+            topic_name) + " (if unequal, the result may be incorrect):")
+        try:
+            brackets_1 = 0
+            brackets_2 = 0
+            for i, row in conll_df.iterrows():  # only count brackets in reference column (exclude token text)
+                brackets_1 += str(row[REFERENCE]).count("(")
+                brackets_2 += str(row[REFERENCE]).count(")")
+            LOGGER.info("Amount of mentions in this topic: " + str(len(event_mentions_local + entity_mentions_local)))
+            LOGGER.info("Total mentions parsed (all topics): " + str(len(event_mentions + entity_mentions)))
+            LOGGER.info("brackets '(' , ')' : " + str(brackets_1) + " , " + str(brackets_2))
+            assert brackets_1 == brackets_2
+        except AssertionError:
+            LOGGER.warning(
+                f'Number of opening and closing brackets in conll does not match! topic: ' + str(topic_name))
+            conll_df.to_csv(os.path.join(OUT_PATH, CONLL_CSV))
+            with open(os.path.join(annot_path, f'{topic_name}.conll'), "w", encoding='utf-8') as file:
+                file.write(outputdoc_str)
+            sys.exit()
+
+        conll_df.to_csv(os.path.join(OUT_PATH, CONLL_CSV))
+
+        with open(os.path.join(annot_path, f'{topic_name}.conll'), "w", encoding='utf-8') as file:
             file.write(outputdoc_str)
 
         summary_conversion_df = summary_conversion_df.append(pd.DataFrame({

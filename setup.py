@@ -4,6 +4,7 @@ CONTEXT_RANGE = 100
 # FOLDERS
 NEWSWCL50_FOLDER_NAME = "2019_annot"
 ECBPLUS_FOLDER_NAME = "ECB+"
+MEANTIME_FOLDER_NAME = "MEANTIME"
 OUTPUT_FOLDER_NAME = "output_data"
 SUMMARY_FOLDER = "summary"
 
@@ -115,11 +116,15 @@ if __name__ == '__main__':
     datasets = {ECB_PLUS: {LINK: "https://github.com/cltl/ecbPlus/raw/master/ECB%2B_LREC2014/ECB%2B.zip",
                            ZIP: os.path.join(os.getcwd(), ECB_PLUS, ECBPLUS_FOLDER_NAME + ".zip"),
                            FOLDER: os.path.join(os.getcwd(), ECB_PLUS)},
+                MEANTIME: {LINK: "https://drive.google.com/u/0/uc?id=0B1PMaGyhp9maeDY1U1p1N01HcjA&export=download",
+                           ZIP: os.path.join(os.getcwd(), MEANTIME, MEANTIME_FOLDER_NAME + ".zip"),
+                           FOLDER: os.path.join(os.getcwd(), MEANTIME)},
                 NEWSWCL50: {LINK: "https://drive.google.com/u/1/uc?id=1ZcTnDeY85iIeUX0nvg3cypnRq87tVSVo&export=download",
                             ZIP: os.path.join(os.getcwd(), NEWSWCL50, NEWSWCL50_FOLDER_NAME + ".zip"),
                             FOLDER: os.path.join(os.getcwd(), NEWSWCL50)}}
 
     for dataset, values in datasets.items():
+        print("Getting: " + dataset)
         gdown.download(values[LINK], values[ZIP], quiet=False)
         with zipfile.ZipFile(values[ZIP], 'r') as zip_ref:
             zip_ref.extractall(values[FOLDER])
