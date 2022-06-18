@@ -29,7 +29,7 @@ with open(path_sample, "r") as file:
     newsplease_format = json.load(file)
 
 import os
-source_path = os.path.join(MEANTIME_PARSING_FOLDER, 'MEANTIME')
+source_path = os.path.join(MEANTIME_PARSING_FOLDER, MEANTIME_FOLDER_NAME)
 result_path = os.path.join(MEANTIME_PARSING_FOLDER, 'test_parsing')
 result_path2 = os.path.join(MEANTIME_PARSING_FOLDER, 'test_parsing2')
 intra = os.path.join(source_path, 'intra-doc_annotation')
