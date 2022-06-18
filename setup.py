@@ -116,7 +116,7 @@ if __name__ == '__main__':
     datasets = {ECB_PLUS: {LINK: "https://github.com/cltl/ecbPlus/raw/master/ECB%2B_LREC2014/ECB%2B.zip",
                            ZIP: os.path.join(os.getcwd(), ECB_PLUS, ECBPLUS_FOLDER_NAME + ".zip"),
                            FOLDER: os.path.join(os.getcwd(), ECB_PLUS)},
-                MEANTIME: {LINK: "https://drive.google.com/u/0/uc?id=0B1PMaGyhp9maeDY1U1p1N01HcjA&export=download",
+                MEANTIME: {LINK: "https://drive.google.com/u/0/uc?id=1K0hcWHOomyrFaKigwzrwImHugdb1pjAX&export=download",
                            ZIP: os.path.join(os.getcwd(), MEANTIME, MEANTIME_FOLDER_NAME + ".zip"),
                            FOLDER: os.path.join(os.getcwd(), MEANTIME)},
                 NEWSWCL50: {LINK: "https://drive.google.com/u/1/uc?id=1ZcTnDeY85iIeUX0nvg3cypnRq87tVSVo&export=download",
