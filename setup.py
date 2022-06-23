@@ -1,11 +1,16 @@
 # PARAMS
+import sys
+import os
+
 CONTEXT_RANGE = 100
 
 # FOLDERS
 NEWSWCL50_FOLDER_NAME = "2019_annot"
 ECBPLUS_FOLDER_NAME = "ECB+"
+MEANTIME_FOLDER_NAME = "meantime_newsreader_english_oct15"
 OUTPUT_FOLDER_NAME = "output_data"
 SUMMARY_FOLDER = "summary"
+TMP_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tmp")
 
 # DATASETS
 NEWSWCL50 = "NewsWCL50-prep"
@@ -21,6 +26,7 @@ MENTIONS_ENTITIES_JSON = "entities_mentions.json"
 CONLL_CSV = "conll.csv"
 SUMMARY_CHAINS_CSV = "summary_chains.csv"
 SUMMARY_TOPICS_CSV = "summary_dataset_topics.csv"
+MANUAL_REVIEW_FILE = "manual_review_needed.json"
 
 # coref types
 STRICT = "STRICT"
@@ -64,6 +70,8 @@ TOKENS_TEXT = "tokens_text"
 TOKENS_STR = "tokens_str"
 TOKEN_ID = "token_id"
 COREF_TYPE = "coref_type"
+SUBTOPIC = "subtopic"
+CONLL_DOC_KEY = "conll_doc_key"
 
 # conll fields
 REFERENCE = "reference"
@@ -98,6 +106,7 @@ T_ID = "t_id"
 ID = "id"
 SENT = "sent"
 M_ID = "m_id"
+NUM = "number"
 
 if __name__ == '__main__':
     import spacy
@@ -109,19 +118,73 @@ if __name__ == '__main__':
     ZIP = "zip"
     LINK = "link"
 
-    spacy.cli.download('en_core_web_sm')
+    while True:
+        try:
+            b = input("Would you like to download the spacy languages? (y/n) : ")
+            b = b.lower()
+            assert b == "y" or b == "n"
+            break
+        except (ValueError, AssertionError) as e:
+            print("Oops! That input was not correct (y/n). Please retry.")
+
+    if b == "y":
+        print("Downloading spacy languages...")
+        spacy.cli.download('en_core_web_sm')
+        spacy.cli.download('es_core_news_sm')
+        spacy.cli.download('nl_core_news_sm')
+        spacy.cli.download('it_core_news_sm')
+    else:
+        print("Skipping the download of languages.")
+
     datasets = {ECB_PLUS: {LINK: "https://github.com/cltl/ecbPlus/raw/master/ECB%2B_LREC2014/ECB%2B.zip",
                            ZIP: os.path.join(os.getcwd(), ECB_PLUS, ECBPLUS_FOLDER_NAME + ".zip"),
                            FOLDER: os.path.join(os.getcwd(), ECB_PLUS)},
+                MEANTIME: {LINK: "https://drive.google.com/u/0/uc?id=1K0hcWHOomyrFaKigwzrwImHugdb1pjAX&export=download",
+                           ZIP: os.path.join(os.getcwd(), MEANTIME, MEANTIME_FOLDER_NAME + ".zip"),
+                           FOLDER: os.path.join(os.getcwd(), MEANTIME)},
                 NEWSWCL50: {LINK: "https://drive.google.com/u/1/uc?id=1ZcTnDeY85iIeUX0nvg3cypnRq87tVSVo&export=download",
                             ZIP: os.path.join(os.getcwd(), NEWSWCL50, NEWSWCL50_FOLDER_NAME + ".zip"),
                             FOLDER: os.path.join(os.getcwd(), NEWSWCL50)}}
 
-    for dataset, values in datasets.items():
-        gdown.download(values[LINK], values[ZIP], quiet=False)
-        with zipfile.ZipFile(values[ZIP], 'r') as zip_ref:
-            zip_ref.extractall(values[FOLDER])
+    prompt_str = "The following datasets are available for download: \n\n"
+    for i, dataset in enumerate(datasets.keys()):
+        prompt_str = prompt_str + str(i) + ": " + dataset + "\n"
+    prompt_str = prompt_str + str(len(datasets)) + ": all datasets \n"
 
-        if dataset == ECB_PLUS:
-            gdown.download("https://raw.githubusercontent.com/cltl/ecbPlus/master/ECB%2B_LREC2014/ECBplus_coreference_sentences.csv",
-                           os.path.join(os.getcwd(), ECB_PLUS, ECBPLUS_FOLDER_NAME, "ECBplus_coreference_sentences.csv"), quiet=False)
+    print(prompt_str)
+    while True:
+        try:
+            input_number = int(input("Please enter a number to download the dataset: "))
+            assert 0 <= input_number < len(datasets)
+            break
+        except (ValueError, AssertionError) as e:
+            print("Oops! Seems like the number you entered is not a number or not valid. Please retry. ")
+
+    # All datasets download
+    if input_number == len(datasets):
+        for dataset, values in datasets.items():
+            print("Getting: " + dataset)
+            gdown.download(values[LINK], values[ZIP], quiet=False)
+            with zipfile.ZipFile(values[ZIP], 'r') as zip_ref:
+                zip_ref.extractall(values[FOLDER])
+
+            if dataset == ECB_PLUS:
+                gdown.download("https://raw.githubusercontent.com/cltl/ecbPlus/master/ECB%2B_LREC2014/ECBplus_coreference_sentences.csv",
+                               os.path.join(os.getcwd(), ECB_PLUS, ECBPLUS_FOLDER_NAME, "ECBplus_coreference_sentences.csv"), quiet=False)
+
+    # Download selected dataset
+    elif 0 <= input_number < len(datasets):
+        for i, (dataset, values) in enumerate(datasets.items()):
+            if i != input_number:   # skip other datasets
+                continue
+            print("Getting: " + dataset)
+            gdown.download(values[LINK], values[ZIP], quiet=False)
+            with zipfile.ZipFile(values[ZIP], 'r') as zip_ref:
+                zip_ref.extractall(values[FOLDER])
+
+            if dataset == ECB_PLUS:
+                gdown.download(
+                    "https://raw.githubusercontent.com/cltl/ecbPlus/master/ECB%2B_LREC2014/ECBplus_coreference_sentences.csv",
+                    os.path.join(os.getcwd(), ECB_PLUS, ECBPLUS_FOLDER_NAME, "ECBplus_coreference_sentences.csv"),
+                    quiet=False)
+    print("Setup successful.")

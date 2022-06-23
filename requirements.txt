@@ -1,5 +1,7 @@
-spacy == 3.2.4
+spacy == 3.3.0
 pandas == 1.4.2
 shortuuid == 1.0.8
 gdown == 4.4.0
 nltk == 3.7
+numpy~=1.21.2
+tqdm~=4.62.3

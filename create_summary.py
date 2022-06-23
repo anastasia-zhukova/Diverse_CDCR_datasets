@@ -27,7 +27,6 @@ P = "P"
 R = "R"
 F1 = "F1"
 TRUE_LABEL, PRED_LABEL = "label_true", "label_pred"
-TMP_PATH = os.path.join(os.getcwd(), "tmp")
 
 with open(os.path.join(os.getcwd(), SAMPLE_MENTION_JSON), "r") as file:
     sample_mention = json.load(file)
@@ -207,7 +206,7 @@ if __name__ == '__main__':
                 mentions_read_list = json.load(file)
 
             for v in mentions_read_list:
-                missed_attributes = set(v.keys()) - set(sample_mention.keys())
+                missed_attributes = set(sample_mention.keys()) - set(v.keys())
                 if len(missed_attributes):
                     LOGGER.warning(f'Dataset {dataset_folder.split("-")[0]} misses mentions\' attributes {missed_attributes} '
                                    f'and this may cause troubles in the script execution')
@@ -236,15 +235,15 @@ if __name__ == '__main__':
 
         # form dataset as full and split into topics to process
         # per topic in the dataset
-        process_list = [(dataset, topic, topic_id, group_df)
-                             for (dataset, topic, topic_id), group_df in mentions_df.groupby([DATASET_NAME, TOPIC, TOPIC_ID])]
+        process_list = [(dataset, topic_id, subtopic, group_df)
+                             for (dataset, topic_id, subtopic), group_df in mentions_df.groupby([DATASET_NAME, TOPIC_ID, SUBTOPIC])]
         # full dataset
         process_list.extend([(dataset, "", None, dataset_df) for dataset, dataset_df in mentions_df.groupby([DATASET_NAME])])
 
         conll_f1_dict = {}
 
         # collect statistics about the dataset
-        for dataset, topic, topic_id, group_df in tqdm(process_list):
+        for dataset, topic_id, subtopic, group_df in tqdm(process_list):
             if dataset not in conll_f1_dict:
                 conll_f1_dict[dataset] = {}
 
@@ -253,10 +252,10 @@ if __name__ == '__main__':
             # general statistics
             summary_dict = {
                 DATASET_NAME: dataset,
-                TOPIC: topic,
+                TOPIC: f'{topic_id}/{subtopic}',
                 TOPICS: len(set(group_df[TOPIC].values)),
                 ARTICLES: len(set(group_df[DOC_ID].values)),
-                TOKENS: len(df_conll[df_conll[TOPIC_SUBTOPIC].str.startswith(str(topic_id))]) if topic_id is not None else len(df_conll),
+                TOKENS: len(df_conll[df_conll[TOPIC_SUBTOPIC].str.contains(f'{topic_id}/{subtopic}')]) if subtopic is not None else len(df_conll),
                 COREF_CHAIN: len(coref_chains),
                 MENTIONS: len(group_df),
                 f'{EVENT}_{MENTIONS}': len(group_df[group_df[TYPE] == EVENT]),
@@ -267,13 +266,15 @@ if __name__ == '__main__':
             # various for, of lexical diversity that depend on the presence/absence of singletons
             for suff, filt_criteria in zip([ALL, WO_SINGL], [0, 1]):
                 selected_chains_df = chain_df[(chain_df[MENTIONS] > filt_criteria) & (chain_df.index.isin(coref_chains))]
+                if not len(selected_chains_df):
+                    continue
                 summary_dict[AVERAGE_SIZE + suff] = float(format(np.mean(selected_chains_df[MENTIONS].values), '.3f'))
                 summary_dict[PHRASING_DIVERSITY + WEIGHTED + suff] = float(format(sum([row[PHRASING_DIVERSITY] * row[MENTIONS]
                                                                   for index, row in selected_chains_df.iterrows()]) / \
                                                                      sum(selected_chains_df[MENTIONS].values), '.3f'))
                 summary_dict[UNIQUE_LEMMAS + suff] = float(format(np.mean(selected_chains_df[UNIQUE_LEMMAS].values), '.3f'))
 
-                if topic:
+                if subtopic:
                     conll_f1 = conll_lemma_baseline([v for v in all_mentions_list if v[COREF_CHAIN] in list(selected_chains_df.index)])
                     summary_dict[F1 + CONLL + suff] = conll_f1
                     if suff not in conll_f1_dict[dataset]:
@@ -282,7 +283,7 @@ if __name__ == '__main__':
                 else:
                     summary_dict[F1 + CONLL + suff] = float(format(np.mean(conll_f1_dict[dataset][suff]), '.3f'))
 
-            summary_df = pd.concat([summary_df, pd.DataFrame(summary_dict, index=[f'{dataset}\\{topic}'])], axis=0)
+            summary_df = pd.concat([summary_df, pd.DataFrame(summary_dict, index=[f'{dataset}\\{topic_id}\\subtopic'])], axis=0)
         chain_df_all = pd.concat([chain_df_all, chain_df], axis=0)
 
         #output the chains statistics

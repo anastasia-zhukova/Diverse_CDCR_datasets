@@ -188,6 +188,7 @@ if __name__ == '__main__':
                                                  MENTION_ID: mention_id,
                                                  TOPIC_ID: int(topic_id),
                                                  TOPIC: topics_dict[topic_id],
+                                                 SUBTOPIC: "-",
                                                  DESCRIPTION: code,
                                                  COREF_TYPE: STRICT,
                                                  MENTION_NER: mention_head_token.ent_type_ if mention_head_token.ent_type_ else "O",
@@ -199,7 +200,9 @@ if __name__ == '__main__':
                                                  IS_SINGLETON: False,
                                                  MENTION_CONTEXT: mention_context_str,
                                                  TOKENS_STR: "".join([t.text_with_ws for t in found_tokens]),
-                                                 TOKENS_TEXT: [t.text for t in found_tokens]}
+                                                 TOKENS_TEXT: [t.text for t in found_tokens],
+                                                 CONLL_DOC_KEY: f'{topic_id}/-/{doc_name}'
+                                                 }
 
                         mentions_df = pd.concat([mentions_df, pd.DataFrame({
                                                COREF_CHAIN: coref_chain,
