@@ -1,5 +1,6 @@
 # PARAMS
 import sys
+import os
 
 CONTEXT_RANGE = 100
 
@@ -9,6 +10,7 @@ ECBPLUS_FOLDER_NAME = "ECB+"
 MEANTIME_FOLDER_NAME = "meantime_newsreader_english_oct15"
 OUTPUT_FOLDER_NAME = "output_data"
 SUMMARY_FOLDER = "summary"
+TMP_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tmp")
 
 # DATASETS
 NEWSWCL50 = "NewsWCL50-prep"
@@ -68,6 +70,8 @@ TOKENS_TEXT = "tokens_text"
 TOKENS_STR = "tokens_str"
 TOKEN_ID = "token_id"
 COREF_TYPE = "coref_type"
+SUBTOPIC = "subtopic"
+CONLL_DOC_KEY = "conll_doc_key"
 
 # conll fields
 REFERENCE = "reference"

@@ -105,10 +105,12 @@ The format is adapted and extended from [WEC-Eng](https://huggingface.co/dataset
 | sent_id           | int             | Sentence ID      |
 | topic_id          | int             | Topic ID      |
 | topic             | string          | Topic description      |
+| subtopic          | string          | Subtopic name |
 | doc_id            | string          | Document ID     |
 | is_continuous     | bool            | If all tokens in the annotated mention continuously occur in the text     |
 | is_singleton      | bool            | If a coreference chain consists of only one mention.      |
 | mention_context   | list of strings | -N and +N tokens before and after the mention (N=100).    |
+| conll_doc_key     | string          | a compositional key for one-to-one mapping documents between .conll and .json files. |
 
 Example: 
 ```
@@ -123,6 +125,7 @@ Example:
     "mention_id": "0_L_21_49_VZrL", 
     "topic_id": 0, 
     "topic": "0_CIADirectorMikePompeoMeetingNorthKorea", 
+    "subtopic": "-",
     "description": "Denuclearization", 
     "coref_type": "STRICT", 
     "mention_ner": "O", 
@@ -134,7 +137,8 @@ Example:
     "is_singleton": false, 
     "mention_context": ["newspaper", ",", "Munhwa", "Ilbo", ",", "reported", "that", "the", "two", "countries", "were", "negotiating", "an", "announcement", "\"", "to", "ease", "military", "tensions", "and", "end", "a", "military", "confrontation", ",", "\"", "as", "part", "of", "the", "summit", "meeting", "planned", "between", "Mr.", "Kim", "and", "President", "Moon", "Jae", "-", "in", "of", "South", "Korea", ".", "\n", "That", "could", "involve", "pulling", "troops", "out", "of", "the", "Demilitarized", "Zone", ",", "making", "it", "a", "genuinely", "\"", "Demilitarized", "Zone", ".", "\"", "A", "South", "Korean", "government", "official", "later", "played", "down", "the", "report", ",", "saying", "it", "was", "too", "soon", "to", "tell", "what", "a", "joint", "statement", "by", "Mr.", "Moon", "and", "Mr.", "Kim", "would", "contain", ",", "other", "than", "broad", "and", "\"", "abstract", "\"", "statements", "about", "the", "need", "for", "North", "Korea", "to", "\"", "denuclearize", ".", "\"", "\n", "But", "analysts", "said", "South", "Korea", "was", "aiming", "for", "a", "comprehensive", "deal", ",", "in", "which", "the", "North", "agreed", "to", "give", "up", "its", "weapons", "in", "return", "for", "a", "security", "guarantee", ",", "including", "a", "peace", "treaty", ".", "Mr.", "Trump", "'s", "comments", "suggested", "he", "backed", "that", "effort", ".", "\n", "\"", "They", "do", "have", "my", "blessing", "to", "discuss", "the", "end", "of", "the", "war", ",", "\"", "he", "said", ".", "\"", "People", "do", "n't", "realize", "that", "the", "Korean", "War", "has", "not", "ended", ".", "It", "'s", "going", "on", "right", "now", ".", "And", "they", "are", "discussing", "an", "end", "to", "war", ".", "Subject", "to", "a", "deal", ",", "they"], 
     "tokens_str": "broad and \"abstract\" statements about the need for North Korea to \"denuclearize.\" ", 
-    "tokens_text": ["broad", "and", "\"", "abstract", "\"", "statements", "about", "the", "need", "for", "North", "Korea", "to", "\"", "denuclearize", ".", "\""]
+    "tokens_text": ["broad", "and", "\"", "abstract", "\"", "statements", "about", "the", "need", "for", "North", "Korea", "to", "\"", "denuclearize", ".", "\""], 
+    "conll_doc_key": "0/-/0_L"
 }
 ```
 
@@ -161,3 +165,5 @@ The following values enable comparison of the CDCR datasets on dataset and topic
 | phrasing_diversity_weighted_wo_singl | float    | -//- Calculated on non-singleton chains. |
 | F1_CONLL_all                         | float    | F1 CoNLL (average of B3, MUC, and CEAF_e) calculated on the simple same-lemma baseline. Calculated on all coref chains.   |
 | F1_CONLL_wo_singl                    | float    | -//- Calculated on non-singleton chains.   |
+
+The results of dataset comparison is available in ```/summary``` folder.

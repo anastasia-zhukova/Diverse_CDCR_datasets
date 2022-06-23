@@ -27,8 +27,7 @@ result_path = os.path.join(ECB_PARSING_FOLDER, OUTPUT_FOLDER_NAME, "test_parsing
 out_path = os.path.join(ECB_PARSING_FOLDER, OUTPUT_FOLDER_NAME)
 path_sample = os.path.join(os.getcwd(), "..", SAMPLE_DOC_JSON)
 
-nlp = spacy.load(
-    r'C:\Users\snake\Documents\GitHub\Diverse_CDCR_datasets\venv\Lib\site-packages\en_core_web_sm\en_core_web_sm-3.2.0')
+nlp = spacy.load("en_core_web_sm")
 
 validated_sentences_df = pd.read_csv(os.path.join(ECB_PARSING_FOLDER, ECBPLUS_FOLDER_NAME,
                                                   "ECBplus_coreference_sentences.csv")).set_index(
@@ -196,16 +195,19 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                     last_char_of_mention = len(sentence_str)
 
                                 counter = 0
+                                mention_id = str(t_subt) + "_" + str(mention_text)
+
                                 while True:
                                     if counter > 50:  # an error must have occurred, so break and add to manual review
-                                        need_manual_review_mention_head[str(t_subt) + "_" + str(mention_text)] = {
+
+                                        need_manual_review_mention_head[mention_id] = {
                                             "mention_text": mention_text,
                                             "sentence_str": sentence_str,
                                             "mention_head": str(mention_head),
                                             "mention_tokens_amount": len(tokens)
                                         }
-                                        LOGGER.info("Mention with ID " + str(t_subt) + "_" + str(
-                                            mention_text) + " needs manual review. Could not determine the mention head automatically.")
+                                        LOGGER.info(f"Mention with ID {mention_id} needs manual review. "
+                                                    f"Could not determine the mention head automatically.")
                                         break
 
                                     if sentence_str[-1] not in ".!?" or mention_text[-1] == ".":
@@ -297,7 +299,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                                 re.split(" ", mention_text)[-1])
 
                                 # whole mention string processed, look for the head
-                                if str(t_subt) + "_" + str(mention_text) not in need_manual_review_mention_head:
+                                if mention_id not in need_manual_review_mention_head:
                                     for i in mention_doc_ids:
                                         ancestors_in_mention = 0
                                         for a in doc[i].ancestors:
@@ -333,8 +335,8 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                 # add to manual review if the resulting token is not inside the mention
                                 # (error must have happened)
                                 if mention_head_id not in sent_tokens:  # also "if is None"
-                                    if str(t_subt) + "_" + str(mention_text) not in need_manual_review_mention_head:
-                                        need_manual_review_mention_head[str(t_subt) + "_" + str(mention_text)] = \
+                                    if mention_id not in need_manual_review_mention_head:
+                                        need_manual_review_mention_head[mention_id] = \
                                             {
                                                 "mention_text": mention_text,
                                                 "sentence_str": sentence_str,
@@ -344,8 +346,8 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                         with open(os.path.join(out_path, MANUAL_REVIEW_FILE), "w",
                                                   encoding='utf-8') as file:
                                             json.dump(need_manual_review_mention_head, file)
-                                        LOGGER.info("Mention with ID " + str(t_subt) + "_" + str(
-                                            mention_text) + " needs manual review. Could not determine the mention head id automatically.")
+                                        LOGGER.info(f"Mention with ID {mention_id} needs manual "
+                                                    f"review. Could not determine the mention head id automatically.")
 
                                 # get the context
                                 tokens_int = [int(x) for x in tokens]
@@ -543,11 +545,12 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                TOKENS_STR: m[TOKENS_STR],
                                TOKENS_TEXT: m[TOKENS_TEXT],
                                TOPIC_ID: int(t_number),
-                               TOPIC: topic_name,
+                               TOPIC: t_number,
+                               SUBTOPIC: topic_name,
                                # COREF_TYPE: chain_vals[COREF_TYPE],
                                COREF_TYPE: STRICT,
                                DESCRIPTION: chain_vals[DESCRIPTION],
-                               "t_subt": m[TOPIC],
+                               CONLL_DOC_KEY: m[TOPIC],
                                }
 
                     # if the first two entries of chain_id are "ACT" or "NEG", add the "mention" to the array "event_mentions_local"
@@ -566,7 +569,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
             for i, row in conll_df.iterrows():
                 reference_str = "-"
                 for mention in [m for m in event_mentions_local + entity_mentions_local if
-                                m["t_subt"] == row[TOPIC_SUBTOPIC] and m[SENT_ID] == row[SENT_ID] and row[TOKEN_ID] in
+                                m[CONLL_DOC_KEY] == row[TOPIC_SUBTOPIC] and m[SENT_ID] == row[SENT_ID] and row[TOKEN_ID] in
                                 m[TOKENS_NUMBER]]:
 
                     token_numbers = [int(t) for t in mention[TOKENS_NUMBER]]
@@ -612,35 +615,35 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                 outputdoc_str += f'#begin document ({topic_local}); part 000\n'
 
                 for (sent_id_local), sent_df in topic_df.groupby(by=[SENT_ID], sort=[SENT_ID]):
-                    np.savetxt(os.path.join(ECB_PARSING_FOLDER, "tmp.txt"), sent_df.values, fmt='%s', delimiter="\t",
+                    np.savetxt(os.path.join(TMP_PATH, "tmp.txt"), sent_df.values, fmt='%s', delimiter="\t",
                                encoding="utf-8")
-                    with open(os.path.join(ECB_PARSING_FOLDER, "tmp.txt"), "r", encoding="utf8") as file:
+                    with open(os.path.join(TMP_PATH, "tmp.txt"), "r", encoding="utf8") as file:
                         saved_lines = file.read()
                     outputdoc_str += saved_lines + "\n"
 
                 outputdoc_str += "#end document\n"
             final_output_str += outputdoc_str
 
+            LOGGER.info(f"Amount of mentions in the topic {topic_name} is {str(len(event_mentions_local + entity_mentions_local))}")
+            LOGGER.info(f"Total mentions parsed (all topics): {str(len(event_mentions + entity_mentions))}")
             # Check if the brackets ( ) are correct
-            LOGGER.info("Checking equal brackets in conll for " + str(
-                topic_name) + " (if unequal, the result may be incorrect):")
             try:
                 brackets_1 = 0
                 brackets_2 = 0
                 for i, row in conll_df.iterrows():  # only count brackets in reference column (exclude token text)
                     brackets_1 += str(row[REFERENCE]).count("(")
                     brackets_2 += str(row[REFERENCE]).count(")")
-                LOGGER.info("Amount of mentions in this topic: " + str(len(event_mentions_local + entity_mentions_local)))
-                LOGGER.info("Total mentions parsed (all topics): " + str(len(event_mentions + entity_mentions)))
-                LOGGER.info("brackets '(' , ')' : " + str(brackets_1) + " , " + str(brackets_2))
+                if brackets_1 != brackets_2:
+                    LOGGER.warning(f"brackets '(' , ')' : {str(brackets_1)} , {str(brackets_2)}")
                 assert brackets_1 == brackets_2
             except AssertionError:
+                # LOGGER.info(f"Checking equal brackets in conll for {str(topic_name)} (if unequal, the result may be incorrect)")
                 LOGGER.warning(
-                    f'Number of opening and closing brackets in conll does not match! topic: ' + str(topic_name))
+                    f'Number of opening and closing brackets in conll does not match! topic: {str(topic_name)}')
                 conll_df.to_csv(os.path.join(out_path, CONLL_CSV))
                 with open(os.path.join(annot_path, f'{topic_name}.conll'), "w", encoding='utf-8') as file:
                     file.write(outputdoc_str)
-                sys.exit()
+                # sys.exit()
 
             conll_df.to_csv(os.path.join(out_path, CONLL_CSV))
 
@@ -649,21 +652,23 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
             # Average number of unique head lemmas within a cluster
             # (excluding singletons for fair comparison)
-            for m in mentions_local:
-                head_lemmas = [m[MENTION_HEAD_LEMMA]]
-                uniques = 1
-                for m2 in mentions_local:
-                    if m2[MENTION_HEAD_LEMMA] not in head_lemmas and m2[TOKENS_STR] == m[TOKENS_STR] and m2[TOPIC_ID] == \
-                            m[TOPIC_ID]:
-                        head_lemmas.append(m[MENTION_HEAD_LEMMA])
-                        uniques = uniques + 1
-                m["mention_head_lemma_uniques"] = uniques
+            # for m in mentions_local:
+            #     head_lemmas = [m[MENTION_HEAD_LEMMA]]
+            #     uniques = 1
+            #     for m2 in mentions_local:
+            #         if m2[MENTION_HEAD_LEMMA] not in head_lemmas and m2[TOKENS_STR] == m[TOKENS_STR] and m2[TOPIC_ID] == \
+            #                 m[TOPIC_ID]:
+            #             head_lemmas.append(m[MENTION_HEAD_LEMMA])
+            #             uniques = uniques + 1
+            #     m["mention_head_lemma_uniques"] = uniques
 
     conll_df.to_csv(os.path.join(out_path, CONLL_CSV))
 
-    LOGGER.info("Mentions that need manual review to define the head and its attributes have been saved to: " + MANUAL_REVIEW_FILE)
-    with open(os.path.join(out_path, MANUAL_REVIEW_FILE), "w", encoding='utf-8') as file:
-        json.dump(need_manual_review_mention_head, file)
+    if len(need_manual_review_mention_head):
+        LOGGER.warning(f'Mentions ignored: {len(need_manual_review_mention_head)}. The ignored mentions are available here for a manual review: '
+                    f'{os.path.join(out_path,MANUAL_REVIEW_FILE)}')
+        with open(os.path.join(out_path, MANUAL_REVIEW_FILE), "w", encoding='utf-8') as file:
+            json.dump(need_manual_review_mention_head, file)
 
     with open(os.path.join(out_path, ECB_PLUS.split("-")[0] + '.conll'), "w", encoding='utf-8') as file:
         file.write(final_output_str)
