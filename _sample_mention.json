@@ -9,6 +9,7 @@
     "mention_id": "0_L_21_49_VZrL",
     "topic_id": 0,
     "topic": "0_CIADirectorMikePompeoMeetingNorthKorea",
+    "subtopic": "-",
     "description": "Denuclearization",
     "coref_type": "STRICT",
     "mention_ner": "O",
@@ -20,5 +21,6 @@
     "is_singleton": false,
     "mention_context": ["test"],
     "tokens_str": "broad and \"abstract\" statements about the need for North Korea to \"denuclearize.\" ",
-    "tokens_text": ["broad", "and", "\"", "abstract", "\"", "statements", "about", "the", "need", "for", "North", "Korea", "to", "\"", "denuclearize", ".", "\""]
+    "tokens_text": ["broad", "and", "\"", "abstract", "\"", "statements", "about", "the", "need", "for", "North", "Korea", "to", "\"", "denuclearize", ".", "\""],
+    "conll_doc_key": "0/-/0_L"
 }
