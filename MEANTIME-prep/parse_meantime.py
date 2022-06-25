@@ -143,6 +143,12 @@ def conv_files(path, result_path, language, nlp):
                 if elem.tag == "Markables":
                     for i, subelem in enumerate(elem):
                         tokens = [token.attrib[T_ID] for token in subelem]
+                        prev_tokens = tokens
+                        tokens.sort(key=int)   # sort tokens by their id
+                        if tokens != prev_tokens:
+                            print("Difference")
+                            print(prev_tokens)
+                            print(tokens)
                         sent_tokens = [int(token_dict[t]["id"]) for t in tokens]
 
                         # skip if the token is contained more than once within the same mention
@@ -182,9 +188,13 @@ def conv_files(path, result_path, language, nlp):
                                 # handle special case if the last punctuation is part of mention in ecb
                                 last_char_of_mention = len(sentence_str)
 
+                            #print(str(first_char_of_mention))
+                            #print(str(last_char_of_mention))
+
                             counter = 0
                             while True:
                                 if counter > 50:  # an error must have occurred, so break and add to manual review
+                                    #print("Counter too high")
                                     need_manual_review_mention_head[str(t_subt) + "_" + str(mention_text)] = {
                                         "mention_text": mention_text,
                                         "sentence_str": sentence_str,
@@ -192,7 +202,7 @@ def conv_files(path, result_path, language, nlp):
                                         "mention_tokens_amount": len(tokens)
                                     }
                                     LOGGER.info("Mention with ID " + str(t_subt) + "_" + str(
-                                        mention_text) + " needs manual review. Could not determine the mention head automatically.")
+                                        mention_text) + " needs manual review. Could not determine the mention head automatically. ")
                                     break
 
                                 if sentence_str[-1] not in ".!?" or mention_text[-1] == ".":
@@ -240,14 +250,18 @@ def conv_files(path, result_path, language, nlp):
                                     if ".com" in mention_text or ".org" in mention_text:
                                         tolerance = tolerance + 2
                                     # tolerance when the mention has external tokens inbetween mention tokens
+                                    #print(tokens[-1])
+                                    #print(tokens[0])
                                     tolerance = tolerance \
-                                                + int(subelem[-1].attrib[T_ID]) \
-                                                - int(subelem[0].attrib[T_ID]) \
-                                                - len(subelem) \
+                                                + int(tokens[-1]) \
+                                                - int(tokens[0]) \
+                                                - len(tokens) \
                                                 + 1
                                     # increase tolerance for every punctuation included in mention text
                                     tolerance = tolerance + sum(
                                         [1 for c in mention_text if c in string.punctuation])
+
+                                    #print(tolerance)
 
                                     if abs(len(re.split(" ", sentence_str[
                                                              first_char_of_mention:last_char_of_mention])) - len(
@@ -267,6 +281,9 @@ def conv_files(path, result_path, language, nlp):
                                             first_char_of_mention + len(
                                                 re.split(" ", mention_text)[0])) + len(
                                             re.split(" ", mention_text)[-1])
+                                        #print(first_char_of_mention)
+                                        #print(last_char_of_mention)
+                                        #print("-")
 
                                 else:
                                     counter = counter + 1
@@ -343,19 +360,18 @@ def conv_files(path, result_path, language, nlp):
                                                                   token_dict)
                                                               else int(max(tokens_int)) + CONTEXT_RANGE]
 
-
                             mention_context_str = []
                             for t in root:
                                 if t.tag == "token" and int(t.attrib["t_id"]) >= context_min_id and int(t.attrib["t_id"]) <= context_max_id:
                                     mention_context_str.append(t.text)
 
                             #[to_nltk_tree(sent.root).pretty_print() for sent in doc.sents]
-                            #print(mention_text)
-                            #print(sentence_str)
-                            #print(mention_head_text)
-                            #print(tokens)
-                            #print(sent_tokens)
-                            #print(mention_head_id)
+                            #print("mention_text " + str(mention_text))
+                            #print("sentence_str " + str(sentence_str))
+                            #print("mention_head_text " + str(mention_head_text))
+                            #print("tokens " + str(tokens))
+                            #print("sent_tokens " + str(sent_tokens))
+                            #print("mention_head_id " + str(mention_head_id))
                             #print("------")
                             #if mention_head_id not in [13, 20, 15, 14, 15, 3, 48]:
                             #    sys.exit()
@@ -608,6 +624,8 @@ def conv_files(path, result_path, language, nlp):
 if __name__ == '__main__':
 
     for i, source_path in enumerate(source_paths):
+        #if i < 2:
+        #    continue
         LOGGER.info(f"Processing MEANTIME language {source_path[-34:].split('_')[2]}.")
         intra = os.path.join(source_path, 'intra-doc_annotation')
         intra_cross = os.path.join(source_path, 'intra_cross-doc_annotation')
