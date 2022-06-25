@@ -143,12 +143,7 @@ def conv_files(path, result_path, language, nlp):
                 if elem.tag == "Markables":
                     for i, subelem in enumerate(elem):
                         tokens = [token.attrib[T_ID] for token in subelem]
-                        prev_tokens = tokens
                         tokens.sort(key=int)   # sort tokens by their id
-                        if tokens != prev_tokens:
-                            print("Difference")
-                            print(prev_tokens)
-                            print(tokens)
                         sent_tokens = [int(token_dict[t]["id"]) for t in tokens]
 
                         # skip if the token is contained more than once within the same mention
@@ -202,7 +197,7 @@ def conv_files(path, result_path, language, nlp):
                                         "mention_tokens_amount": len(tokens)
                                     }
                                     LOGGER.info("Mention with ID " + str(t_subt) + "_" + str(
-                                        mention_text) + " needs manual review. Could not determine the mention head automatically. ")
+                                        mention_text) + " needs manual review. Could not determine the mention head automatically. " + str(tolerance))
                                     break
 
                                 if sentence_str[-1] not in ".!?" or mention_text[-1] == ".":
@@ -250,8 +245,6 @@ def conv_files(path, result_path, language, nlp):
                                     if ".com" in mention_text or ".org" in mention_text:
                                         tolerance = tolerance + 2
                                     # tolerance when the mention has external tokens inbetween mention tokens
-                                    #print(tokens[-1])
-                                    #print(tokens[0])
                                     tolerance = tolerance \
                                                 + int(tokens[-1]) \
                                                 - int(tokens[0]) \
@@ -261,17 +254,17 @@ def conv_files(path, result_path, language, nlp):
                                     tolerance = tolerance + sum(
                                         [1 for c in mention_text if c in string.punctuation])
 
-                                    #print(tolerance)
-
                                     if abs(len(re.split(" ", sentence_str[
                                                              first_char_of_mention:last_char_of_mention])) - len(
                                         tokens)) <= tolerance and sentence_str[
                                         first_char_of_mention - 1] in string.punctuation + " " and sentence_str[
                                         last_char_of_mention] in string.punctuation + " ":
                                         # Whole mention found in sentence (and tolerance is OK)
+                                        #print("difference OK")
                                         break
                                     else:
                                         counter = counter + 1
+                                        #print("Difference to big")
                                         # The next char is not a punctuation, so it therefore it is just a part of a bigger word
                                         first_char_of_mention = sentence_str.find(
                                             re.split(" ", mention_text)[0],
@@ -299,6 +292,10 @@ def conv_files(path, result_path, language, nlp):
                                                                                      re.split(" ", mention_text)[
                                                                                          0])) + len(
                                             re.split(" ", mention_text)[-1])
+                                    #print("is part of bigger")
+                                    #print(first_char_of_mention)
+                                    #print(last_char_of_mention)
+                                    #print("-")
 
                             # whole mention string processed, look for the head
                             if str(t_subt) + "_" + str(mention_text) not in need_manual_review_mention_head:
@@ -332,7 +329,11 @@ def conv_files(path, result_path, language, nlp):
                             elif not mention_head_id:
                                 for t in tokens:
                                     if mention_head_text.startswith(str(token_dict[t][TEXT])):
-                                        mention_head_id = token_dict[t][ID]
+                                        mention_head_id = token_dict[str(t)][ID]
+                            if not mention_head_id:
+                                for t in tokens:
+                                    if str(token_dict[t][TEXT]).endswith(mention_head_text):
+                                        mention_head_id = token_dict[str(t)][ID]
 
                             # add to manual review if the resulting token is not inside the mention
                             # (error must have happened)
@@ -349,7 +350,7 @@ def conv_files(path, result_path, language, nlp):
                                               encoding='utf-8') as file:
                                         json.dump(need_manual_review_mention_head, file)
                                     LOGGER.info("Mention with ID " + str(t_subt) + "_" + str(
-                                        mention_text) + " needs manual review. Could not determine the mention head id automatically.")
+                                        mention_text) + " needs manual review. Could not determine the mention head id automatically. " + str(tolerance))
 
                             # get the context
                             tokens_int = [int(x) for x in tokens]

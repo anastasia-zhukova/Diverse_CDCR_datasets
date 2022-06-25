@@ -6,7 +6,10 @@ ECBplus-prep/ECB+/
 ECBplus-prep/ECB+.zip
 MEANTIME-prep/MEANTIME
 MEANTIME-prep/MEANTIME.zip
-MEANTIME-prep/test_parsing
+MEANTIME-prep/test_parsing_en
+MEANTIME-prep/test_parsing_it
+MEANTIME-prep/test_parsing_es
+MEANTIME-prep/test_parsing_nl
 MEANTIME-prep/meantime_newsreader_dutch_dec15
 MEANTIME-prep/meantime_newsreader_english_oct15
 MEANTIME-prep/meantime_newsreader_italian_dec15
