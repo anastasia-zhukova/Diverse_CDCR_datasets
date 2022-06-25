@@ -18,22 +18,28 @@ from config import DATA_PATH, TMP_PATH
 from logger import LOGGER
 
 path_sample = os.path.join(DATA_PATH, "_sample_doc.json")  # ->root/data/original/_sample_doc.json
-MEANTIME_PARSING_FOLDER = os.path.join(DATA_PATH, "MEANTIME-prep")
-OUT_PATH = os.path.join(TMP_PATH, "output_data")
+MEANTIME_PARSING_FOLDER = os.path.join(os.getcwd())
+OUT_PATH = os.path.join(MEANTIME_PARSING_FOLDER, OUTPUT_FOLDER_NAME)
 CONTEXT_RANGE = 250
 
-nlp = spacy.load('en_core_web_sm')
+nlps = [spacy.load('en_core_web_sm'),
+        spacy.load('es_core_news_sm'),
+        spacy.load('nl_core_news_sm'),
+        spacy.load('it_core_news_sm')]
 
 # opens and loads the newsplease-format out of the json file: _sample_doc.json
 with open(path_sample, "r") as file:
     newsplease_format = json.load(file)
 
 import os
-source_path = os.path.join(MEANTIME_PARSING_FOLDER, MEANTIME_FOLDER_NAME)
-result_path = os.path.join(MEANTIME_PARSING_FOLDER, 'test_parsing')
-result_path2 = os.path.join(MEANTIME_PARSING_FOLDER, 'test_parsing2')
-intra = os.path.join(source_path, 'intra-doc_annotation')
-intra_cross = os.path.join(source_path, 'intra_cross-doc_annotation')
+source_paths = [os.path.join(MEANTIME_PARSING_FOLDER, MEANTIME_FOLDER_NAME_ENGLISH),
+                os.path.join(MEANTIME_PARSING_FOLDER, MEANTIME_FOLDER_NAME_SPANISH),
+                os.path.join(MEANTIME_PARSING_FOLDER, MEANTIME_FOLDER_NAME_DUTCH),
+                os.path.join(MEANTIME_PARSING_FOLDER, MEANTIME_FOLDER_NAME_ITALIAN)]
+result_paths = [os.path.join(MEANTIME_PARSING_FOLDER, 'test_parsing_en'),
+                os.path.join(MEANTIME_PARSING_FOLDER, 'test_parsing_es'),
+                os.path.join(MEANTIME_PARSING_FOLDER, 'test_parsing_nl'),
+                os.path.join(MEANTIME_PARSING_FOLDER, 'test_parsing_it')]
 
 meantime_types = {"PRO": "PRODUCT",
                   "FIN": "FINANCE",
@@ -52,7 +58,7 @@ def to_nltk_tree(node):
         return node.orth_
 
 
-def conv_files(path):
+def conv_files(path, result_path, language, nlp):
     doc_files = {}
     # coref_dics = {}
     entity_mentions = []
@@ -68,7 +74,7 @@ def conv_files(path):
     mark_counter = 0
 
     for topic_dir in dirs:
-        print("Parsing of " + topic_dir + ". Please wait ...")
+        LOGGER.info(f"Parsing of {topic_dir} ({language}). Please wait...")
 
         # information_df = pd.DataFrame()
 
@@ -85,7 +91,7 @@ def conv_files(path):
         entity_mentions_local = []
         event_mentions_local = []
 
-        for topic_file in topic_files:
+        for topic_file in tqdm(topic_files):
             tree = ET.parse(os.path.join(path, topic_dir, topic_file))
             root = tree.getroot()
             title, text, date, url, time, time2, time3 = "", "", "", "", "", "", ""
@@ -129,6 +135,7 @@ def conv_files(path):
                             # "after": "\"" + append_text(prev_word, elem.text, "space") + "\"",
                             REFERENCE: "-"
                         }
+                        text, word, no_whitespace = append_text(text, elem.text)
 
                 except KeyError:
                     pass
@@ -181,7 +188,7 @@ def conv_files(path):
                                     need_manual_review_mention_head[str(t_subt) + "_" + str(mention_text)] = {
                                         "mention_text": mention_text,
                                         "sentence_str": sentence_str,
-                                        "mention_head": str(mention_head),
+                                        "mention_head": "unknown",
                                         "mention_tokens_amount": len(tokens)
                                     }
                                     LOGGER.info("Mention with ID " + str(t_subt) + "_" + str(
@@ -321,7 +328,7 @@ def conv_files(path):
                                             "mention_head": str(mention_head),
                                             "mention_tokens_amount": len(tokens)
                                         }
-                                    with open(os.path.join(OUT_PATH, MANUAL_REVIEW_FILE), "w",
+                                    with open(os.path.join(OUT_PATH, MANUAL_REVIEW_FILE.replace(".json", "_"+language+".json")), "w",
                                               encoding='utf-8') as file:
                                         json.dump(need_manual_review_mention_head, file)
                                     LOGGER.info("Mention with ID " + str(t_subt) + "_" + str(
@@ -413,7 +420,7 @@ def conv_files(path):
 
             newsplease_custom = copy.copy(newsplease_format)
 
-            newsplease_custom["title"] = title
+            newsplease_custom["title"] = None   # title
             newsplease_custom["date_publish"] = None
 
             # if len(text):
@@ -421,8 +428,8 @@ def conv_files(path):
             newsplease_custom["filename"] = topic_file
             newsplease_custom["text"] = text
             newsplease_custom["source_domain"] = topic_file.split(".")[0]
-            if newsplease_custom["title"][-1] not in string.punctuation:
-                newsplease_custom["title"] += "."
+            #if newsplease_custom["title"][-1] not in string.punctuation:
+            #    newsplease_custom["title"] += "."
 
             doc_files[topic_file.split(".")[0]] = newsplease_custom
             if topic_name not in os.listdir(result_path):
@@ -431,11 +438,11 @@ def conv_files(path):
             with open(os.path.join(result_path, topic_name, newsplease_custom["source_domain"] + ".json"),
                       "w") as file:
                 json.dump(newsplease_custom, file)
-                print(f'Saved {topic_name}/{newsplease_custom["source_domain"]}')
+                #LOGGER.info('Saved {topic_name}/{newsplease_custom["source_domain"]}')
         # coref_dics[topic_dir] = coref_dict
 
         for chain_index, (chain_id, chain_vals) in enumerate(coref_dict.items()):
-            if chain_vals.get("mentions") is not None:
+            if chain_vals.get("mentions") is not None and chain_id != "":
                 for m in chain_vals["mentions"]:
 
                     sent_id = m["sent_id"]
@@ -505,8 +512,6 @@ def conv_files(path):
             if row[REFERENCE].startswith("-| "):
                 conll_df.at[i, REFERENCE] = row[REFERENCE][3:]
 
-        print(conll_df.head(20))
-
         annot_path = os.path.join(result_path, topic_name, "annotation",
                                   "original")  # ->root/data/MEANTIME-prep/test_parsing/topicName/annotation/original
         if topic_name not in os.listdir(os.path.join(result_path)):
@@ -557,17 +562,17 @@ def conv_files(path):
         except AssertionError:
             LOGGER.warning(
                 f'Number of opening and closing brackets in conll does not match! topic: ' + str(topic_name))
-            conll_df.to_csv(os.path.join(OUT_PATH, CONLL_CSV))
+            conll_df.to_csv(os.path.join(OUT_PATH, CONLL_CSV.replace(".csv", "_"+language+".csv")))
             with open(os.path.join(annot_path, f'{topic_name}.conll'), "w", encoding='utf-8') as file:
                 file.write(outputdoc_str)
             sys.exit()
 
-        conll_df.to_csv(os.path.join(OUT_PATH, CONLL_CSV))
+        conll_df.to_csv(os.path.join(OUT_PATH, CONLL_CSV.replace(".csv", "_"+language+".csv")))
 
         with open(os.path.join(annot_path, f'{topic_name}.conll'), "w", encoding='utf-8') as file:
             file.write(outputdoc_str)
 
-        summary_conversion_df = summary_conversion_df.append(pd.DataFrame({
+        summary_conversion_df = pd.concat([summary_conversion_df, pd.DataFrame({
             "files": len(topic_files),
             "tokens": len(conll_topic_df),
             "chains": len(coref_dict),
@@ -575,35 +580,38 @@ def conv_files(path):
             "entity_mentions": len(entity_mentions_local),
             "singletons": sum([v["is_singleton"] for v in event_mentions_local]) + sum(
                 [v["is_singleton"] for v in entity_mentions_local])
-        }, index=[topic_name]))
+        }, index=[topic_name])])
 
     LOGGER.info(
-        "Mentions that need manual review to define the head and its attributes have been saved to: " + MANUAL_REVIEW_FILE)
-    with open(os.path.join(OUT_PATH, MANUAL_REVIEW_FILE), "w", encoding='utf-8') as file:
+        "Mentions that need manual review to define the head and its attributes have been saved to: " + MANUAL_REVIEW_FILE.replace(".json", "_"+language+".json"))
+    with open(os.path.join(OUT_PATH, MANUAL_REVIEW_FILE.replace(".json", "_"+language+".json")), "w", encoding='utf-8') as file:
         json.dump(need_manual_review_mention_head, file)
 
-    with open(os.path.join(OUT_PATH, "conll_as_json" + ".json"), "w", encoding='utf-8') as file:
+    with open(os.path.join(OUT_PATH, "conll_as_json_" + language + ".json"), "w", encoding='utf-8') as file:
         json.dump(conll_df.to_dict('records'), file)
 
-    with open(os.path.join(OUT_PATH, 'meantime.conll'), "w", encoding='utf-8') as file:
+    with open(os.path.join(OUT_PATH, 'meantime_' + language + '.conll'), "w", encoding='utf-8') as file:
         file.write(final_output_str)
 
-    with open(os.path.join(OUT_PATH, "entity_mentions" + ".json"), "w", encoding='utf-8') as file:
+    with open(os.path.join(OUT_PATH, MENTIONS_ENTITIES_JSON.replace(".json", "_"+language+".json")), "w", encoding='utf-8') as file:
         json.dump(entity_mentions, file)
 
-    with open(os.path.join(OUT_PATH, "event_mentions" + ".json"), "w", encoding='utf-8') as file:
+    with open(os.path.join(OUT_PATH, MENTIONS_EVENTS_JSON.replace(".json", "_"+language+".json")), "w", encoding='utf-8') as file:
         json.dump(event_mentions, file)
 
-    summary_df.to_csv(os.path.join(OUT_PATH, "all_mentions.csv"))
+    summary_df.to_csv(os.path.join(OUT_PATH, MENTIONS_ALL_CSV.replace(".csv", "_"+language+".csv")))
     #summary_conversion_df.to_csv(os.path.join(result_path, now.strftime("%Y-%m-%d_%H-%M") + "_" + "dataset_summary.csv"))
 
-    print('Parsing of MEANTIME annotation done!')
-    return 'Parsing of MEANTIME annotation done!'
+    LOGGER.info(f'Parsing of MEANTIME annotation with language {language} done!')
 
 
 if __name__ == '__main__':
 
-    conv_files(intra_cross)
+    for i, source_path in enumerate(source_paths):
+        LOGGER.info(f"Processing MEANTIME language {source_path[-34:].split('_')[2]}.")
+        intra = os.path.join(source_path, 'intra-doc_annotation')
+        intra_cross = os.path.join(source_path, 'intra_cross-doc_annotation')
+        conv_files(intra_cross, result_paths[i], source_path[-34:].split("_")[2], nlps[i])
 
     # print('Please enter the number of the set, you want to convert:\n'
     #       '   1 MEANTIME intra document annotation\n'
