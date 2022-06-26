@@ -36,10 +36,14 @@ source_paths = [os.path.join(MEANTIME_PARSING_FOLDER, MEANTIME_FOLDER_NAME_ENGLI
                 os.path.join(MEANTIME_PARSING_FOLDER, MEANTIME_FOLDER_NAME_SPANISH),
                 os.path.join(MEANTIME_PARSING_FOLDER, MEANTIME_FOLDER_NAME_DUTCH),
                 os.path.join(MEANTIME_PARSING_FOLDER, MEANTIME_FOLDER_NAME_ITALIAN)]
-result_paths = [os.path.join(MEANTIME_PARSING_FOLDER, 'test_parsing_en'),
-                os.path.join(MEANTIME_PARSING_FOLDER, 'test_parsing_es'),
-                os.path.join(MEANTIME_PARSING_FOLDER, 'test_parsing_nl'),
-                os.path.join(MEANTIME_PARSING_FOLDER, 'test_parsing_it')]
+result_paths = [os.path.join(OUT_PATH, 'test_parsing_en'),
+                os.path.join(OUT_PATH, 'test_parsing_es'),
+                os.path.join(OUT_PATH, 'test_parsing_nl'),
+                os.path.join(OUT_PATH, 'test_parsing_it')]
+out_paths = [   os.path.join(OUT_PATH, 'en'),
+                os.path.join(OUT_PATH, 'es'),
+                os.path.join(OUT_PATH, 'nl'),
+                os.path.join(OUT_PATH, 'it')]
 
 meantime_types = {"PRO": "PRODUCT",
                   "FIN": "FINANCE",
@@ -58,7 +62,7 @@ def to_nltk_tree(node):
         return node.orth_
 
 
-def conv_files(path, result_path, language, nlp):
+def conv_files(path, result_path, out_path, language, nlp):
     doc_files = {}
     # coref_dics = {}
     entity_mentions = []
@@ -346,7 +350,7 @@ def conv_files(path, result_path, language, nlp):
                                             "mention_head": str(mention_head),
                                             "mention_tokens_amount": len(tokens)
                                         }
-                                    with open(os.path.join(OUT_PATH, MANUAL_REVIEW_FILE.replace(".json", "_"+language+".json")), "w",
+                                    with open(os.path.join(out_path, MANUAL_REVIEW_FILE.replace(".json", "_"+language+".json")), "w",
                                               encoding='utf-8') as file:
                                         json.dump(need_manual_review_mention_head, file)
                                     LOGGER.info("Mention with ID " + str(t_subt) + "_" + str(
@@ -445,8 +449,10 @@ def conv_files(path, result_path, language, nlp):
             newsplease_custom["filename"] = topic_file
             newsplease_custom["text"] = text
             newsplease_custom["source_domain"] = topic_file.split(".")[0]
-            #if newsplease_custom["title"][-1] not in string.punctuation:
-            #    newsplease_custom["title"] += "."
+            newsplease_custom["language"] = result_path[-14:].split("_")[2]
+            newsplease_custom["title"] = " ".join(topic_file.split(".")[0].split("_")[1:])
+            if newsplease_custom["title"][-1] not in string.punctuation:
+                newsplease_custom["title"] += "."
 
             doc_files[topic_file.split(".")[0]] = newsplease_custom
             if topic_name not in os.listdir(result_path):
@@ -579,12 +585,12 @@ def conv_files(path, result_path, language, nlp):
         except AssertionError:
             LOGGER.warning(
                 f'Number of opening and closing brackets in conll does not match! topic: ' + str(topic_name))
-            conll_df.to_csv(os.path.join(OUT_PATH, CONLL_CSV.replace(".csv", "_"+language+".csv")))
+            conll_df.to_csv(os.path.join(out_path, CONLL_CSV.replace(".csv", "_"+language+".csv")))
             with open(os.path.join(annot_path, f'{topic_name}.conll'), "w", encoding='utf-8') as file:
                 file.write(outputdoc_str)
             sys.exit()
 
-        conll_df.to_csv(os.path.join(OUT_PATH, CONLL_CSV.replace(".csv", "_"+language+".csv")))
+        conll_df.to_csv(os.path.join(out_path, CONLL_CSV.replace(".csv", "_"+language+".csv")))
 
         with open(os.path.join(annot_path, f'{topic_name}.conll'), "w", encoding='utf-8') as file:
             file.write(outputdoc_str)
@@ -601,22 +607,22 @@ def conv_files(path, result_path, language, nlp):
 
     LOGGER.info(
         "Mentions that need manual review to define the head and its attributes have been saved to: " + MANUAL_REVIEW_FILE.replace(".json", "_"+language+".json"))
-    with open(os.path.join(OUT_PATH, MANUAL_REVIEW_FILE.replace(".json", "_"+language+".json")), "w", encoding='utf-8') as file:
+    with open(os.path.join(out_path, MANUAL_REVIEW_FILE.replace(".json", "_"+language+".json")), "w", encoding='utf-8') as file:
         json.dump(need_manual_review_mention_head, file)
 
-    with open(os.path.join(OUT_PATH, "conll_as_json_" + language + ".json"), "w", encoding='utf-8') as file:
+    with open(os.path.join(out_path, "conll_as_json_" + language + ".json"), "w", encoding='utf-8') as file:
         json.dump(conll_df.to_dict('records'), file)
 
-    with open(os.path.join(OUT_PATH, 'meantime_' + language + '.conll'), "w", encoding='utf-8') as file:
+    with open(os.path.join(out_path, 'meantime_' + language + '.conll'), "w", encoding='utf-8') as file:
         file.write(final_output_str)
 
-    with open(os.path.join(OUT_PATH, MENTIONS_ENTITIES_JSON.replace(".json", "_"+language+".json")), "w", encoding='utf-8') as file:
+    with open(os.path.join(out_path, MENTIONS_ENTITIES_JSON.replace(".json", "_"+language+".json")), "w", encoding='utf-8') as file:
         json.dump(entity_mentions, file)
 
-    with open(os.path.join(OUT_PATH, MENTIONS_EVENTS_JSON.replace(".json", "_"+language+".json")), "w", encoding='utf-8') as file:
+    with open(os.path.join(out_path, MENTIONS_EVENTS_JSON.replace(".json", "_"+language+".json")), "w", encoding='utf-8') as file:
         json.dump(event_mentions, file)
 
-    summary_df.to_csv(os.path.join(OUT_PATH, MENTIONS_ALL_CSV.replace(".csv", "_"+language+".csv")))
+    summary_df.to_csv(os.path.join(out_path, MENTIONS_ALL_CSV.replace(".csv", "_"+language+".csv")))
     #summary_conversion_df.to_csv(os.path.join(result_path, now.strftime("%Y-%m-%d_%H-%M") + "_" + "dataset_summary.csv"))
 
     LOGGER.info(f'Parsing of MEANTIME annotation with language {language} done!')
@@ -630,7 +636,7 @@ if __name__ == '__main__':
         LOGGER.info(f"Processing MEANTIME language {source_path[-34:].split('_')[2]}.")
         intra = os.path.join(source_path, 'intra-doc_annotation')
         intra_cross = os.path.join(source_path, 'intra_cross-doc_annotation')
-        conv_files(intra_cross, result_paths[i], source_path[-34:].split("_")[2], nlps[i])
+        conv_files(intra_cross, result_paths[i], out_paths[i], source_path[-34:].split("_")[2], nlps[i])
 
     # print('Please enter the number of the set, you want to convert:\n'
     #       '   1 MEANTIME intra document annotation\n'
