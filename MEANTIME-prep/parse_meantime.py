@@ -580,10 +580,10 @@ def conv_files(paths, result_path, out_path, language, nlp):
         if row[REFERENCE].startswith("-| "):
             conll_df.at[i, REFERENCE] = row[REFERENCE][3:]
 
-    conll_topic_df = conll_df[conll_df[TOPIC_SUBTOPIC].str.contains(f'{topic_name}/')].drop(columns=[DOC_ID])
+    conll_df = conll_df.drop(columns=[DOC_ID])
 
     outputdoc_str = ""
-    for (topic_local), topic_df in conll_topic_df.groupby(by=[TOPIC_SUBTOPIC]):
+    for (topic_local), topic_df in conll_df.groupby(by=[TOPIC_SUBTOPIC]):
         outputdoc_str += f'#begin document ({topic_local}); part 000\n'
 
         for (sent_id_local), sent_df in topic_df.groupby(by=[SENT_ID], sort=[SENT_ID]):
@@ -595,6 +595,9 @@ def conv_files(paths, result_path, out_path, language, nlp):
 
         outputdoc_str += "#end document\n"
     final_output_str += outputdoc_str
+
+    print(final_output_str)
+    print(outputdoc_str)
 
     # Check if the brackets ( ) are correct
     try:
@@ -628,7 +631,7 @@ def conv_files(paths, result_path, out_path, language, nlp):
         json.dump(conll_df.to_dict('records'), file)
 
     with open(os.path.join(out_path, 'meantime_' + language + '.conll'), "w", encoding='utf-8') as file:
-        file.write(final_output_str)
+        file.write(outputdoc_str)
 
     with open(os.path.join(out_path, MENTIONS_ENTITIES_JSON.replace(".json", "_"+language+".json")), "w", encoding='utf-8') as file:
         json.dump(entity_mentions, file)
@@ -657,7 +660,7 @@ if __name__ == '__main__':
         intra = os.path.join(source_path, 'intra-doc_annotation')
         intra_cross = os.path.join(source_path, 'intra_cross-doc_annotation')
         conv_files([intra_cross, intra], result_paths[i], out_paths[i], source_path[-34:].split("_")[2], nlps[i])
-        merge_intra_cross_results()
+        #sys.exit()
 
     # print('Please enter the number of the set, you want to convert:\n'
     #       '   1 MEANTIME intra document annotation\n'
