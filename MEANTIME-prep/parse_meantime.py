@@ -385,21 +385,22 @@ def conv_files(paths, result_path, out_path, language, nlp):
                                 #if mention_head_id not in [13, 20, 15, 14, 15, 3, 48]:
                                 #    sys.exit()
 
-                                mentions[subelem.attrib["m_id"]] = {"type": subelem.tag,
-                                                                    "text": " ".join(
-                                                                        [token_dict[t]["text"] for t in tokens]),
-                                                                    "sent_doc": doc,
-                                                                    MENTION_NER: mention_ner,
-                                                                    MENTION_HEAD_POS: mention_head_pos,
-                                                                    MENTION_HEAD_LEMMA: mention_head_lemma,
-                                                                    MENTION_HEAD: mention_head.text,
-                                                                    MENTION_HEAD_ID: mention_head.i,
-                                                                    TOKENS_NUMBER: sent_tokens,
-                                                                    #"token_doc_numbers": token_ids_in_doc,
-                                                                    DOC_ID: topic_file.split(".")[0],
-                                                                    SENT_ID: int(sent_id),
-                                                                    "mention_context": mention_context_str,
-                                                                    TOPIC_SUBTOPIC: t_subt}
+                                if str(t_subt) + "_" + str(mention_text) not in need_manual_review_mention_head:
+                                    mentions[subelem.attrib["m_id"]] = {"type": subelem.tag,
+                                                                        "text": " ".join(
+                                                                            [token_dict[t]["text"] for t in tokens]),
+                                                                        "sent_doc": doc,
+                                                                        MENTION_NER: mention_ner,
+                                                                        MENTION_HEAD_POS: mention_head_pos,
+                                                                        MENTION_HEAD_LEMMA: mention_head_lemma,
+                                                                        MENTION_HEAD: mention_head.text,
+                                                                        MENTION_HEAD_ID: mention_head.i,
+                                                                        TOKENS_NUMBER: sent_tokens,
+                                                                        #"token_doc_numbers": token_ids_in_doc,
+                                                                        DOC_ID: topic_file.split(".")[0],
+                                                                        SENT_ID: int(sent_id),
+                                                                        "mention_context": mention_context_str,
+                                                                        TOPIC_SUBTOPIC: t_subt}
 
                             else:
                                 try:
@@ -660,7 +661,7 @@ if __name__ == '__main__':
         intra = os.path.join(source_path, 'intra-doc_annotation')
         intra_cross = os.path.join(source_path, 'intra_cross-doc_annotation')
         conv_files([intra_cross, intra], result_paths[i], out_paths[i], source_path[-34:].split("_")[2], nlps[i])
-        #sys.exit()
+        sys.exit()
 
     # print('Please enter the number of the set, you want to convert:\n'
     #       '   1 MEANTIME intra document annotation\n'

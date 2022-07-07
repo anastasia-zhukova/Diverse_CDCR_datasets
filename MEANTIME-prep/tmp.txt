@@ -1,39 +1,39 @@
-corpus_apple/9549	2MEANTIME	19	0	This	-
-corpus_apple/9549	2MEANTIME	19	1	constant	-
-corpus_apple/9549	2MEANTIME	19	2	development	-
-corpus_apple/9549	2MEANTIME	19	3	program	-
-corpus_apple/9549	2MEANTIME	19	4	has	-
-corpus_apple/9549	2MEANTIME	19	5	occasionally	-
-corpus_apple/9549	2MEANTIME	19	6	been	-
-corpus_apple/9549	2MEANTIME	19	7	accused	-
-corpus_apple/9549	2MEANTIME	19	8	of	-
-corpus_apple/9549	2MEANTIME	19	9	being	-
-corpus_apple/9549	2MEANTIME	19	10	aimed	-
-corpus_apple/9549	2MEANTIME	19	11	at	-
-corpus_apple/9549	2MEANTIME	19	12	forcing	-
-corpus_apple/9549	2MEANTIME	19	13	users	-
-corpus_apple/9549	2MEANTIME	19	14	to	-
-corpus_apple/9549	2MEANTIME	19	15	constantly	-
-corpus_apple/9549	2MEANTIME	19	16	pay	-
-corpus_apple/9549	2MEANTIME	19	17	out	-
-corpus_apple/9549	2MEANTIME	19	18	for	-
-corpus_apple/9549	2MEANTIME	19	19	expensive	-
-corpus_apple/9549	2MEANTIME	19	20	new	-
-corpus_apple/9549	2MEANTIME	19	21	software	-
-corpus_apple/9549	2MEANTIME	19	22	,	-
-corpus_apple/9549	2MEANTIME	19	23	but	-
-corpus_apple/9549	2MEANTIME	19	24	the	-
-corpus_apple/9549	2MEANTIME	19	25	returns	-
-corpus_apple/9549	2MEANTIME	19	26	of	-
-corpus_apple/9549	2MEANTIME	19	27	regular	-
-corpus_apple/9549	2MEANTIME	19	28	releases	-
-corpus_apple/9549	2MEANTIME	19	29	have	-
-corpus_apple/9549	2MEANTIME	19	30	been	-
-corpus_apple/9549	2MEANTIME	19	31	quick	-
-corpus_apple/9549	2MEANTIME	19	32	bug	-
-corpus_apple/9549	2MEANTIME	19	33	fixes	-
-corpus_apple/9549	2MEANTIME	19	34	and	-
-corpus_apple/9549	2MEANTIME	19	35	leading	-
-corpus_apple/9549	2MEANTIME	19	36	edge	-
-corpus_apple/9549	2MEANTIME	19	37	technology	-
-corpus_apple/9549	2MEANTIME	19	38	.	-
+corpus_apple/9549	19	0	This	-
+corpus_apple/9549	19	1	constant	-
+corpus_apple/9549	19	2	development	-
+corpus_apple/9549	19	3	program	-
+corpus_apple/9549	19	4	has	-
+corpus_apple/9549	19	5	occasionally	-
+corpus_apple/9549	19	6	been	-
+corpus_apple/9549	19	7	accused	-
+corpus_apple/9549	19	8	of	-
+corpus_apple/9549	19	9	being	-
+corpus_apple/9549	19	10	aimed	-
+corpus_apple/9549	19	11	at	-
+corpus_apple/9549	19	12	forcing	-
+corpus_apple/9549	19	13	users	-
+corpus_apple/9549	19	14	to	-
+corpus_apple/9549	19	15	constantly	-
+corpus_apple/9549	19	16	pay	-
+corpus_apple/9549	19	17	out	-
+corpus_apple/9549	19	18	for	-
+corpus_apple/9549	19	19	expensive	-
+corpus_apple/9549	19	20	new	-
+corpus_apple/9549	19	21	software	-
+corpus_apple/9549	19	22	,	-
+corpus_apple/9549	19	23	but	-
+corpus_apple/9549	19	24	the	-
+corpus_apple/9549	19	25	returns	-
+corpus_apple/9549	19	26	of	-
+corpus_apple/9549	19	27	regular	-
+corpus_apple/9549	19	28	releases	-
+corpus_apple/9549	19	29	have	-
+corpus_apple/9549	19	30	been	-
+corpus_apple/9549	19	31	quick	-
+corpus_apple/9549	19	32	bug	-
+corpus_apple/9549	19	33	fixes	-
+corpus_apple/9549	19	34	and	-
+corpus_apple/9549	19	35	leading	-
+corpus_apple/9549	19	36	edge	-
+corpus_apple/9549	19	37	technology	-
+corpus_apple/9549	19	38	.	-
