@@ -66,7 +66,7 @@ def conv_files(paths, result_path, out_path, language, nlp):
     doc_files = {}
     entity_mentions = []
     event_mentions = []
-    summary_df = pd.DataFrame(columns=[DOC_ID, COREF_CHAIN, DESCRIPTION, MENTION_TYPE, MENTION_FULL_TYPE, TOKENS_STR])
+    summary_df = pd.DataFrame(columns=[DOC_ID, COREF_CHAIN, DESCRIPTION, MENTION_TYPE, MENTION_FULL_TYPE, MENTION_ID, TOKENS_STR])
     summary_conversion_df = pd.DataFrame()
     conll_df = pd.DataFrame(columns=[TOPIC_SUBTOPIC, DOC_ID, SENT_ID, TOKEN_ID, TOKEN, REFERENCE])
     final_output_str = ""
@@ -512,15 +512,20 @@ def conv_files(paths, result_path, out_path, language, nlp):
                                 DESCRIPTION: chain_vals["descr"],
                                 MENTION_TYPE: chain_id[:3],
                                 MENTION_FULL_TYPE: m["type"],
+                                MENTION_ID: mention_id,
                                 TOKENS_STR: m["text"]
                             }
                         else:
+                            # change the prefix of coref chains depending on coref type intra, cross, cross_intra
                             for i in range(len(entity_mentions)):
                                 if entity_mentions[i][MENTION_ID] == mention_id:
                                     entity_mentions[i][COREF_CHAIN] = "cross_intra_" + chain_id
                             for i in range(len(event_mentions)):
                                 if event_mentions[i][MENTION_ID] == mention_id:
                                     event_mentions[i][COREF_CHAIN] = "cross_intra_" + chain_id
+                            for i in range(len(summary_df)):
+                                if summary_df.iloc[i][MENTION_ID] == mention_id:
+                                    summary_df.at[i, COREF_CHAIN] = "cross_intra_" + chain_id
 
             annot_path = os.path.join(result_path, topic_name, "annotation",
                                       "original")  # ->root/data/MEANTIME-prep/test_parsing/topicName/annotation/original
@@ -640,6 +645,7 @@ def conv_files(paths, result_path, out_path, language, nlp):
     with open(os.path.join(out_path, MENTIONS_EVENTS_JSON.replace(".json", "_"+language+".json")), "w", encoding='utf-8') as file:
         json.dump(event_mentions, file)
 
+    summary_df.drop(columns=[MENTION_ID], inplace=True)
     summary_df.to_csv(os.path.join(out_path, MENTIONS_ALL_CSV.replace(".csv", "_"+language+".csv")))
     #summary_conversion_df.to_csv(os.path.join(result_path, now.strftime("%Y-%m-%d_%H-%M") + "_" + "dataset_summary.csv"))
 
