@@ -6,9 +6,6 @@ import copy
 import re
 import pandas as pd
 import numpy as np
-from datetime import datetime
-from nltk.corpus import wordnet
-import sys
 from nltk import Tree
 import spacy
 from tqdm import tqdm
@@ -536,14 +533,93 @@ def conv_files(paths, result_path, out_path, language, nlp):
                 os.mkdir(os.path.join(result_path, topic_name, "annotation"))
                 os.mkdir(annot_path)
 
+            entity_mentions.extend(entity_mentions_local)
+            event_mentions.extend(event_mentions_local)
+
+            # remap the local mentions with the updated cross/intra prefixes
+            entity_mentions_local, event_mentions_local = [], []
+            for m in entity_mentions:
+                if m[TOPIC_SUBTOPIC].split("/")[0] == t_subt.split("/")[0]:
+                    entity_mentions_local.append(m)
+            for m in event_mentions:
+                if m[TOPIC_SUBTOPIC].split("/")[0] == t_subt.split("/")[0]:
+                    event_mentions_local.append(m)
+
             with open(os.path.join(annot_path, "entity_mentions_" + topic_name + ".json"), "w") as file:
                 json.dump(entity_mentions_local, file)
 
             with open(os.path.join(annot_path, "event_mentions_" + topic_name + ".json"), "w") as file:
                 json.dump(event_mentions_local, file)
 
-            entity_mentions.extend(entity_mentions_local)
-            event_mentions.extend(event_mentions_local)
+            conll_topic_df = conll_df[conll_df[TOPIC_SUBTOPIC].str.contains(t_subt.split("/")[0])].reset_index(drop=True)
+
+            # create a conll string from the conll_df
+            LOGGER.info("Generating conll string for this topic...")
+            for i, row in tqdm(conll_topic_df.iterrows(), total=conll_topic_df.shape[0]):
+                if row[REFERENCE] is None:
+                    reference_str = "-"
+                else:
+                    reference_str = row[REFERENCE]
+
+                for mention in [m for m in entity_mentions + event_mentions]:
+                    if mention[TOPIC_SUBTOPIC] == row[TOPIC_SUBTOPIC] and mention[SENT_ID] == row[SENT_ID] and row[
+                        TOKEN_ID] in mention[TOKENS_NUMBER]:
+                        token_numbers = [int(t) for t in mention[TOKENS_NUMBER]]
+                        chain = mention[COREF_CHAIN]
+                        # one and only token
+                        if len(token_numbers) == 1 and token_numbers[0] == row[TOKEN_ID]:
+                            reference_str = reference_str + '| (' + str(chain) + ')'
+                        # one of multiple tokes
+                        elif len(token_numbers) > 1 and token_numbers[0] == row[TOKEN_ID]:
+                            reference_str = reference_str + '| (' + str(chain)
+                        elif len(token_numbers) > 1 and token_numbers[len(token_numbers) - 1] == row[TOKEN_ID]:
+                            reference_str = reference_str + '| ' + str(chain) + ')'
+
+                # if row[DOC_ID] == topic_name:  # do not overwrite conll rows of previous topic iterations
+                conll_topic_df.at[i, REFERENCE] = reference_str
+
+            for i, row in conll_topic_df.iterrows():  # remove the leading characters if necessary (left from initialization)
+                if row[REFERENCE].startswith("-| "):
+                    conll_topic_df.at[i, REFERENCE] = row[REFERENCE][3:]
+
+            conll_topic_df = conll_topic_df.drop(columns=[DOC_ID])
+
+            outputdoc_str = ""
+            for (topic_local), topic_df in conll_topic_df.groupby(by=[TOPIC_SUBTOPIC]):
+                outputdoc_str += f'#begin document ({topic_local}); part 000\n'
+
+                for (sent_id_local), sent_df in topic_df.groupby(by=[SENT_ID], sort=[SENT_ID]):
+                    np.savetxt(os.path.join(MEANTIME_PARSING_FOLDER, "tmp.txt"), sent_df.values, fmt='%s',
+                               delimiter="\t",
+                               encoding="utf-8")
+                    with open(os.path.join(MEANTIME_PARSING_FOLDER, "tmp.txt"), "r", encoding="utf8") as file:
+                        saved_lines = file.read()
+                    outputdoc_str += saved_lines + "\n"
+
+                outputdoc_str += "#end document\n"
+
+            # Check if the brackets ( ) are correct
+            try:
+                brackets_1 = 0
+                brackets_2 = 0
+                for i, row in conll_topic_df.iterrows():  # only count brackets in reference column (exclude token text)
+                    brackets_1 += str(row[REFERENCE]).count("(")
+                    brackets_2 += str(row[REFERENCE]).count(")")
+                LOGGER.info(
+                    "Amount of mentions in this topic: " + str(len(event_mentions_local + entity_mentions_local)))
+                LOGGER.info("Total mentions parsed (all topics): " + str(len(event_mentions + entity_mentions)))
+                LOGGER.info("brackets '(' , ')' : " + str(brackets_1) + " , " + str(brackets_2))
+                assert brackets_1 == brackets_2
+            except AssertionError:
+                LOGGER.warning(
+                    f'Number of opening and closing brackets in conll does not match! topic: {str(topic_name)}')
+                conll_topic_df.to_csv(os.path.join(out_path, CONLL_CSV.replace(".csv", "_" + language + ".csv")))
+                with open(os.path.join(annot_path, f'{topic_name}.conll'), "w", encoding='utf-8') as file:
+                    file.write(outputdoc_str)
+                sys.exit()
+
+            with open(os.path.join(annot_path, f'{topic_name}.conll'), "w", encoding='utf-8') as file:
+                file.write(outputdoc_str)
 
             summary_conversion_df = pd.concat([summary_conversion_df, pd.DataFrame({
                 "files": len(topic_files),
@@ -602,9 +678,6 @@ def conv_files(paths, result_path, out_path, language, nlp):
         outputdoc_str += "#end document\n"
     final_output_str += outputdoc_str
 
-    print(final_output_str)
-    print(outputdoc_str)
-
     # Check if the brackets ( ) are correct
     try:
         brackets_1 = 0
@@ -620,12 +693,10 @@ def conv_files(paths, result_path, out_path, language, nlp):
         LOGGER.warning(f'Number of opening and closing brackets in conll does not match! topic: {str(topic_name)}')
         conll_df.to_csv(os.path.join(out_path, CONLL_CSV.replace(".csv", "_"+language+".csv")))
         with open(os.path.join(annot_path, f'{topic_name}.conll'), "w", encoding='utf-8') as file:
-            file.write(outputdoc_str)
+            file.write(final_output_str)
         sys.exit()
 
     conll_df.to_csv(os.path.join(out_path, CONLL_CSV.replace(".csv", "_"+language+".csv")))
-    with open(os.path.join(annot_path, f'{topic_name}.conll'), "w", encoding='utf-8') as file:
-        file.write(outputdoc_str)
 
     LOGGER.info(
         "Mentions that need manual review to define the head and its attributes have been saved to: " +
@@ -637,7 +708,7 @@ def conv_files(paths, result_path, out_path, language, nlp):
         json.dump(conll_df.to_dict('records'), file)
 
     with open(os.path.join(out_path, 'meantime_' + language + '.conll'), "w", encoding='utf-8') as file:
-        file.write(outputdoc_str)
+        file.write(final_output_str)
 
     with open(os.path.join(out_path, MENTIONS_ENTITIES_JSON.replace(".json", "_"+language+".json")), "w", encoding='utf-8') as file:
         json.dump(entity_mentions, file)
@@ -652,11 +723,6 @@ def conv_files(paths, result_path, out_path, language, nlp):
     #merge_intra_cross_results(conll_df, entity_mentions, event_mentions, summary_df)
 
     LOGGER.info(f'Parsing of MEANTIME annotation with language {language} done!')
-
-def merge_intra_cross_results(conll_df, entity_mentions, event_mentions, summary_df):
-    #for m in entity_mentions:
-
-    return None
 
 if __name__ == '__main__':
 
