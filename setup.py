@@ -1,5 +1,4 @@
 # PARAMS
-import sys
 import os
 
 CONTEXT_RANGE = 100
@@ -111,11 +110,12 @@ SENT = "sent"
 M_ID = "m_id"
 NUM = "number"
 
+
 if __name__ == '__main__':
     import spacy
     import gdown
     import zipfile
-    import os
+    from logger import LOGGER
 
     FOLDER = "folder"
     ZIP = "zip"
@@ -143,7 +143,7 @@ if __name__ == '__main__':
                            ZIP: os.path.join(os.getcwd(), ECB_PLUS, ECBPLUS_FOLDER_NAME + ".zip"),
                            FOLDER: os.path.join(os.getcwd(), ECB_PLUS)},
                 MEANTIME: {LINK: "https://drive.google.com/u/0/uc?id=1K0hcWHOomyrFaKigwzrwImHugdb1pjAX&export=download;https://drive.google.com/u/0/uc?id=1qhKFhO-EszieMz_B7rOJhvbWcIeEg1F5&export=download;https://drive.google.com/u/0/uc?id=1-i3DoyenEYV8_jY6bYaNJ4lsmtb4-4Tw&export=download;https://drive.google.com/u/0/uc?id=1NB6Vw_W7KYii7L7OLMnW2qfq1KWPZ4de&export=download",
-                           ZIP: None,
+                           ZIP: os.path.join(os.getcwd(), MEANTIME, "MEANTIME_tmp" + ".zip"),
                            FOLDER: os.path.join(os.getcwd(), MEANTIME)},
                 NEWSWCL50: {LINK: "https://drive.google.com/u/1/uc?id=1ZcTnDeY85iIeUX0nvg3cypnRq87tVSVo&export=download",
                             ZIP: os.path.join(os.getcwd(), NEWSWCL50, NEWSWCL50_FOLDER_NAME + ".zip"),
@@ -158,7 +158,7 @@ if __name__ == '__main__':
     while True:
         try:
             input_number = int(input("Please enter a number to download the dataset: "))
-            assert 0 <= input_number < len(datasets)
+            assert 0 <= input_number <= len(datasets)
             break
         except (ValueError, AssertionError) as e:
             print("Oops! Seems like the number you entered is not a number or not valid. Please retry. ")
@@ -166,11 +166,11 @@ if __name__ == '__main__':
     # All datasets download
     if input_number == len(datasets):
         for dataset, values in datasets.items():
-            print("Getting: " + dataset)
+            LOGGER.info(f"Getting: {dataset}")
             if dataset == MEANTIME:
                 # download all languages
                 links = values[LINK].split(";")
-                print("Downloading datasets for " + str(len(links)) + " languages.")
+                LOGGER.info(f"Downloading datasets for {str(len(links))} languages.")
                 for link in links:
                     gdown.download(link, values[ZIP], quiet=False)
                     with zipfile.ZipFile(values[ZIP], 'r') as zip_ref:
@@ -189,11 +189,11 @@ if __name__ == '__main__':
         for i, (dataset, values) in enumerate(datasets.items()):
             if i != input_number:   # skip other datasets
                 continue
-            print("Getting: " + dataset)
+            LOGGER.info(f"Getting: {dataset}")
             if dataset == MEANTIME:
                 # download all languages
                 links = values[LINK].split(";")
-                print("Downloading datasets for " + str(len(links)) + " languages.")
+                LOGGER.info(f"Downloading datasets for {str(len(links))} languages.")
                 for link in links:
                     gdown.download(link, values[ZIP], quiet=False)
                     with zipfile.ZipFile(values[ZIP], 'r') as zip_ref:
