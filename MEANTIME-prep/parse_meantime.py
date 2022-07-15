@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from nltk import Tree
 import spacy
+import sys
 from tqdm import tqdm
 from setup import *
 from insert_whitespace import append_text
@@ -379,6 +380,11 @@ def conv_files(paths, result_path, out_path, language, nlp):
                                             t.attrib["t_id"]) <= context_max_id:
                                         mention_context_str.append(t.text)
 
+                                # tokens text
+                                tokens_text = []
+                                for t in tokens:
+                                    tokens_text = str(token_dict[t][TEXT])
+
                                 # add to mentions if the variables are correct ( do not add for manual review needed )
                                 if str(t_subt) + "_" + str(mention_text) not in need_manual_review_mention_head:
                                     mentions[subelem.attrib["m_id"]] = {"type": subelem.tag,
@@ -391,10 +397,10 @@ def conv_files(paths, result_path, out_path, language, nlp):
                                                                         MENTION_HEAD: mention_head.text,
                                                                         MENTION_HEAD_ID: mention_head.i,
                                                                         TOKENS_NUMBER: sent_tokens,
-                                                                        # "token_doc_numbers": token_ids_in_doc,
+                                                                        TOKENS_TEXT: tokens_text,
                                                                         DOC_ID: topic_file.split(".")[0],
                                                                         SENT_ID: int(sent_id),
-                                                                        "mention_context": mention_context_str,
+                                                                        MENTION_CONTEXT: mention_context_str,
                                                                         TOPIC_SUBTOPIC: t_subt}
 
                             else:
@@ -483,6 +489,7 @@ def conv_files(paths, result_path, out_path, language, nlp):
                                        MENTION_HEAD_LEMMA: m["mention_head_lemma"],
                                        MENTION_HEAD: m["mention_head"],
                                        MENTION_HEAD_ID: m["mention_head_id"],
+                                       DOC_ID: m["doc_id"],
                                        DOC_ID_FULL: m["doc_id"],
                                        IS_CONTINIOUS: True if token_numbers == list(
                                            range(token_numbers[0], token_numbers[-1] + 1))
@@ -493,11 +500,17 @@ def conv_files(paths, result_path, out_path, language, nlp):
                                        MENTION_FULL_TYPE: meantime_types[chain_id[:3]],
                                        SCORE: -1.0,
                                        SENT_ID: sent_id,
+                                       MENTION_CONTEXT: MENTION_CONTEXT,
                                        TOKENS_NUMBER: token_numbers,
                                        TOKENS_STR: m["text"],
+                                       TOKENS_TEXT: m[TOKENS_TEXT],
+                                       TOPIC_ID: cnt,
+                                       TOPIC: m[TOPIC_SUBTOPIC].split("/")[0],
+                                       SUBTOPIC: m[TOPIC_SUBTOPIC].split("/")[1],
                                        TOPIC_SUBTOPIC: m[TOPIC_SUBTOPIC],
                                        COREF_TYPE: chain_vals["coref_type"],
-                                       DESCRIPTION: chain_vals["descr"]
+                                       DESCRIPTION: chain_vals["descr"],
+                                       CONLL_DOC_KEY: m[TOPIC_SUBTOPIC],
                                        }
                             if "EVENT" in m["type"]:
                                 event_mentions_local.append(mention)
@@ -615,10 +628,10 @@ def conv_files(paths, result_path, out_path, language, nlp):
             except AssertionError:
                 LOGGER.warning(
                     f'Number of opening and closing brackets in conll does not match! topic: {str(topic_name)}')
-                conll_topic_df.to_csv(os.path.join(out_path, CONLL_CSV.replace(".csv", "_" + language + ".csv")))
+                conll_topic_df.to_csv(os.path.join(out_path, CONLL_CSV))
                 with open(os.path.join(annot_path, f'{topic_name}.conll'), "w", encoding='utf-8') as file:
                     file.write(outputdoc_str)
-                sys.exit()
+                #sys.exit()
 
             with open(os.path.join(annot_path, f'{topic_name}.conll'), "w", encoding='utf-8') as file:
                 file.write(outputdoc_str)
@@ -694,12 +707,12 @@ def conv_files(paths, result_path, out_path, language, nlp):
         assert brackets_1 == brackets_2
     except AssertionError:
         LOGGER.warning(f'Number of opening and closing brackets in conll does not match! topic: {str(topic_name)}')
-        conll_df.to_csv(os.path.join(out_path, CONLL_CSV.replace(".csv", "_" + language + ".csv")))
-        with open(os.path.join(annot_path, f'{topic_name}.conll'), "w", encoding='utf-8') as file:
+        conll_df.to_csv(os.path.join(out_path, CONLL_CSV))
+        with open(os.path.join(out_path, 'meantime.conll'), "w", encoding='utf-8') as file:
             file.write(final_output_str)
-        sys.exit()
+        # sys.exit()
 
-    conll_df.to_csv(os.path.join(out_path, CONLL_CSV.replace(".csv", "_" + language + ".csv")))
+    conll_df.to_csv(os.path.join(out_path, CONLL_CSV))
 
     LOGGER.info(
         "Mentions that need manual review to define the head and its attributes have been saved to: " +
@@ -712,19 +725,19 @@ def conv_files(paths, result_path, out_path, language, nlp):
     with open(os.path.join(out_path, "conll_as_json_" + language + ".json"), "w", encoding='utf-8') as file:
         json.dump(conll_df.to_dict('records'), file)
 
-    with open(os.path.join(out_path, 'meantime_' + language + '.conll'), "w", encoding='utf-8') as file:
+    with open(os.path.join(out_path, 'meantime.conll'), "w", encoding='utf-8') as file:
         file.write(final_output_str)
 
-    with open(os.path.join(out_path, MENTIONS_ENTITIES_JSON.replace(".json", "_" + language + ".json")), "w",
+    with open(os.path.join(out_path, MENTIONS_ENTITIES_JSON), "w",
               encoding='utf-8') as file:
         json.dump(entity_mentions, file)
 
-    with open(os.path.join(out_path, MENTIONS_EVENTS_JSON.replace(".json", "_" + language + ".json")), "w",
+    with open(os.path.join(out_path, MENTIONS_EVENTS_JSON), "w",
               encoding='utf-8') as file:
         json.dump(event_mentions, file)
 
     summary_df.drop(columns=[MENTION_ID], inplace=True)
-    summary_df.to_csv(os.path.join(out_path, MENTIONS_ALL_CSV.replace(".csv", "_" + language + ".csv")))
+    summary_df.to_csv(os.path.join(out_path, MENTIONS_ALL_CSV))
     # summary_conversion_df.to_csv(os.path.join(result_path, now.strftime("%Y-%m-%d_%H-%M") + "_" + "dataset_summary.csv"))
 
     LOGGER.info(f'Parsing of MEANTIME annotation with language {language} done!')

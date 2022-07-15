@@ -13,7 +13,7 @@ from nltk.corpus import stopwords
 from tqdm import tqdm
 
 
-DIRECTORIES_TO_SUMMARIZE = [NEWSWCL50, ECB_PLUS]
+DIRECTORIES_TO_SUMMARIZE = [NEWSWCL50, ECB_PLUS, MEANTIME]
 
 nltk.download('stopwords')
 
@@ -199,27 +199,49 @@ if __name__ == '__main__':
     for dataset_folder in selected_dir_to_summarize:
         mentions_df = pd.DataFrame()
 
-        LOGGER.info(f'Reading files with mentions for {dataset_folder} dataset..')
+        LOGGER.info(f'Reading files with mentions for {dataset_folder} dataset...')
         for mention_type, file_name in zip([EVENT, ENTITY], [MENTIONS_EVENTS_JSON, MENTIONS_ENTITIES_JSON]):
-            full_filename = os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, file_name)
-            with open(full_filename, encoding='utf-8', mode='r') as file:
-                mentions_read_list = json.load(file)
+            if "MEANTIME" in dataset_folder:
+                full_filenames = [os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, "en", file_name),
+                                  os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, "es", file_name),
+                                  os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, "it", file_name),
+                                  os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, "nl", file_name)
+                                  ]
+            else:
+                full_filenames = [os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, file_name)]
+            for full_filename in full_filenames:
+                LOGGER.info(f'Processing {full_filename}...')
+                with open(full_filename, encoding='utf-8', mode='r') as file:
+                    mentions_read_list = json.load(file)
 
-            for v in mentions_read_list:
-                missed_attributes = set(sample_mention.keys()) - set(v.keys())
-                if len(missed_attributes):
-                    LOGGER.warning(f'Dataset {dataset_folder.split("-")[0]} misses mentions\' attributes {missed_attributes} '
-                                   f'and this may cause troubles in the script execution')
+                for v in mentions_read_list:
+                    missed_attributes = set(sample_mention.keys()) - set(v.keys())
+                    if len(missed_attributes):
+                        LOGGER.warning(f'Dataset {dataset_folder.split("-")[0]} misses mentions\' attributes {missed_attributes} '
+                                       f'and this may cause troubles in the script execution')
 
-            df_tmp = pd.DataFrame(mentions_read_list, index=list(range(len(mentions_read_list))))
-            df_tmp[TYPE] = [mention_type] * len(df_tmp)
-            # kick out "prep" from the name
-            df_tmp[DATASET_NAME] = [dataset_folder.split("-")[0]] * len(df_tmp)
-            mentions_df = pd.concat([mentions_df, df_tmp], ignore_index=True, axis = 0)
-            all_mentions_list.extend(mentions_read_list)
+                df_tmp = pd.DataFrame(mentions_read_list, index=list(range(len(mentions_read_list))))
+                df_tmp[TYPE] = [mention_type] * len(df_tmp)
+                # kick out "prep" from the name
+                df_tmp[DATASET_NAME] = [dataset_folder.split("-")[0]] * len(df_tmp)
+                mentions_df = pd.concat([mentions_df, df_tmp], ignore_index=True, axis = 0)
+                all_mentions_list.extend(mentions_read_list)
 
         # read texts (conll format)
-        df_conll = pd.read_csv(os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, CONLL_CSV), index_col=[0])
+        df_conll = pd.DataFrame()
+        if "MEANTIME" in dataset_folder:
+            conll_filenames = [
+                os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, "en", CONLL_CSV),
+                os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, "es", CONLL_CSV),
+                os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, "it", CONLL_CSV),
+                os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, "nl", CONLL_CSV)
+                ]
+        else:
+            conll_filenames = [os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, CONLL_CSV)]
+
+        for conll_filename in conll_filenames:
+            df_conll = pd.concat([df_conll, pd.read_csv(conll_filename, index_col=[0])])
+        df_conll = df_conll.reset_index(drop=True)
 
         # calculate statistics about the chains
         chain_df = mentions_df[[COREF_CHAIN, DATASET_NAME, DOC_ID]].groupby([COREF_CHAIN,
