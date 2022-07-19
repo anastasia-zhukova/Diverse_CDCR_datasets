@@ -29,20 +29,29 @@ nlps = [spacy.load('en_core_web_sm'),
 with open(path_sample, "r") as file:
     newsplease_format = json.load(file)
 
-import os
 
-source_paths = [os.path.join(MEANTIME_PARSING_FOLDER, MEANTIME_FOLDER_NAME_ENGLISH),
-                os.path.join(MEANTIME_PARSING_FOLDER, MEANTIME_FOLDER_NAME_SPANISH),
-                os.path.join(MEANTIME_PARSING_FOLDER, MEANTIME_FOLDER_NAME_DUTCH),
-                os.path.join(MEANTIME_PARSING_FOLDER, MEANTIME_FOLDER_NAME_ITALIAN)]
-result_paths = [os.path.join(OUT_PATH, 'test_parsing_en'),
-                os.path.join(OUT_PATH, 'test_parsing_es'),
-                os.path.join(OUT_PATH, 'test_parsing_nl'),
-                os.path.join(OUT_PATH, 'test_parsing_it')]
-out_paths = [os.path.join(OUT_PATH, 'en'),
-             os.path.join(OUT_PATH, 'es'),
-             os.path.join(OUT_PATH, 'nl'),
-             os.path.join(OUT_PATH, 'it')]
+lang_paths = {
+    EN: {
+        "source": os.path.join(MEANTIME_PARSING_FOLDER, MEANTIME_FOLDER_NAME_ENGLISH),
+        "result": os.path.join(OUT_PATH, 'test_parsing_' + EN),
+        "out": os.path.join(OUT_PATH, EN),
+        "nlp": spacy.load('en_core_web_sm')},
+    ES: {
+        "source": os.path.join(MEANTIME_PARSING_FOLDER, MEANTIME_FOLDER_NAME_SPANISH),
+        "result": os.path.join(OUT_PATH, 'test_parsing_' + ES),
+        "out": os.path.join(OUT_PATH, ES),
+        "nlp": spacy.load('es_core_news_sm')},
+    NL: {
+        "source": os.path.join(MEANTIME_PARSING_FOLDER, MEANTIME_FOLDER_NAME_DUTCH),
+        "result": os.path.join(OUT_PATH, 'test_parsing_' + NL),
+        "out": os.path.join(OUT_PATH, NL),
+        "nlp": spacy.load('nl_core_news_sm')},
+    IT: {
+        "source": os.path.join(MEANTIME_PARSING_FOLDER, MEANTIME_FOLDER_NAME_ITALIAN),
+        "result": os.path.join(OUT_PATH, 'test_parsing_' + IT),
+        "out": os.path.join(OUT_PATH, IT),
+        "nlp": spacy.load('it_core_news_sm')}
+}
 
 meantime_types = {"PRO": "PRODUCT",
                   "FIN": "FINANCE",
@@ -738,49 +747,20 @@ def conv_files(paths, result_path, out_path, language, nlp):
 
     summary_df.drop(columns=[MENTION_ID], inplace=True)
     summary_df.to_csv(os.path.join(out_path, MENTIONS_ALL_CSV))
-    # summary_conversion_df.to_csv(os.path.join(result_path, now.strftime("%Y-%m-%d_%H-%M") + "_" + "dataset_summary.csv"))
 
     LOGGER.info(f'Parsing of MEANTIME annotation with language {language} done!')
 
 
 if __name__ == '__main__':
 
-    for i, source_path in enumerate(source_paths):
-        # if i < 2:
-        #    continue
+    for lang_key in lang_paths.keys():
+        source_path = lang_paths[lang_key]["source"]
+        result_path = lang_paths[lang_key]["result"]
+        out_path = lang_paths[lang_key]["out"]
+        nlp = lang_paths[lang_key]["nlp"]
+
         LOGGER.info(f"Processing MEANTIME language {source_path[-34:].split('_')[2]}.")
         intra = os.path.join(source_path, 'intra-doc_annotation')
         intra_cross = os.path.join(source_path, 'intra_cross-doc_annotation')
-        conv_files([intra_cross, intra], result_paths[i], out_paths[i], source_path[-34:].split("_")[2], nlps[i])
-        # sys.exit()
+        conv_files([intra_cross, intra], result_path, out_path, source_path[-34:].split("_")[2], nlp)
 
-    # print('Please enter the number of the set, you want to convert:\n'
-    #       '   1 MEANTIME intra document annotation\n'
-    #       '   2 MEANTIME cross-document annotation\n'
-    #       '   3 both')
-    #
-    #
-    # def choose_input():
-    #     setnumber = input()
-    #     if setnumber == "1":
-    #         c_format = "\"MEANTIME intra document annotation\""
-    #         print(conv_files(intra))
-    #         return c_format
-    #     elif setnumber == "2":
-    #         c_format = "\"MEANTIME cross-document annotation\""
-    #         print(conv_files(intra_cross))
-    #         return c_format
-    #     elif setnumber == "3":
-    #         c_format = "\"MEANTIME intra and intra cross-document annotations\""
-    #         print(conv_files(intra))
-    #         print(conv_files(intra_cross))
-    #         return c_format
-    #     else:
-    #         print("Please choose one of the 3 numbers!")
-    #         return choose_input()
-
-    # co_format = choose_input()
-
-    # print("\nConversion of {0} from xml to newsplease format and to annotations in a json file is "
-    #       "done. \n\nFiles are saved to {1}. \nCopy the topics on which you want to execute Newsalyze to "
-    #       "{2}.".format(co_format, result_path, DATA_PATH))

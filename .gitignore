@@ -14,6 +14,8 @@ MEANTIME-prep/meantime_newsreader_dutch_dec15/*
 MEANTIME-prep/meantime_newsreader_english_oct15/*
 MEANTIME-prep/meantime_newsreader_italian_dec15/*
 MEANTIME-prep/meantime_newsreader_spanish_nov15/*
+NP4E-prep/NP4E/
+NiDENT-prep/NiDENT/
 .venv
 venv/
 .idea

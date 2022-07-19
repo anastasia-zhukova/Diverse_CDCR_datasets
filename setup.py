@@ -10,6 +10,8 @@ MEANTIME_FOLDER_NAME_ENGLISH = "meantime_newsreader_english_oct15"
 MEANTIME_FOLDER_NAME_DUTCH = "meantime_newsreader_dutch_dec15"
 MEANTIME_FOLDER_NAME_ITALIAN = "meantime_newsreader_italian_dec15"
 MEANTIME_FOLDER_NAME_SPANISH = "meantime_newsreader_spanish_nov15"
+NIDENT_FOLDER_NAME = "NiDENT"
+NP4E_FOLDER_NAME = "NP4E"
 OUTPUT_FOLDER_NAME = "output_data"
 SUMMARY_FOLDER = "summary"
 TMP_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tmp")
@@ -18,6 +20,8 @@ TMP_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tmp")
 NEWSWCL50 = "NewsWCL50-prep"
 ECB_PLUS = "ECBplus-prep"
 MEANTIME = "MEANTIME-prep"
+NIDENT = "NiDENT-prep"
+NP4E = "NP4E-prep"
 
 # FILES
 SAMPLE_DOC_JSON = "_sample_doc.json"
@@ -110,6 +114,11 @@ SENT = "sent"
 M_ID = "m_id"
 NUM = "number"
 
+# MEANTIME languages
+EN = "en"
+NL = "nl"
+IT = "it"
+ES = "es"
 
 if __name__ == '__main__':
     import spacy
@@ -147,7 +156,8 @@ if __name__ == '__main__':
                            FOLDER: os.path.join(os.getcwd(), MEANTIME)},
                 NEWSWCL50: {LINK: "https://drive.google.com/u/1/uc?id=1ZcTnDeY85iIeUX0nvg3cypnRq87tVSVo&export=download",
                             ZIP: os.path.join(os.getcwd(), NEWSWCL50, NEWSWCL50_FOLDER_NAME + ".zip"),
-                            FOLDER: os.path.join(os.getcwd(), NEWSWCL50)}}
+                            FOLDER: os.path.join(os.getcwd(), NEWSWCL50)}},
+
 
     prompt_str = "The following datasets are available for download: \n\n"
     for i, dataset in enumerate(datasets.keys()):
