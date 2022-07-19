@@ -29,7 +29,7 @@ with open(path_sample, "r") as file:
 
 source_path = os.path.join(NIDENT_PARSING_FOLDER, NIDENT_FOLDER_NAME)
 result_path = os.path.join(OUT_PATH, 'test_parsing')
-out_path = os.path.join(OUT_PATH, 'en')
+out_path = os.path.join(OUT_PATH)
 
 def to_nltk_tree(node):
     """
@@ -79,6 +79,8 @@ def conv_files(path):
     for topic_dirs in dirs:     # corpora
         cnt = cnt + 1
         topic_name = str(cnt) + "NiDENT"
+        event_mentions_local = []
+        entity_mentions_local = []
 
         doc_type = "nident"
         coref_dict = {}
@@ -122,14 +124,14 @@ def conv_files(path):
                     t_subt = topic_name + "/" + info_t_name
 
                     # information.txt-dataframe construction
-                    conll_df = conll_df.append(pd.DataFrame({
+                    conll_df = pd.concat([conll_df,pd.DataFrame({
                         "topic/subtopic_name": t_subt,
                         "sent_id": sent_id,
                         "token_id": token_id,
                         "token": word.get("wd"),
                         # "after": "\"" + append_text(prev_word, word.get("wd"), "space") + "\"",
                         "coref": "-"
-                    }, index=[0]))
+                    }, index=[0])])
 
                     if 'S' + str(old_sent) == str(sentence.attrib["id"]):
                         t_id += 1
@@ -152,11 +154,19 @@ def conv_files(path):
                     marker_id = markable.get("markerid")
                     entity_id = markable.get("entity")
                     coref_id = markable.get("corefid")
+
+                    for t in markable:
+                        print(ET.tostring(t))
+                    print("----")
+
                     token_numbers = []
-                    token_int_numbers = []
+                    token_sent_numbers = []
                     token_str = ""
                     markable_words = markable.findall('.//word')
                     for word in markable_words:
+                        if word.get("wdid") is not None:
+                            token_sent_numbers.append(int(word.get("wdid")[1:]))
+
                         m_word_cnt = 0
                         # get counted word-id(first called "number") in sentence for every word in the markable
                         # if punctuation (wich does not have a wdid) then count last word +1 or if first set number = 0
@@ -178,12 +188,9 @@ def conv_files(path):
 
                         token_numbers.append(number)
                         token_str, word_fixed, no_whitespace = append_text(token_str, str(word.attrib['wd']))
-
-                    for num in token_numbers:
-                        if num is not None:
-                            token_int_numbers.append(int(num))
-                        else:
-                            token_int_numbers.append(0)
+                    print(token_str)
+                    print(token_numbers)
+                    print(token_sent_numbers)
 
                     doc_id = str(topic_file.split(".xml")[0])
                     entity = str(markable.attrib["entity"])
@@ -199,29 +206,16 @@ def conv_files(path):
                     # determine the sentences as a string
                     tokens = sentence.findall('.//word')
 
+                    sentence_str = ""
                     for t in tokens:
-                        print(ET.tostring(t))
+                        sentence_str, _, _ = append_text(sentence_str, t.get("wd"))
 
                     sent_tokens = [int(t.get("wdid")[1:]) for t in tokens if t.get("wdid") is not None]
-                    tokens_str = []
-                    sentence_str = ""
-                    for i, t in enumerate(tokens):
-                        tokens_str.append(t.attrib["wd"])
-                        if ("wdid" in t):
-                            t.attrib["t_id"] = int(t.attrib["wdid"][1:])
-                        elif i == 0:
-                            t.attrib["t_id"] = 0
-                        else:
-                            t.attrib["t_id"] = tokens[i - 1].attrib["t_id"] + 1
-
-                        if t.attrib["pos"] == "PUNCT" or i == 0:
-                            sentence_str = sentence_str + t.attrib["wd"]
-                        else:
-                            sentence_str = sentence_str + " " + t.attrib["wd"]
 
                     # pass the string into spacy
+                    print(sentence_str)
+                    print(sent_tokens)
                     doc = nlp(sentence_str)
-                    token_ids_in_doc = []
 
                     # skip if the token is contained more than once within the same mention
                     # (i.e. ignore entries with error in meantime tokenization)
@@ -233,13 +227,6 @@ def conv_files(path):
                         mention_text, _, _ = append_text(mention_text, t.get("wd"))
                     # if "tokens" has values -> fill the "mention" dict with the value of the corresponding m_id
                     if len(tokens):
-
-                        # generate sentence doc with spacy
-                        sentence_str = ""
-                        for t in root:
-                            if t.tag == TOKEN and t.attrib[SENTENCE] == str(sent_id):
-                                sentence_str, _, _ = append_text(sentence_str, t.text)
-                        doc = nlp(sentence_str)
 
                         # tokenize the mention text
                         mention_tokenized = []
@@ -319,7 +306,7 @@ def conv_files(path):
 
                                 # allow for dynamic differences in tokenization
                                 # (longer mention texts may lead to more differences)
-                                tolerance = len(tokens) / 2
+                                tolerance = 0#len(tokens) / 2
                                 if tolerance > 2:
                                     tolerance = 2
                                 # tolerance for website mentions
@@ -327,13 +314,13 @@ def conv_files(path):
                                     tolerance = tolerance + 2
                                 # tolerance when the mention has external tokens inbetween mention tokens
                                 tolerance = tolerance \
-                                            + int(tokens[-1]) \
-                                            - int(tokens[0]) \
-                                            - len(tokens) \
-                                            + 1
+                                           # + int(tokens[-1]) \
+                                            #- int(tokens[0]) \
+                                            #- len(tokens) \
+                                            #+ 1
                                 # increase tolerance for every punctuation included in mention text
-                                tolerance = tolerance + sum(
-                                    [1 for c in mention_text if c in string.punctuation])
+                                #tolerance = tolerance + sum(
+                                #    [1 for c in mention_text if c in string.punctuation])
 
                                 if abs(len(re.split(" ", sentence_str[
                                                          first_char_of_mention:last_char_of_mention])) - len(
@@ -393,19 +380,21 @@ def conv_files(path):
                         # remap the mention head back to the meantime original tokenization to get the ID for the output
                         mention_head_id = None
                         mention_head_text = mention_head.text
+                        print(mention_head_text)
                         for t in tokens:
-                            if str(token_dict[t][TEXT]).startswith(mention_head_text):
-                                mention_head_id = token_dict[t][ID]
-                        if not mention_head_id and len(tokens) == 1:
-                            mention_head_id = token_dict[tokens[0]][ID]
-                        elif not mention_head_id:
-                            for t in tokens:
-                                if mention_head_text.startswith(str(token_dict[t][TEXT])):
-                                    mention_head_id = token_dict[str(t)][ID]
+                            if str(t.get("wd")).startswith(mention_head_text) and t.get("wdid") is not None:
+                                mention_head_id = int(t.get("wdid")[1:])
+
                         if not mention_head_id:
                             for t in tokens:
-                                if str(token_dict[t][TEXT]).endswith(mention_head_text):
-                                    mention_head_id = token_dict[str(t)][ID]
+                                if mention_head_text.startswith(str(t.get("wd"))):
+                                    mention_head_id = int(t.get("wdid")[1:])
+                        if not mention_head_id:
+                            for t in tokens:
+                                if str(t.get("wd")).endswith(mention_head_text) and t.get("wdid") is not None:
+                                    mention_head_id = int(t.get("wdid")[1:])
+
+                        print(mention_head_id)
 
                         # add to manual review if the resulting token is not inside the mention
                         # (error must have happened)
@@ -427,46 +416,81 @@ def conv_files(path):
                                     f"Mention with ID {str(t_subt)}_{str(mention_text)} needs manual review. Could not determine the mention head automatically. {str(tolerance)}")
 
                         # get the context
-                        tokens_int = [int(x) for x in tokens]
-                        context_min_id, context_max_id = [0 if int(min(tokens_int)) - CONTEXT_RANGE < 0 else
-                                                          int(min(tokens_int)) - CONTEXT_RANGE,
+                        context_min_id, context_max_id = [0 if int(min(token_sent_numbers)) - CONTEXT_RANGE < 0 else
+                                                          int(min(token_sent_numbers)) - CONTEXT_RANGE,
                                                           len(token_dict) - 1
-                                                          if int(max(tokens_int)) + CONTEXT_RANGE > len(
+                                                          if int(max(token_sent_numbers)) + CONTEXT_RANGE > len(
                                                               token_dict)
-                                                          else int(max(tokens_int)) + CONTEXT_RANGE]
-
+                                                          else int(max(token_sent_numbers)) + CONTEXT_RANGE]
+                        print(context_min_id)
+                        print(context_max_id)
                         mention_context_str = []
-                        for t in root:
-                            if t.tag == "token" and int(t.attrib["t_id"]) >= context_min_id and int(
-                                    t.attrib["t_id"]) <= context_max_id:
-                                mention_context_str.append(t.text)
+                        break_indicator = False
+                        # append to the mention context string list
+                        for sent in sentences:
+                            sent_words = []
+                            for s in sent.iter():
+                                if s.tag == 'word':
+                                    sent_words.append(s)
+                            for word in sent_words:
+                                if word.get("wdid") is None:
+                                    if len(mention_context_str) > 0:
+                                        mention_context_str.append(word.get("wd"))
+                                elif int(word.get("wdid")[1:]) > context_max_id:    # break when all needed words processed
+                                    break_indicator = True
+                                    break
+                                elif int(word.get("wdid")[1:]) >= context_min_id and int(word.get("wdid")[1:]) <= context_max_id:
+                                    mention_context_str.append(word.get("wd"))
+                            if break_indicator is True:
+                                break
 
-                        # tokens text
-                        tokens_text = []
-                        for t in tokens:
-                            tokens_text = str(token_dict[t][TEXT])
+                        print(mention_context_str)
 
                         # add to mentions if the variables are correct ( do not add for manual review needed )
                         if str(t_subt) + "_" + str(mention_text) not in need_manual_review_mention_head:
-                            mentions[topic_file.split(".")[0]+str(sent_id)+str(marker_id)] = {
-                                "type": "-",    #subelem.tag
-                                "text": " ".join(
-                                    [token_dict[t]["text"] for t in tokens]),
-                                "sent_doc": doc,
-                                MENTION_NER: mention_ner,
-                                MENTION_HEAD_POS: mention_head_pos,
-                                MENTION_HEAD_LEMMA: mention_head_lemma,
-                                MENTION_HEAD: mention_head.text,
-                                MENTION_HEAD_ID: mention_head.i,
-                                TOKENS_NUMBER: sent_tokens,
-                                TOKENS_TEXT: tokens_text,
-                                DOC_ID: topic_file.split(".")[0],
-                                SENT_ID: int(sent_id),
-                                MENTION_CONTEXT: mention_context_str,
-                                TOPIC_SUBTOPIC: t_subt}
+                            mention = {COREF_CHAIN: entity_id,
+                                       MENTION_NER: mention_ner,
+                                       MENTION_HEAD_POS: mention_head_pos,
+                                       MENTION_HEAD_LEMMA: mention_head_lemma,
+                                       MENTION_HEAD: mention_head_text,
+                                       MENTION_HEAD_ID: mention_head_id,
+                                       DOC_ID: doc_id,
+                                       DOC_ID_FULL: doc_id,
+                                       IS_CONTINIOUS: token_numbers == list(range(token_numbers[0], token_numbers[-1] + 1)),
+                                       IS_SINGLETON: len(tokens) == 1,
+                                       MENTION_ID: "placeholder",  #mention_id,
+                                       MENTION_TYPE: "placeholder",
+                                       MENTION_FULL_TYPE: "placeholder",
+                                       SCORE: -1.0,
+                                       SENT_ID: sent_id,
+                                       MENTION_CONTEXT: mention_context_str,
+                                       TOKENS_NUMBER: token_numbers,
+                                       TOKENS_STR: token_str,
+                                       TOKENS_TEXT: token_str,
+                                       TOPIC_ID: cnt,
+                                       TOPIC: t_subt,
+                                       SUBTOPIC: t_subt,
+                                       TOPIC_SUBTOPIC: t_subt,
+                                       COREF_TYPE: "placeholder",
+                                       DESCRIPTION: "placeholder",
+                                       CONLL_DOC_KEY: "placeholder",
+                                       }
+                            #if "EVENT" in m["type"]:
+                            event_mentions_local.append(mention)
+                            #else:
+                            entity_mentions_local.append(mention)
+                            summary_df.loc[len(summary_df)] = {
+                                DOC_ID: doc_id,
+                                COREF_CHAIN: entity_id,
+                                DESCRIPTION: "placeholder",
+                                MENTION_TYPE: "placeholder",
+                                MENTION_FULL_TYPE: "placeholder",
+                                MENTION_ID: "placeholder",
+                                TOKENS_STR: token_str
+                            }
 
             # sets singleton-values and creates relations
-
+            '''
             for mention_a in ee_mentions:
                 change = False
                 m_cnt = 0
@@ -494,7 +518,7 @@ def conv_files(path):
                     relation["concept_id"] = mention_a.get("mention_type")  # -> identdegree
                     relations.append(relation)
                     recorded_ent.append(mention_a.get("coref_chain"))
-
+            '''
             newsplease_custom = copy.copy(newsplease_format)
 
             newsplease_custom["title"] = title
@@ -526,10 +550,10 @@ def conv_files(path):
                 os.mkdir(annot_path)
 
             with open(os.path.join(out_path, "entity_mentions_" + topic_name + ".json"), "w") as file:
-                json.dump(entity_mentions, file)
+                json.dump(entity_mentions_local, file)
 
             with open(os.path.join(out_path, "event_mentions_" + topic_name + ".json"), "w") as file:
-                json.dump(event_mentions, file)
+                json.dump(event_mentions_local, file)
 
             with open(os.path.join(out_path, "mentions_" + topic_name + ".json"), "w") as file:
                 json.dump(ee_mentions, file)
