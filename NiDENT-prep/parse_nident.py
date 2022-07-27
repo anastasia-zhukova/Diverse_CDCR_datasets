@@ -14,6 +14,7 @@ from setup import *
 from insert_whitespace import append_text
 from config import DATA_PATH, TMP_PATH
 from logger import LOGGER
+from pathlib import Path
 
 path_sample = os.path.join(DATA_PATH, "_sample_doc.json")  # ->root/data/original/_sample_doc.json
 NIDENT_PARSING_FOLDER = os.path.join(os.getcwd())
@@ -76,21 +77,31 @@ def conv_files(path):
     final_output_str = ""
     need_manual_review_mention_head = {}
 
-    for topic_dirs in dirs:     # corpora
+    # map xml files to their topics (np4e folder structure)
+    topic_dict = {}
+    topic_ids = { "bukavu": 1, "china": 2, "israel": 3, "peru": 4, "tajikistan": 5 }
+    for topic_dir_np4e in os.listdir(os.path.join(Path(os.getcwd()).parent.absolute(), NP4E, NP4E_FOLDER_NAME, "mmax2")):
         cnt = cnt + 1
-        topic_name = str(cnt) + "NiDENT"
         event_mentions_local = []
         entity_mentions_local = []
 
         doc_type = "nident"
         coref_dict = {}
         print("Parsing of NiDENT. This process can take several minutes. Please wait ...")
-        topic_files = os.listdir(os.path.join(path,"english-corpus"))
+        topic_files = os.listdir(os.path.join(path, "english-corpus"))
+        topic_name = str(topic_dir_np4e)
+        topic_id = topic_ids[topic_name]
 
         coref_dict = {}
 
         conll_df = pd.DataFrame()
-        for topic_file in tqdm(topic_files):
+        for file in os.listdir(os.path.join(Path(os.getcwd()).parent.absolute(), NP4E, NP4E_FOLDER_NAME, "mmax2", topic_dir_np4e)):
+            file_spec = str(file).split(".")[0]
+            topic_file = "20111107.near2_"+file_spec+".xml"
+            # topic_dict[file_spec] = { "topic": str(topic_dir), "topic_id": topic_ids[str(topic_dir)] }
+            if "Basedata" in topic_file or "common" in topic_file or "markables" in topic_file or not os.path.isfile(os.path.join(path,"english-corpus", topic_file)):
+                continue    # skip directories
+
             tree = ET.parse(os.path.join(path,"english-corpus", topic_file))
             root = tree.getroot()
             title, text, url, time, time2, time3 = "", "", "", "", "", ""
@@ -222,9 +233,8 @@ def conv_files(path):
                     if len(tokens) != len(list(set(tokens))):
                         continue
 
-                    mention_text = ""
-                    for t in tokens:
-                        mention_text, _, _ = append_text(mention_text, t.get("wd"))
+                    mention_text = token_str
+                    print("mention_text: " + mention_text)
                     # if "tokens" has values -> fill the "mention" dict with the value of the corresponding m_id
                     if len(tokens):
 
@@ -254,6 +264,9 @@ def conv_files(path):
                             # handle special case if the last punctuation is part of mention in ecb
                             last_char_of_mention = len(sentence_str)
 
+                        print("first: " + str(first_char_of_mention) )
+                        print("last: " + str(last_char_of_mention) )
+
                         counter = 0
                         while True:
                             if counter > 50:  # an error must have occurred, so break and add to manual review
@@ -265,7 +278,7 @@ def conv_files(path):
                                     "tolerance": tolerance
                                 }
                                 LOGGER.info(
-                                    f"Mention with ID {str(t_subt)}_{str(mention_text)} needs manual review. Could not determine the mention head automatically. {str(tolerance)}")
+                                    f"Mention with ID {str(t_subt)}_{str(mention_text)} needs manual review. Could not determine the mention head automatically \n(Exceeded max iterations). {str(tolerance)}")
                                 break
 
                             if sentence_str[-1] not in ".!?" or mention_text[-1] == ".":
@@ -314,20 +327,26 @@ def conv_files(path):
                                     tolerance = tolerance + 2
                                 # tolerance when the mention has external tokens inbetween mention tokens
                                 tolerance = tolerance \
+                                            + 1
                                            # + int(tokens[-1]) \
                                             #- int(tokens[0]) \
                                             #- len(tokens) \
-                                            #+ 1
+
                                 # increase tolerance for every punctuation included in mention text
                                 #tolerance = tolerance + sum(
                                 #    [1 for c in mention_text if c in string.punctuation])
 
+                                print("first: " + str(first_char_of_mention) + " " + sentence_str[first_char_of_mention])
+                                print("last: " + str(last_char_of_mention) + " " + sentence_str[last_char_of_mention])
+
+
                                 if abs(len(re.split(" ", sentence_str[
                                                          first_char_of_mention:last_char_of_mention])) - len(
-                                    tokens)) <= tolerance and sentence_str[
+                                    markable_words)) <= tolerance and sentence_str[
                                     first_char_of_mention - 1] in string.punctuation + " " and sentence_str[
                                     last_char_of_mention] in string.punctuation + " ":
                                     # Whole mention found in sentence (and tolerance is OK)
+                                    print("tolerance OK")
                                     break
                                 else:
                                     counter = counter + 1
@@ -342,6 +361,8 @@ def conv_files(path):
                                         re.split(" ", mention_text)[-1])
 
                             else:
+                                print("first: " + str(first_char_of_mention) + " " + sentence_str[first_char_of_mention])
+                                print("last: " + str(last_char_of_mention) + " " + sentence_str[last_char_of_mention])
                                 counter = counter + 1
                                 # The next char is not a punctuation, so it therefore we just see a part of a bigger word
                                 # i.g. do not accept "her" if the next letter is "s" ("herself")
@@ -380,21 +401,21 @@ def conv_files(path):
                         # remap the mention head back to the meantime original tokenization to get the ID for the output
                         mention_head_id = None
                         mention_head_text = mention_head.text
-                        print(mention_head_text)
+                        print("head text: " + mention_head_text)
                         for t in tokens:
                             if str(t.get("wd")).startswith(mention_head_text) and t.get("wdid") is not None:
                                 mention_head_id = int(t.get("wdid")[1:])
 
                         if not mention_head_id:
                             for t in tokens:
-                                if mention_head_text.startswith(str(t.get("wd"))):
+                                if mention_head_text.startswith(str(t.get("wd"))) and t.get("wdid") is not None:
                                     mention_head_id = int(t.get("wdid")[1:])
                         if not mention_head_id:
                             for t in tokens:
                                 if str(t.get("wd")).endswith(mention_head_text) and t.get("wdid") is not None:
                                     mention_head_id = int(t.get("wdid")[1:])
 
-                        print(mention_head_id)
+                        print("head id: " + str(mention_head_id))
 
                         # add to manual review if the resulting token is not inside the mention
                         # (error must have happened)
@@ -479,6 +500,7 @@ def conv_files(path):
                             event_mentions_local.append(mention)
                             #else:
                             entity_mentions_local.append(mention)
+                            print("LEN EVENT MENTIONS:" + str(len(event_mentions_local)))
                             summary_df.loc[len(summary_df)] = {
                                 DOC_ID: doc_id,
                                 COREF_CHAIN: entity_id,
@@ -538,31 +560,31 @@ def conv_files(path):
                       "w") as file:
                 json.dump(newsplease_custom, file)
 
-            coref_dics[topic_dirs] = coref_dict
+        #coref_dics[topic_dirs] = coref_dict
 
-            annot_path = os.path.join(result_path, topic_name, "annotation",
-                                      "original")  # ->root/data/NP4E+NiDENT-prep/test_parsing/topicName/annotation/original
-            if topic_name not in os.listdir(os.path.join(result_path)):
-                os.mkdir(os.path.join(result_path, topic_name))
+        annot_path = os.path.join(result_path, topic_name, "annotation",
+                                  "original")  # ->root/data/NP4E+NiDENT-prep/test_parsing/topicName/annotation/original
+        if topic_name not in os.listdir(os.path.join(result_path)):
+            os.mkdir(os.path.join(result_path, topic_name))
 
-            if "annotation" not in os.listdir(os.path.join(result_path, topic_name)):
-                os.mkdir(os.path.join(result_path, topic_name, "annotation"))
-                os.mkdir(annot_path)
+        if "annotation" not in os.listdir(os.path.join(result_path, topic_name)):
+            os.mkdir(os.path.join(result_path, topic_name, "annotation"))
+            os.mkdir(annot_path)
 
-            with open(os.path.join(out_path, "entity_mentions_" + topic_name + ".json"), "w") as file:
-                json.dump(entity_mentions_local, file)
+        with open(os.path.join(annot_path, "entity_mentions_" + topic_name + ".json"), "w") as file:
+            json.dump(entity_mentions_local, file)
 
-            with open(os.path.join(out_path, "event_mentions_" + topic_name + ".json"), "w") as file:
-                json.dump(event_mentions_local, file)
+        with open(os.path.join(annot_path, "event_mentions_" + topic_name + ".json"), "w") as file:
+            json.dump(event_mentions_local, file)
 
-            with open(os.path.join(out_path, "mentions_" + topic_name + ".json"), "w") as file:
-                json.dump(ee_mentions, file)
+        with open(os.path.join(annot_path, "mentions_" + topic_name + ".json"), "w") as file:
+            json.dump(ee_mentions, file)
 
-            with open(os.path.join(annot_path, "relations.json"), "w") as file:
-                json.dump(relations, file)
+        with open(os.path.join(annot_path, "relations.json"), "w") as file:
+            json.dump(relations, file)
 
-            np.savetxt(os.path.join(annot_path, "information.txt"), conll_df.values, fmt='%s', delimiter="\t",
-                       header="topic/subtopic_name\tsent_id\ttoken_id\ttoken\tafter\tcoref")
+        np.savetxt(os.path.join(annot_path, "information.txt"), conll_df.values, fmt='%s', delimiter="\t",
+                   header="topic/subtopic_name\tsent_id\ttoken_id\ttoken\tafter\tcoref")
 
     LOGGER.info(f'Parsing of NiDENT done!')
 
