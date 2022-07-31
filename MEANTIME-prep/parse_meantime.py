@@ -89,7 +89,6 @@ def conv_files(paths, result_path, out_path, language, nlp):
     event_mentions = []
     summary_df = pd.DataFrame(
         columns=[DOC_ID, COREF_CHAIN, DESCRIPTION, MENTION_TYPE, MENTION_FULL_TYPE, MENTION_ID, TOKENS_STR])
-    summary_conversion_df = pd.DataFrame()
     conll_df = pd.DataFrame(columns=[TOPIC_SUBTOPIC, DOC_ID, SENT_ID, TOKEN_ID, TOKEN, REFERENCE])
     final_output_str = ""
     need_manual_review_mention_head = {}
@@ -637,23 +636,13 @@ def conv_files(paths, result_path, out_path, language, nlp):
             except AssertionError:
                 LOGGER.warning(
                     f'Number of opening and closing brackets in conll does not match! topic: {str(topic_name)}')
-                conll_topic_df.to_csv(os.path.join(out_path, CONLL_CSV))
+                conll_topic_df.to_csv(os.path.join(annot_path, CONLL_CSV))
                 with open(os.path.join(annot_path, f'{topic_name}.conll'), "w", encoding='utf-8') as file:
                     file.write(outputdoc_str)
                 #sys.exit()
 
             with open(os.path.join(annot_path, f'{topic_name}.conll'), "w", encoding='utf-8') as file:
                 file.write(outputdoc_str)
-
-            summary_conversion_df = pd.concat([summary_conversion_df, pd.DataFrame({
-                "files": len(topic_files),
-                "tokens": len(conll_df),
-                "chains": len(coref_dict),
-                "event_mentions": len(event_mentions_local),
-                "entity_mentions": len(entity_mentions_local),
-                "singletons": sum([v["is_singleton"] for v in event_mentions_local]) + sum(
-                    [v["is_singleton"] for v in entity_mentions_local])
-            }, index=[topic_name])])
 
     conll_df = conll_df.reset_index(drop=True)
 

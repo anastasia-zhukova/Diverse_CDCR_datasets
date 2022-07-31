@@ -1,0 +1,19 @@
+tajikistan/381877newsML	26	0	It	-
+tajikistan/381877newsML	26	1	was	-
+tajikistan/381877newsML	26	2	only	-
+tajikistan/381877newsML	26	3	the	(entity569
+tajikistan/381877newsML	26	4	intervention	-
+tajikistan/381877newsML	26	5	of	-
+tajikistan/381877newsML	26	6	Russia	entity569)| (251_entity20)
+tajikistan/381877newsML	26	7	which	-
+tajikistan/381877newsML	26	8	led	-
+tajikistan/381877newsML	26	9	to	-
+tajikistan/381877newsML	26	10	negotiations	(entity570
+tajikistan/381877newsML	26	11	resulting	-
+tajikistan/381877newsML	26	12	in	-
+tajikistan/381877newsML	26	13	earlier	(entity571
+tajikistan/381877newsML	26	14	releases	-
+tajikistan/381877newsML	26	15	of	-
+tajikistan/381877newsML	26	16	some	(entity572
+tajikistan/381877newsML	26	17	hostages	entity570)| entity571)| entity572)
+tajikistan/381877newsML	26	18	.	-
