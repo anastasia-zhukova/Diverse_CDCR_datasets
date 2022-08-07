@@ -664,8 +664,6 @@ def conv_files(path):
 if __name__ == '__main__':
 
     LOGGER.info(f"Processing MEANTIME language {source_path[-34:].split('_')[2]}.")
-    intra = os.path.join(source_path, 'intra-doc_annotation')
-    intra_cross = os.path.join(source_path, 'intra_cross-doc_annotation')
     conv_files(source_path)
 
 
