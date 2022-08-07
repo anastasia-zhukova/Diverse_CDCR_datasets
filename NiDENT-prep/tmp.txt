@@ -4,7 +4,7 @@ tajikistan/381877newsML	26	2	only	-
 tajikistan/381877newsML	26	3	the	(entity569
 tajikistan/381877newsML	26	4	intervention	-
 tajikistan/381877newsML	26	5	of	-
-tajikistan/381877newsML	26	6	Russia	entity569)| (251_entity20)
+tajikistan/381877newsML	26	6	Russia	entity569)| (entity20)
 tajikistan/381877newsML	26	7	which	-
 tajikistan/381877newsML	26	8	led	-
 tajikistan/381877newsML	26	9	to	-

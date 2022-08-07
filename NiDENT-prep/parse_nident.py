@@ -54,24 +54,12 @@ def conv_files(path):
         :param language: the language to process
         :param nlp: the spacy model that fits the desired language
     """
-    doc_files = {}
-    coref_dics = {}
-    relation = {}
 
-    entity_mentions = []
-    event_mentions = []
-    ee_mentions = []
-
-    relations = []
-    recorded_ent = []
-
-    dirs = os.listdir(path)
     cnt = 0
     mark_counter = 0
 
     doc_files = {}
     entity_mentions = []
-    event_mentions = []
     summary_df = pd.DataFrame(
         columns=[DOC_ID, COREF_CHAIN, DESCRIPTION, MENTION_TYPE, MENTION_FULL_TYPE, MENTION_ID, TOKENS_STR])
     conll_df = pd.DataFrame(columns=[TOPIC_SUBTOPIC, DOC_ID, SENT_ID, TOKEN_ID, TOKEN, REFERENCE])
@@ -79,15 +67,12 @@ def conv_files(path):
     need_manual_review_mention_head = {}
 
     # map xml files to their topics (np4e folder structure)
-    topic_dict = {}
     topic_ids = { "bukavu": 1, "china": 2, "israel": 3, "peru": 4, "tajikistan": 5 }
+
     for topic_dir_np4e in os.listdir(os.path.join(Path(os.getcwd()).parent.absolute(), NP4E, NP4E_FOLDER_NAME, "mmax2")):
         cnt = cnt + 1
-        event_mentions_local = []
         entity_mentions_local = []
 
-        doc_type = "nident"
-        coref_dict = {}
         LOGGER.info(f"Parsing of NiDENT topic {topic_dir_np4e}...")
         topic_files = os.listdir(os.path.join(path, "english-corpus"))
         topic_name = str(topic_dir_np4e)
@@ -95,7 +80,7 @@ def conv_files(path):
 
         coref_dict = {}
 
-        for file in os.listdir(os.path.join(Path(os.getcwd()).parent.absolute(), NP4E, NP4E_FOLDER_NAME, "mmax2", topic_dir_np4e)):
+        for file in tqdm(os.listdir(os.path.join(Path(os.getcwd()).parent.absolute(), NP4E, NP4E_FOLDER_NAME, "mmax2", topic_dir_np4e))):
             file_spec = str(file).split(".")[0]
             topic_file = "20111107.near2_"+file_spec+".xml"
             # topic_dict[file_spec] = { "topic": str(topic_dir), "topic_id": topic_ids[str(topic_dir)] }
@@ -109,11 +94,9 @@ def conv_files(path):
             token_dict, mentions, mentions_map = {}, {}, {}
 
             t_id = -1
-            sent_id = -1
 
             old_sent = 0
             word_count = 0
-            sent_dict = {}
             sentences = tree.findall('.//sentence')
             for sentence in sentences:
                 sent_word_ar = []
@@ -163,12 +146,22 @@ def conv_files(path):
                     mark_counter += 1
                     marker_id = markable.get("markerid")
                     entity_id = markable.get("entity")
-                    coref_id = markable.get("corefid")
+                    coref_id = entity_id #markable.get("corefid")
+                    coref_type = markable.get("identdegree")
+
+                    if coref_type:
+                        if coref_type == "1":
+                            coref_type = "WEAK_NEAR"
+                        elif coref_type == "2":
+                            coref_type = "STRONG_NEAR"
+                        elif coref_type == "3":
+                            coref_type = "STRICT"
+                    '''
                     if not coref_id:
                         coref_id = entity_id
                     else:
                         coref_id = coref_id+"_"+entity_id
-
+                    '''
                     marker_comment = markable.get("markercomment")  # most of the times None
 
                     #for t in markable:
@@ -196,30 +189,11 @@ def conv_files(path):
                                     number = 0
                             m_word_cnt += 1
 
-                        # using the "wdid"- attribute from xml for token_ids does not provide an ascending sequence of numbers
-                        # number_ar = re.findall(r'\d+', str(word.get('wdid')))
-                        # if number_ar is None or not number_ar:
-                        #     number = 0
-                        # else:
-                        #     number = number_ar[0]
-
                         token_numbers.append(number)
                         token_str, word_fixed, no_whitespace = append_text(token_str, str(word.attrib['wd']))
                         token_text.append(str(word.attrib['wd']))
-                    #print(token_str)
-                    #print(token_numbers)
-                    #print(token_sent_numbers)
 
                     doc_id = str(topic_file.split(".xml")[0])
-                    entity = str(markable.attrib["entity"])
-                    if markable.get("identdegree") == "1":
-                        mention_full_type = "weak near-identity"
-                    elif markable.get("identdegree") == "2":
-                        mention_full_type = "strong near-identity"
-                    elif markable.get("identdegree") == "3":
-                        mention_full_type = "total identity"
-                    else:
-                        mention_full_type = "-"
 
                     # determine the sentences as a string
                     tokens = sentence.findall('.//word')
@@ -231,8 +205,6 @@ def conv_files(path):
                     sent_tokens = [int(t.get("wdid")[1:]) for t in tokens if t.get("wdid") is not None]
 
                     # pass the string into spacy
-                    #print(sentence_str)
-                    #print(sent_tokens)
                     doc = nlp(sentence_str)
 
                     # skip if the token is contained more than once within the same mention
@@ -270,9 +242,6 @@ def conv_files(path):
                         if last_char_of_mention == 0:  # last char can't be first char of string
                             # handle special case if the last punctuation is part of mention
                             last_char_of_mention = len(sentence_str)
-
-                        #print("first: " + str(first_char_of_mention) )
-                        #print("last: " + str(last_char_of_mention) )
 
                         counter = 0
                         while True:
@@ -326,7 +295,7 @@ def conv_files(path):
 
                                 # allow for dynamic differences in tokenization
                                 # (longer mention texts may lead to more differences)
-                                tolerance = 0#len(tokens) / 2
+                                tolerance = 0
                                 if tolerance > 2:
                                     tolerance = 2
                                 # tolerance for website mentions
@@ -336,17 +305,6 @@ def conv_files(path):
                                 tolerance = tolerance \
                                             + int(count_punct(token_str)) \
                                             + 1
-                                           # + int(tokens[-1]) \
-                                            #- int(tokens[0]) \
-                                            #- len(tokens) \
-
-                                # increase tolerance for every punctuation included in mention text
-                                #tolerance = tolerance + sum(
-                                #    [1 for c in mention_text if c in string.punctuation])
-
-                                #print("first: " + str(first_char_of_mention) + " " + sentence_str[first_char_of_mention])
-                                #print("last: " + str(last_char_of_mention) + " " + sentence_str[last_char_of_mention])
-
 
                                 if abs(len(re.split(" ", sentence_str[
                                                          first_char_of_mention:last_char_of_mention])) - len(
@@ -354,7 +312,6 @@ def conv_files(path):
                                     first_char_of_mention - 1] in string.punctuation + " " and sentence_str[
                                     last_char_of_mention] in string.punctuation + " ":
                                     # Whole mention found in sentence (and tolerance is OK)
-                                    #print("tolerance OK")
                                     break
                                 else:
                                     counter = counter + 1
@@ -369,11 +326,9 @@ def conv_files(path):
                                         re.split(" ", mention_text)[-1])
 
                             else:
-                                #print("first: " + str(first_char_of_mention) + " " + sentence_str[first_char_of_mention])
-                                #print("last: " + str(last_char_of_mention) + " " + sentence_str[last_char_of_mention])
                                 counter = counter + 1
                                 # The next char is not a punctuation, so it therefore we just see a part of a bigger word
-                                # i.g. do not accept "her" if the next letter is "s" ("herself")
+                                # i.g. do not accept "her" as a full word if the next letter is "s" ("herself")
                                 first_char_of_mention = sentence_str.find(re.split(" ", mention_text)[0],
                                                                           first_char_of_mention + 2)
                                 if len(re.split(" ", mention_text)) == 1:
@@ -409,7 +364,6 @@ def conv_files(path):
                         # remap the mention head back to the meantime original tokenization to get the ID for the output
                         mention_head_id = None
                         mention_head_text = mention_head.text
-                        #print("head text: " + mention_head_text)
                         for t in tokens:
                             if str(t.get("wd")).startswith(mention_head_text) and t.get("wdid") is not None:
                                 mention_head_id = int(t.get("wdid")[1:])
@@ -422,8 +376,6 @@ def conv_files(path):
                             for t in tokens:
                                 if str(t.get("wd")).endswith(mention_head_text) and t.get("wdid") is not None:
                                     mention_head_id = int(t.get("wdid")[1:])
-
-                        #print("head id: " + str(mention_head_id))
 
                         # add to manual review if the resulting token is not inside the mention
                         # (error must have happened)
@@ -486,8 +438,8 @@ def conv_files(path):
                                        IS_CONTINIOUS: token_numbers == list(range(token_numbers[0], token_numbers[-1] + 1)),
                                        IS_SINGLETON: len(tokens) == 1,
                                        MENTION_ID: marker_id,
-                                       MENTION_TYPE: None,
-                                       MENTION_FULL_TYPE: None,
+                                       MENTION_TYPE: "MIS",
+                                       MENTION_FULL_TYPE: "MISC",
                                        SCORE: -1.0,
                                        SENT_ID: sent_id,
                                        MENTION_CONTEXT: mention_context_str,
@@ -498,55 +450,24 @@ def conv_files(path):
                                        TOPIC: t_subt.split("/")[0],
                                        SUBTOPIC: t_subt.split("/")[1],
                                        TOPIC_SUBTOPIC: t_subt,
-                                       COREF_TYPE: None,
+                                       COREF_TYPE: coref_type,
                                        DESCRIPTION: marker_comment,
                                        CONLL_DOC_KEY: t_subt
                                        }
-                            #if "EVENT" in m["type"]:
-                            event_mentions_local.append(mention)
-                            #else:
+
+                            # nident only has entities
                             entity_mentions_local.append(mention)
 
                             summary_df.loc[len(summary_df)] = {
                                 DOC_ID: doc_id,
                                 COREF_CHAIN: entity_id,
                                 DESCRIPTION: marker_comment,
-                                MENTION_TYPE: None,
-                                MENTION_FULL_TYPE: None,
+                                MENTION_TYPE: "MIS",
+                                MENTION_FULL_TYPE: "MISC",
                                 MENTION_ID: marker_id,
                                 TOKENS_STR: token_str
                             }
 
-            # sets singleton-values and creates relations
-            '''
-            for mention_a in ee_mentions:
-                change = False
-                m_cnt = 0
-                if mention_a.get("coref_chain") not in recorded_ent:
-                    m_cnt += 1
-                    relation = {"mention_" + str(m_cnt): mention_a.get("mention_id"),
-                                }
-                    # print("neuer Eintrag"+mention_a.get("coref_chain"))
-                    change = True
-                for mention_b in ee_mentions:
-                    if mention_a.get("mention_id") != mention_b.get("mention_id"):
-                        if mention_a.get("coref_chain") == mention_b.get("coref_chain") and mention_a.get(
-                                "coref_chain") not in recorded_ent:
-                            mention_a["is_singleton"] = False
-
-                            m_cnt += 1
-                            relation["mention_" + str(m_cnt)] = mention_b.get("mention_id")
-                            change = True
-
-                        elif mention_a.get("coref_chain") == mention_b.get("coref_chain"):
-                            mention_a["is_singleton"] = False
-
-                if change:
-                    relation["relation_type"] = mention_a.get("mention_full_type")
-                    relation["concept_id"] = mention_a.get("mention_type")  # -> identdegree
-                    relations.append(relation)
-                    recorded_ent.append(mention_a.get("coref_chain"))
-            '''
             newsplease_custom = copy.copy(newsplease_format)
 
             newsplease_custom["title"] = title
@@ -566,8 +487,6 @@ def conv_files(path):
                       "w") as file:
                 json.dump(newsplease_custom, file)
 
-        #coref_dics[topic_dirs] = coref_dict
-
         annot_path = os.path.join(result_path, topic_name, "annotation",
                                   "original")  # ->root/data/NP4E+NiDENT-prep/test_parsing/topicName/annotation/original
         if topic_name not in os.listdir(os.path.join(result_path)):
@@ -577,13 +496,12 @@ def conv_files(path):
             os.mkdir(os.path.join(result_path, topic_name, "annotation"))
             os.mkdir(annot_path)
 
-        event_mentions.extend(event_mentions_local)
         entity_mentions.extend(entity_mentions_local)
 
         conll_topic_df = conll_df[conll_df[TOPIC_SUBTOPIC].str.contains(t_subt.split("/")[0])].reset_index(
             drop=True)
 
-        # create a conll string from the conll_df
+        # create a conll string from the conll_df   (per topic)
         LOGGER.info("Generating conll string for this topic...")
         for i, row in tqdm(conll_topic_df.iterrows(), total=conll_topic_df.shape[0]):
             if row[REFERENCE] is None:
@@ -591,7 +509,7 @@ def conv_files(path):
             else:
                 reference_str = row[REFERENCE]
 
-            for mention in [m for m in entity_mentions]: # + event_mentions
+            for mention in [m for m in entity_mentions]:
                 if mention[TOPIC_SUBTOPIC] == row[TOPIC_SUBTOPIC] and mention[SENT_ID] == row[SENT_ID] and row[
                     TOKEN_ID] in mention[TOKENS_NUMBER]:
                     token_numbers = [int(t) for t in mention[TOKENS_NUMBER]]
@@ -655,21 +573,9 @@ def conv_files(path):
         with open(os.path.join(annot_path, "entity_mentions_" + topic_name + ".json"), "w") as file:
             json.dump(entity_mentions_local, file)
 
-        with open(os.path.join(annot_path, "event_mentions_" + topic_name + ".json"), "w") as file:
-            json.dump(event_mentions_local, file)
-
-        with open(os.path.join(annot_path, "mentions_" + topic_name + ".json"), "w") as file:
-            json.dump(ee_mentions, file)
-
-        #with open(os.path.join(annot_path, "relations.json"), "w") as file:
-        #    json.dump(relations, file)
-
-        #np.savetxt(os.path.join(annot_path, "information.txt"), conll_df.values, fmt='%s', delimiter="\t",
-        #           header="topic/subtopic_name\tsent_id\ttoken_id\ttoken\tafter\tcoref")
-
     conll_df = conll_df.reset_index(drop=True)
 
-    # create a conll string from the conll_df
+    # create a conll string from the conll_df (all topics combined)
     LOGGER.info("Generating conll string...")
     for i, row in tqdm(conll_df.iterrows(), total=conll_df.shape[0]):
         if row[REFERENCE] is None:
@@ -736,6 +642,7 @@ def conv_files(path):
     LOGGER.info(
         "Mentions that need manual review to define the head and its attributes have been saved to: " +
         MANUAL_REVIEW_FILE + " - Total: " + str(len(need_manual_review_mention_head)))
+
     with open(os.path.join(out_path, MANUAL_REVIEW_FILE), "w", encoding='utf-8') as file:
         json.dump(need_manual_review_mention_head, file)
 
@@ -747,9 +654,6 @@ def conv_files(path):
 
     with open(os.path.join(out_path, "entity_mentions.json"), "w") as file:
         json.dump(entity_mentions, file)
-
-    with open(os.path.join(out_path, "event_mentions.json"), "w") as file:
-        json.dump(event_mentions, file)
 
     summary_df.drop(columns=[MENTION_ID], inplace=True)
     summary_df.to_csv(os.path.join(out_path, MENTIONS_ALL_CSV))
