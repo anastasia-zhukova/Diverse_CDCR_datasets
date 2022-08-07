@@ -480,7 +480,7 @@ def conv_files(path):
                 json.dump(newsplease_custom, file)
 
         annot_path = os.path.join(result_path, topic_name, "annotation",
-                                  "original")  # ->root/data/NP4E+NiDENT-prep/test_parsing/topicName/annotation/original
+                                  "original")
         if topic_name not in os.listdir(os.path.join(result_path)):
             os.mkdir(os.path.join(result_path, topic_name))
 
