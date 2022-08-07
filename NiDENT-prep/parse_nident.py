@@ -66,19 +66,12 @@ def conv_files(path):
     final_output_str = ""
     need_manual_review_mention_head = {}
 
-    # map xml files to their topics (np4e folder structure)
-    topic_ids = { "bukavu": 1, "china": 2, "israel": 3, "peru": 4, "tajikistan": 5 }
-
     for topic_dir_np4e in os.listdir(os.path.join(Path(os.getcwd()).parent.absolute(), NP4E, NP4E_FOLDER_NAME, "mmax2")):
         cnt = cnt + 1
         entity_mentions_local = []
 
         LOGGER.info(f"Parsing of NiDENT topic {topic_dir_np4e}...")
-        topic_files = os.listdir(os.path.join(path, "english-corpus"))
         topic_name = str(topic_dir_np4e)
-        topic_id = topic_ids[topic_name]
-
-        coref_dict = {}
 
         for file in tqdm(os.listdir(os.path.join(Path(os.getcwd()).parent.absolute(), NP4E, NP4E_FOLDER_NAME, "mmax2", topic_dir_np4e))):
             file_spec = str(file).split(".")[0]
@@ -88,7 +81,6 @@ def conv_files(path):
                 continue    # skip directories
 
             tree = ET.parse(os.path.join(path,"english-corpus", topic_file))
-            root = tree.getroot()
             title, text, url, time, time2, time3 = "", "", "", "", "", ""
 
             token_dict, mentions, mentions_map = {}, {}, {}
@@ -663,7 +655,7 @@ def conv_files(path):
 
 if __name__ == '__main__':
 
-    LOGGER.info(f"Processing MEANTIME language {source_path[-34:].split('_')[2]}.")
+    LOGGER.info(f"Processing NiDENT: {source_path[-34:].split('_')[2]}.")
     conv_files(source_path)
 
 

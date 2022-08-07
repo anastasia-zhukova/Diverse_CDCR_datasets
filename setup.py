@@ -6,15 +6,16 @@ CONTEXT_RANGE = 100
 # FOLDERS
 NEWSWCL50_FOLDER_NAME = "2019_annot"
 ECBPLUS_FOLDER_NAME = "ECB+"
+NIDENT_FOLDER_NAME = "NiDENT"
+NP4E_FOLDER_NAME = "NP4E"
 MEANTIME_FOLDER_NAME_ENGLISH = "meantime_newsreader_english_oct15"
 MEANTIME_FOLDER_NAME_DUTCH = "meantime_newsreader_dutch_dec15"
 MEANTIME_FOLDER_NAME_ITALIAN = "meantime_newsreader_italian_dec15"
 MEANTIME_FOLDER_NAME_SPANISH = "meantime_newsreader_spanish_nov15"
-NIDENT_FOLDER_NAME = "NiDENT"
-NP4E_FOLDER_NAME = "NP4E"
 OUTPUT_FOLDER_NAME = "output_data"
 SUMMARY_FOLDER = "summary"
 TMP_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tmp")
+DATA_PATH = "C:\\Users\\snake\\Documents\\GitHub\\Diverse_CDCR_datasets\\"
 
 # DATASETS
 NEWSWCL50 = "NewsWCL50-prep"
