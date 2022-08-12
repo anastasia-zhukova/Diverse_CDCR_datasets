@@ -272,7 +272,6 @@ if __name__ == '__main__':
 
         # collect statistics about the dataset
         for dataset, topic_id, subtopic, group_df in tqdm(process_list):
-            LOGGER.info(f"Processing {dataset}: {topic_id}, {subtopic}")
             if dataset not in conll_f1_dict:
                 conll_f1_dict[dataset] = {}
 
