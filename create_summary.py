@@ -113,7 +113,7 @@ def conll_lemma_baseline(mentions: List[dict]) -> float:
 
     true_label_ids_dict = {v: i for i, v in enumerate(set(pred_true_df[TRUE_LABEL].values))}
     pred_label_ids_dict = {v: i for i, v in enumerate(set(pred_true_df[PRED_LABEL].values))}
-    for index_, row in pred_true_df.iterrows(), pred_true_df.shape[0]:
+    for index_, row in pred_true_df.iterrows():
         in_str += f'{general_tag}\t({str(true_label_ids_dict[row[TRUE_LABEL]])})\n'
         out_str += f'{general_tag}\t({str(pred_label_ids_dict[row[PRED_LABEL]])})\n'
 
