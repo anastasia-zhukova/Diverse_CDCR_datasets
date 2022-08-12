@@ -108,6 +108,14 @@ def conv_files(path):
                             else:
                                 text, word_fixed, no_whitespace = append_text(text, elem.text)
 
+                            conll_df = pd.concat([conll_df, pd.DataFrame({
+                                TOPIC_SUBTOPIC: t_subt,
+                                SENT_ID: sent_cnt,
+                                TOKEN_ID: t_id,
+                                TOKEN: elem.text,
+                                REFERENCE: "-"
+                            }, index=[0])])
+
                             if elem.text in "\".!?)]}'":
                                 sent_cnt += 1
 
@@ -153,16 +161,10 @@ def conv_files(path):
                                     sentence_str, _, _ = append_text(sentence_str, token_dict[t]["text"])
                                     sent_tokens.append(token_dict[t]["id"])
 
-                            #print(sentence_str)
-                            #print(sent_tokens)
-                            #print(token_str)
-                            #print(token_numbers)
-
                             # pass the string into spacy
                             doc = nlp(sentence_str)
 
                             mention_text = token_str
-                            # print("mention_text: " + mention_text)
                             # if "tokens" has values -> fill the "mention" dict with the value of the corresponding m_id
                             if len(token_numbers):
 
@@ -290,7 +292,7 @@ def conv_files(path):
                                                 re.split(" ", mention_text)[-1])
 
                                 # whole mention string processed, look for the head
-                                if str(topic_name) + "_" + str(mention_text) not in need_manual_review_mention_head:
+                                if str(topic_name) + "_" + str(mention_text)[:10] not in need_manual_review_mention_head:
                                     for i in mention_doc_ids:
                                         ancestors_in_mention = 0
                                         for a in doc[i].ancestors:
@@ -311,9 +313,7 @@ def conv_files(path):
                                 if mention_ner == "":
                                     mention_ner = "O"
 
-                                #print(mention_head.text)
-
-                                # remap the mention head back to the meantime original tokenization to get the ID for the output
+                                # remap the mention head back to the np4e original tokenization to get the ID for the output
                                 mention_head_id = None
                                 mention_head_text = mention_head.text
 
@@ -329,8 +329,6 @@ def conv_files(path):
                                     for t in tokens:
                                         if str(tokens[t]["text"]).endswith(mention_head_text):
                                             mention_head_id = int(tokens[t]["id"])
-
-                                # print(mention_head_id)
 
                                 # add to manual review if the resulting token is not inside the mention
                                 # (error must have happened)
@@ -348,7 +346,7 @@ def conv_files(path):
                                                   "w",
                                                   encoding='utf-8') as file:
                                             json.dump(need_manual_review_mention_head, file)
-                                        [to_nltk_tree(sent.root).pretty_print() for sent in doc.sents]
+                                        #[to_nltk_tree(sent.root).pretty_print() for sent in doc.sents]
                                         LOGGER.info(
                                             f"Mention with ID {str(topic_name)}_{str(mention_text)} needs manual review. Could not determine the mention head automatically. {str(tolerance)}")
 
@@ -369,8 +367,6 @@ def conv_files(path):
                                         break
                                     elif int(token_dict[t]["id"]) >= context_min_id and int(token_dict[t]["id"]) <= context_max_id:
                                         mention_context_str.append(token_dict[t]["text"])
-
-                                #print(mention_context_str)
 
                                 # add to mentions if the variables are correct ( do not add for manual review needed )
                                 if str(topic_name) + "_" + str(mention_text) not in need_manual_review_mention_head:
@@ -403,7 +399,7 @@ def conv_files(path):
                                                CONLL_DOC_KEY: t_subt
                                                }
 
-                                    # nident only has entities
+                                    # np4e only has entities
                                     entity_mentions_local.append(mention)
 
                                     summary_df.loc[len(summary_df)] = {
@@ -423,7 +419,6 @@ def conv_files(path):
 
                     newsplease_custom["text"] = text
                     newsplease_custom["source_domain"] = word_file.split(".xml")[0]
-                    # print(topic_file.split(".xml")[0])
                     if newsplease_custom["title"][-1] not in string.punctuation:
                         newsplease_custom["title"] += "."
 
@@ -585,7 +580,7 @@ def conv_files(path):
         LOGGER.warning(
             f'Number of opening and closing brackets in conll does not match! topic: {str(topic_name)}')
         conll_df.to_csv(os.path.join(out_path, CONLL_CSV))
-        with open(os.path.join(out_path, 'meantime.conll'), "w", encoding='utf-8') as file:
+        with open(os.path.join(out_path, 'np4e.conll'), "w", encoding='utf-8') as file:
             file.write(final_output_str)
         # sys.exit()
 
