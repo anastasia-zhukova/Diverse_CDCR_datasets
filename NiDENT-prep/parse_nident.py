@@ -562,7 +562,7 @@ def conv_files(path):
         with open(os.path.join(annot_path, f'{topic_name}.conll'), "w", encoding='utf-8') as file:
             file.write(outputdoc_str)
 
-        with open(os.path.join(annot_path, "entity_mentions_" + topic_name + ".json"), "w") as file:
+        with open(os.path.join(annot_path, "entities_mentions_" + topic_name + ".json"), "w") as file:
             json.dump(entity_mentions_local, file)
 
     conll_df = conll_df.reset_index(drop=True)
@@ -644,7 +644,7 @@ def conv_files(path):
     with open(os.path.join(out_path, 'nident.conll'), "w", encoding='utf-8') as file:
         file.write(final_output_str)
 
-    with open(os.path.join(out_path, "entity_mentions.json"), "w") as file:
+    with open(os.path.join(out_path, MENTIONS_ENTITIES_JSON), "w") as file:
         json.dump(entity_mentions, file)
 
     summary_df.drop(columns=[MENTION_ID], inplace=True)

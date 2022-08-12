@@ -13,7 +13,7 @@ from nltk.corpus import stopwords
 from tqdm import tqdm
 
 
-DIRECTORIES_TO_SUMMARIZE = [NEWSWCL50, ECB_PLUS, MEANTIME]
+DIRECTORIES_TO_SUMMARIZE = [NEWSWCL50, ECB_PLUS, MEANTIME, NIDENT, NP4E]
 
 nltk.download('stopwords')
 
@@ -113,7 +113,7 @@ def conll_lemma_baseline(mentions: List[dict]) -> float:
 
     true_label_ids_dict = {v: i for i, v in enumerate(set(pred_true_df[TRUE_LABEL].values))}
     pred_label_ids_dict = {v: i for i, v in enumerate(set(pred_true_df[PRED_LABEL].values))}
-    for index_, row in pred_true_df.iterrows():
+    for index_, row in pred_true_df.iterrows(), pred_true_df.shape[0]:
         in_str += f'{general_tag}\t({str(true_label_ids_dict[row[TRUE_LABEL]])})\n'
         out_str += f'{general_tag}\t({str(pred_label_ids_dict[row[PRED_LABEL]])})\n'
 
@@ -200,7 +200,12 @@ if __name__ == '__main__':
         mentions_df = pd.DataFrame()
 
         LOGGER.info(f'Reading files with mentions for {dataset_folder} dataset...')
-        for mention_type, file_name in zip([EVENT, ENTITY], [MENTIONS_EVENTS_JSON, MENTIONS_ENTITIES_JSON]):
+
+        mentions_zip = zip([EVENT, ENTITY], [MENTIONS_EVENTS_JSON, MENTIONS_ENTITIES_JSON])
+        if NIDENT == dataset_folder or NP4E == dataset_folder:
+            mentions_zip = zip([ENTITY], [MENTIONS_ENTITIES_JSON])    # nident and np4e do only contain entity mentions
+
+        for mention_type, file_name in mentions_zip:
             if "MEANTIME" in dataset_folder:
                 full_filenames = [os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, "en", file_name),
                                   os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, "es", file_name),
@@ -240,6 +245,7 @@ if __name__ == '__main__':
             conll_filenames = [os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, CONLL_CSV)]
 
         for conll_filename in conll_filenames:
+            LOGGER.info(f'Reading {conll_filename}...')
             df_conll = pd.concat([df_conll, pd.read_csv(conll_filename, index_col=[0])])
         df_conll = df_conll.reset_index(drop=True)
 
@@ -266,6 +272,7 @@ if __name__ == '__main__':
 
         # collect statistics about the dataset
         for dataset, topic_id, subtopic, group_df in tqdm(process_list):
+            LOGGER.info(f"Processing {dataset}: {topic_id}, {subtopic}")
             if dataset not in conll_f1_dict:
                 conll_f1_dict[dataset] = {}
 
@@ -295,7 +302,6 @@ if __name__ == '__main__':
                                                                   for index, row in selected_chains_df.iterrows()]) / \
                                                                      sum(selected_chains_df[MENTIONS].values), '.3f'))
                 summary_dict[UNIQUE_LEMMAS + suff] = float(format(np.mean(selected_chains_df[UNIQUE_LEMMAS].values), '.3f'))
-
                 if subtopic:
                     conll_f1 = conll_lemma_baseline([v for v in all_mentions_list if v[COREF_CHAIN] in list(selected_chains_df.index)])
                     summary_dict[F1 + CONLL + suff] = conll_f1
