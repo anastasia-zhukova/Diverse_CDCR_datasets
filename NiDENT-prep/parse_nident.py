@@ -392,10 +392,7 @@ def conv_files(path):
                         # get the context
                         context_min_id, context_max_id = [0 if int(min(token_sent_numbers)) - CONTEXT_RANGE < 0 else
                                                           int(min(token_sent_numbers)) - CONTEXT_RANGE,
-                                                          len(token_dict) - 1
-                                                          if int(max(token_sent_numbers)) + CONTEXT_RANGE > len(
-                                                              token_dict)
-                                                          else int(max(token_sent_numbers)) + CONTEXT_RANGE]
+                                                          int(max(token_sent_numbers)) + CONTEXT_RANGE]
 
                         mention_context_str = []
                         break_indicator = False

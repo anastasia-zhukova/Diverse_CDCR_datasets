@@ -354,18 +354,15 @@ def conv_files(path):
                                 context_min_id, context_max_id = [
                                     0 if int(min(tokens)) - CONTEXT_RANGE < 0 else
                                     int(min(tokens)) - CONTEXT_RANGE,
-                                    len(token_dict) - 1
-                                    if int(max(tokens)) + CONTEXT_RANGE > len(
-                                        token_dict)
-                                    else int(max(tokens)) + CONTEXT_RANGE]
+                                    int(max(tokens)) + CONTEXT_RANGE]
 
                                 mention_context_str = []
                                 break_indicator = False
                                 # append to the mention context string list
                                 for t in token_dict:
-                                    if int(token_dict[t]["id"]) > context_max_id:  # break when all needed words processed
+                                    if int(t) > context_max_id:  # break when all needed words processed
                                         break
-                                    elif int(token_dict[t]["id"]) >= context_min_id and int(token_dict[t]["id"]) <= context_max_id:
+                                    elif int(t) >= context_min_id and int(t) <= context_max_id:
                                         mention_context_str.append(token_dict[t]["text"])
 
                                 # add to mentions if the variables are correct ( do not add for manual review needed )

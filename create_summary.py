@@ -132,11 +132,12 @@ def conll_lemma_baseline(mentions: List[dict]) -> float:
     processes = []
     # LOGGER.info('Run CoNLL scorer perl command for CDCR')
     processes.append(subprocess.Popen(scorer_command, shell=True))
-
+    print(1)
     while processes:
         status = processes[0].poll()
         if status is not None:
             processes.pop(0)
+    print(2)
 
     # LOGGER.info('Running CoNLL scorers has been completed.')
 
@@ -255,6 +256,7 @@ if __name__ == '__main__':
         chain_df[PHRASING_DIVERSITY] = [0] * len(chain_df)
         chain_df[UNIQUE_LEMMAS] = [0] * len(chain_df)
 
+        LOGGER.info("Calculating Phrasing Diversity...")
         for chain in set(mentions_df[COREF_CHAIN].values):
             chain_mentions = [v for v in all_mentions_list if v[COREF_CHAIN] == chain]
             chain_df.loc[chain, PHRASING_DIVERSITY] = phrasing_diversity_calc(chain_mentions)
@@ -292,7 +294,7 @@ if __name__ == '__main__':
             }
 
             # various for, of lexical diversity that depend on the presence/absence of singletons
-            for suff, filt_criteria in zip([ALL, WO_SINGL], [0, 1]):
+            for suff, filt_criteria in tqdm(zip([ALL, WO_SINGL], [0, 1])):
                 selected_chains_df = chain_df[(chain_df[MENTIONS] > filt_criteria) & (chain_df.index.isin(coref_chains))]
                 if not len(selected_chains_df):
                     continue
@@ -302,7 +304,7 @@ if __name__ == '__main__':
                                                                      sum(selected_chains_df[MENTIONS].values), '.3f'))
                 summary_dict[UNIQUE_LEMMAS + suff] = float(format(np.mean(selected_chains_df[UNIQUE_LEMMAS].values), '.3f'))
                 if subtopic:
-                    conll_f1 = conll_lemma_baseline([v for v in all_mentions_list if v[COREF_CHAIN] in list(selected_chains_df.index)])
+                    conll_f1 = conll_lemma_baseline([v for v in all_mentions_list if v[COREF_CHAIN] in list(selected_chains_df.index)]) # hang up in conll_lemma_baseline
                     summary_dict[F1 + CONLL + suff] = conll_f1
                     if suff not in conll_f1_dict[dataset]:
                         conll_f1_dict[dataset][suff] = []
