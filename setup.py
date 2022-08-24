@@ -1,5 +1,7 @@
 # PARAMS
 import os
+from huggingface_hub import hf_hub_url, cached_download
+import json
 
 CONTEXT_RANGE = 100
 
@@ -8,6 +10,7 @@ NEWSWCL50_FOLDER_NAME = "2019_annot"
 ECBPLUS_FOLDER_NAME = "ECB+"
 NIDENT_FOLDER_NAME = "NiDENT"
 NP4E_FOLDER_NAME = "NP4E"
+WECENG_FOLDER_NAME = "WEC-Eng"
 MEANTIME_FOLDER_NAME_ENGLISH = "meantime_newsreader_english_oct15"
 MEANTIME_FOLDER_NAME_DUTCH = "meantime_newsreader_dutch_dec15"
 MEANTIME_FOLDER_NAME_ITALIAN = "meantime_newsreader_italian_dec15"
@@ -23,6 +26,7 @@ ECB_PLUS = "ECBplus-prep"
 MEANTIME = "MEANTIME-prep"
 NIDENT = "NiDENT-prep"
 NP4E = "NP4E-prep"
+WEC_ENG = "WECeng-prep"
 
 # FILES
 SAMPLE_DOC_JSON = "_sample_doc.json"
@@ -157,7 +161,11 @@ if __name__ == '__main__':
                            FOLDER: os.path.join(os.getcwd(), MEANTIME)},
                 NEWSWCL50: {LINK: "https://drive.google.com/u/1/uc?id=1ZcTnDeY85iIeUX0nvg3cypnRq87tVSVo&export=download",
                             ZIP: os.path.join(os.getcwd(), NEWSWCL50, NEWSWCL50_FOLDER_NAME + ".zip"),
-                            FOLDER: os.path.join(os.getcwd(), NEWSWCL50)}},
+                            FOLDER: os.path.join(os.getcwd(), NEWSWCL50)},
+                WEC_ENG:   {LINK: "",
+                            ZIP: os.path.join(os.getcwd(), WEC_ENG, WECENG_FOLDER_NAME + ".zip"),
+                            FOLDER: os.path.join(os.getcwd(), WEC_ENG)}
+                }
 
 
     prompt_str = "The following datasets are available for download: \n\n"
@@ -209,14 +217,27 @@ if __name__ == '__main__':
                     gdown.download(link, values[ZIP], quiet=False)
                     with zipfile.ZipFile(values[ZIP], 'r') as zip_ref:
                         zip_ref.extractall(values[FOLDER])
-            else:
-                gdown.download(values[LINK], values[ZIP], quiet=False)
-                with zipfile.ZipFile(values[ZIP], 'r') as zip_ref:
-                    zip_ref.extractall(values[FOLDER])
-
-            if dataset == ECB_PLUS:
+            elif dataset == WEC_ENG:
+                REPO_ID = "datasets/Intel/WEC-Eng"
+                splits_files = ["Dev_Event_gold_mentions_validated.json",
+                                "Test_Event_gold_mentions_validated.json",
+                                "Train_Event_gold_mentions.json"]
+                wec_eng = list()
+                for split_file in splits_files:
+                    with open(cached_download(hf_hub_url(REPO_ID, split_file)), encoding='utf-8') as cd:
+                        wec_eng = wec_eng+json.load(cd)
+                print(len(wec_eng))
+                if not os.path.exists(WEC_ENG): os.mkdir(WEC_ENG)
+                if not os.path.exists(os.path.join(WEC_ENG, WECENG_FOLDER_NAME)): os.mkdir(os.path.join(WEC_ENG, WECENG_FOLDER_NAME))
+                with open(os.path.join(WEC_ENG, WECENG_FOLDER_NAME, "WEC-Eng.json"), "w") as file:
+                    json.dump(wec_eng, file)
+            elif dataset == ECB_PLUS:
                 gdown.download(
                     "https://raw.githubusercontent.com/cltl/ecbPlus/master/ECB%2B_LREC2014/ECBplus_coreference_sentences.csv",
                     os.path.join(os.getcwd(), ECB_PLUS, ECBPLUS_FOLDER_NAME, "ECBplus_coreference_sentences.csv"),
                     quiet=False)
+            else:
+                gdown.download(values[LINK], values[ZIP], quiet=False)
+                with zipfile.ZipFile(values[ZIP], 'r') as zip_ref:
+                    zip_ref.extractall(values[FOLDER])
     print("Setup successful.")

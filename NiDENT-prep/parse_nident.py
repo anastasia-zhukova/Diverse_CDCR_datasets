@@ -474,7 +474,7 @@ def conv_files(path):
 
             with open(os.path.join(result_path, topic_name, newsplease_custom["source_domain"] + ".json"),
                       "w") as file:
-                json.dump(newsplease_custom, file)
+                json.dump(newsplease_custom ,file, indent=4)
 
         annot_path = os.path.join(result_path, topic_name, "annotation",
                                   "original")
