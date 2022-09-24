@@ -93,3 +93,5 @@ fabric.properties
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
 MEANTIME-prep/MEANTIME_tmp.zip
+*.json
+GVC-prep/output_data.7z
