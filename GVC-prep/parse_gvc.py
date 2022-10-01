@@ -120,12 +120,12 @@ def conv_files(path):
             json.dump(newsplease_custom, file)
 
     need_manual_review_mention_head = {}
-    entity_mentions_local = []
+    event_mentions = []
     topic_id = 0
 
     # --> generate coref mention files
 
-    # go through every mention identifier and determine its attributes to save into entity_mentions_local
+    # go through every mention identifier and determine its attributes to save into event_mentions
     LOGGER.info("Generating the mentions file...")
     for i, mention_identifier in tqdm(enumerate(mention_identifiers), total=len(mention_identifiers)):
         coref_id = mention_identifier.split("_")[0]
@@ -372,7 +372,7 @@ def conv_files(path):
                        }
 
             # add to mentions list
-            entity_mentions_local.append(mention)
+            event_mentions.append(mention)
 
             summary_df.loc[len(summary_df)] = {
                 DOC_ID: doc_id,
@@ -393,8 +393,8 @@ def conv_files(path):
         with open(os.path.join(OUT_PATH, MANUAL_REVIEW_FILE), "w", encoding='utf-8') as file:
             json.dump(need_manual_review_mention_head, file)
 
-    with open(os.path.join(OUT_PATH, MENTIONS_ENTITIES_JSON), "w", encoding='utf-8') as file:
-        json.dump(entity_mentions_local, file)
+    with open(os.path.join(OUT_PATH, MENTIONS_EVENTS_JSON), "w", encoding='utf-8') as file:
+        json.dump(event_mentions, file)
 
     summary_df.drop(columns=[MENTION_ID], inplace=True)
     summary_df.to_csv(os.path.join(OUT_PATH, MENTIONS_ALL_CSV))
@@ -431,7 +431,7 @@ def conv_files(path):
             brackets_1 += str(row[REFERENCE]).count("(")
             brackets_2 += str(row[REFERENCE]).count(")")
         LOGGER.info(
-            f"Amount of mentions in this topic: {str(len(entity_mentions_local))}")
+            f"Amount of mentions in this topic: {str(len(event_mentions))}")
         LOGGER.info(f"brackets '(' , ')' : {str(brackets_1)}, {str(brackets_2)}")
         assert brackets_1 == brackets_2
     except AssertionError:

@@ -28,6 +28,7 @@ MEANTIME = "MEANTIME-prep"
 NIDENT = "NiDENT-prep"
 NP4E = "NP4E-prep"
 WEC_ENG = "WECeng-prep"
+GVC = "GVC-prep"
 
 # FILES
 SAMPLE_DOC_JSON = "_sample_doc.json"

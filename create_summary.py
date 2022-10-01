@@ -13,7 +13,7 @@ from nltk.corpus import stopwords
 from tqdm import tqdm
 
 
-DIRECTORIES_TO_SUMMARIZE = [NEWSWCL50, ECB_PLUS, MEANTIME, NIDENT, NP4E]
+DIRECTORIES_TO_SUMMARIZE = [NEWSWCL50, ECB_PLUS, MEANTIME, NIDENT, NP4E, GVC]
 
 nltk.download('stopwords')
 
@@ -132,12 +132,10 @@ def conll_lemma_baseline(mentions: List[dict]) -> float:
     processes = []
     # LOGGER.info('Run CoNLL scorer perl command for CDCR')
     processes.append(subprocess.Popen(scorer_command, shell=True))
-    print(1)
     while processes:
         status = processes[0].poll()
         if status is not None:
             processes.pop(0)
-    print(2)
 
     # LOGGER.info('Running CoNLL scorers has been completed.')
 
@@ -202,9 +200,14 @@ if __name__ == '__main__':
 
         LOGGER.info(f'Reading files with mentions for {dataset_folder} dataset...')
 
-        mentions_zip = zip([EVENT, ENTITY], [MENTIONS_EVENTS_JSON, MENTIONS_ENTITIES_JSON])
         if NIDENT == dataset_folder or NP4E == dataset_folder:
             mentions_zip = zip([ENTITY], [MENTIONS_ENTITIES_JSON])    # nident and np4e do only contain entity mentions
+        elif GVC == dataset_folder:
+            mentions_zip = zip([EVENT], [MENTIONS_EVENTS_JSON])      # gvc has only one file (events)
+        else:
+            # all other datasets have events and entities
+            mentions_zip = zip([EVENT, ENTITY], [MENTIONS_EVENTS_JSON, MENTIONS_ENTITIES_JSON])
+
 
         for mention_type, file_name in mentions_zip:
             if "MEANTIME" in dataset_folder:
@@ -294,7 +297,7 @@ if __name__ == '__main__':
             }
 
             # various for, of lexical diversity that depend on the presence/absence of singletons
-            for suff, filt_criteria in tqdm(zip([ALL, WO_SINGL], [0, 1])):
+            for suff, filt_criteria in zip([ALL, WO_SINGL], [0, 1]):
                 selected_chains_df = chain_df[(chain_df[MENTIONS] > filt_criteria) & (chain_df.index.isin(coref_chains))]
                 if not len(selected_chains_df):
                     continue
@@ -315,9 +318,9 @@ if __name__ == '__main__':
             summary_df = pd.concat([summary_df, pd.DataFrame(summary_dict, index=[f'{dataset}\\{topic_id}\\subtopic'])], axis=0)
         chain_df_all = pd.concat([chain_df_all, chain_df], axis=0)
 
-        #output the chains statistics
+    #output the chains statistics
     chain_df_all.reset_index().to_csv(os.path.join(os.getcwd(), SUMMARY_FOLDER, SUMMARY_CHAINS_CSV))
     summary_df.to_csv(os.path.join(os.getcwd(), SUMMARY_FOLDER, SUMMARY_TOPICS_CSV))
 
-    LOGGER.info(f'Summary computed over {len(DIRECTORIES_TO_SUMMARIZE)} datasets ({DIRECTORIES_TO_SUMMARIZE}) '
+    LOGGER.info(f'Summary computed over {len(selected_dir_to_summarize)} datasets ({str(selected_dir_to_summarize)}) '
                 f'is completed.')
