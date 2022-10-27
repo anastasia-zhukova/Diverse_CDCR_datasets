@@ -114,7 +114,7 @@ The format is adapted and extended from [WEC-Eng](https://huggingface.co/dataset
 
 Example: 
 ```
-{
+[{
     "coref_chain": "0_Denuclearization_MISC", 
     "tokens_number": [33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49], 
     "doc_id": "0_L", 
@@ -139,7 +139,7 @@ Example:
     "tokens_str": "broad and \"abstract\" statements about the need for North Korea to \"denuclearize.\" ", 
     "tokens_text": ["broad", "and", "\"", "abstract", "\"", "statements", "about", "the", "need", "for", "North", "Korea", "to", "\"", "denuclearize", ".", "\""], 
     "conll_doc_key": "0/-/0_L"
-}
+}]
 ```
 
 
