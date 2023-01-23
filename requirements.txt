@@ -5,3 +5,5 @@ gdown == 4.4.0
 nltk == 3.7
 numpy~=1.21.2
 tqdm~=4.62.3
+# spacy model
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.4.1/en_core_web_sm-3.4.1.tar.gz

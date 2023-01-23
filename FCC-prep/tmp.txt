@@ -1,0 +1,9 @@
+-/nan/dfe92f123	19	0	So	-
+-/nan/dfe92f123	19	1	at	-
+-/nan/dfe92f123	19	2	least	-
+-/nan/dfe92f123	19	3	he	-
+-/nan/dfe92f123	19	4	learns	-
+-/nan/dfe92f123	19	5	from	-
+-/nan/dfe92f123	19	6	his	-
+-/nan/dfe92f123	19	7	mistakes	-
+-/nan/dfe92f123	19	8	.	-

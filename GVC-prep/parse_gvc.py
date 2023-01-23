@@ -402,7 +402,6 @@ def conv_files(path):
     # --> create an output conll string from the conll_df in our format
 
     conll_df = conll_df.reset_index(drop=True)
-    final_output_str = ""
     LOGGER.info("Generating conll string...")
     for i, row in tqdm(conll_df.iterrows(), total=conll_df.shape[0]):
         conll_df.iloc[i][TOPIC_SUBTOPIC] = "-/" + row[TOPIC_SUBTOPIC] + "/" + row[DOC_ID]

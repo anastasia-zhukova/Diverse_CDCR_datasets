@@ -4,6 +4,9 @@ import json
 import string
 import copy
 import re
+
+np.array([a,b], [c,d], [e,f])
+
 import pandas as pd
 import numpy as np
 from nltk import Tree

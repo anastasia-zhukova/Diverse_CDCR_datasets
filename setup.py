@@ -1,6 +1,5 @@
 # PARAMS
 import os
-from huggingface_hub import hf_hub_url, cached_download
 import json
 
 CONTEXT_RANGE = 100
@@ -12,6 +11,7 @@ NIDENT_FOLDER_NAME = "NiDENT"
 NP4E_FOLDER_NAME = "NP4E"
 WECENG_FOLDER_NAME = "WEC-Eng"
 GVC_FOLDER_NAME = "GVC"
+FCC_FOLDER_NAME = "FCC"
 MEANTIME_FOLDER_NAME_ENGLISH = "meantime_newsreader_english_oct15"
 MEANTIME_FOLDER_NAME_DUTCH = "meantime_newsreader_dutch_dec15"
 MEANTIME_FOLDER_NAME_ITALIAN = "meantime_newsreader_italian_dec15"
@@ -29,6 +29,7 @@ NIDENT = "NiDENT-prep"
 NP4E = "NP4E-prep"
 WEC_ENG = "WECeng-prep"
 GVC = "GVC-prep"
+FCC = "FCC-prep"
 
 # FILES
 SAMPLE_DOC_JSON = "_sample_doc.json"
