@@ -13,7 +13,7 @@ from nltk.corpus import stopwords
 from tqdm import tqdm
 
 
-DIRECTORIES_TO_SUMMARIZE = [NEWSWCL50, ECB_PLUS, MEANTIME, NIDENT, NP4E, GVC]
+DIRECTORIES_TO_SUMMARIZE = [NEWSWCL50, ECB_PLUS, MEANTIME, NIDENT, NP4E, GVC, FCC]
 
 nltk.download('stopwords')
 
@@ -202,8 +202,8 @@ if __name__ == '__main__':
 
         if NIDENT == dataset_folder or NP4E == dataset_folder:
             mentions_zip = zip([ENTITY], [MENTIONS_ENTITIES_JSON])    # nident and np4e do only contain entity mentions
-        elif GVC == dataset_folder:
-            mentions_zip = zip([EVENT], [MENTIONS_EVENTS_JSON])      # gvc has only one file (events)
+        elif GVC == dataset_folder or FCC == dataset_folder:
+            mentions_zip = zip([EVENT], [MENTIONS_EVENTS_JSON])      # has only one file (events)
         else:
             # all other datasets have events and entities
             mentions_zip = zip([EVENT, ENTITY], [MENTIONS_EVENTS_JSON, MENTIONS_ENTITIES_JSON])

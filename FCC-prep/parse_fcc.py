@@ -98,7 +98,7 @@ def conv_files(path):
     LOGGER.info("Updating conll dataframe with the correct subtopics...")
     for i, row in tqdm(conll_df.iterrows(), total=conll_df.shape[0]):
         seminal_event = docs_seminal_df[docs_seminal_df["doc-id"] == row[DOC_ID]].iloc[0]["seminal-event"]
-        conll_df.at[i, TOPIC_SUBTOPIC] = "-/"+str(seminal_event)+"/"+str(row[DOC_ID])
+        conll_df.at[i, TOPIC_SUBTOPIC] = "0/"+str(seminal_event)+"/"+str(row[DOC_ID])   # main topic 0 "football"
 
     # --> reassemble the conll data into its original articles
     LOGGER.info("Reassembling the original articles from the conll data...")
@@ -329,6 +329,8 @@ def conv_files(path):
     conll_df.to_csv(os.path.join(OUT_PATH, CONLL_CSV))
     with open(os.path.join(OUT_PATH, 'fcc.conll'), "w", encoding='utf-8') as file:
         file.write(outputdoc_str)
+
+    LOGGER.info(f'Parsing of FCC done!')
 
 if __name__ == '__main__':
     LOGGER.info(f"Processing FCC {source_path[-34:].split('_')[2]}.")
