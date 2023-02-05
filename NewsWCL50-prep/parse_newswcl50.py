@@ -58,7 +58,7 @@ if __name__ == '__main__':
                                for index in list(topic_df.index)]
 
     # appending all articles as spacy docs to the dataframe
-    for index, row in tqdm(topic_df.iterrows()):
+    for index, row in tqdm(topic_df.iterrows(), total=topic_df.shape[0]):
         doc = {}
         text = row[CONCAT_TEXT]
         doc_preproc = nlp(text)
@@ -117,13 +117,12 @@ if __name__ == '__main__':
     not_found_list = {}
 
     for (coref_chain, doc_name, mention_orig, paragraph_orig, topic_id, code), group_df in\
-            df_annotations.groupby([COREF_CHAIN, DOCUMENT_NAME, SEGMENT, BEGINNING, TOPIC_ID, CODE]):
+            tqdm(df_annotations.groupby([COREF_CHAIN, DOCUMENT_NAME, SEGMENT, BEGINNING, TOPIC_ID, CODE])):
         # tokenize the segment
         mention_orig = re.sub("’", "'", mention_orig)
         mention_orig = re.sub("‘", "'", mention_orig)
         mention_orig = re.sub("“", "\"", mention_orig)
         mention_orig = re.sub("”", "\"", mention_orig)
-        LOGGER.info(f'GOT:   \"{mention_orig}\" (x{len(group_df)}) in document {doc_name}, paragraph {paragraph_orig - 1}')
         segment_doc = nlp(mention_orig)
         segment_tokenized = [t for t in segment_doc]
         found_mentions_counter = 0
@@ -159,7 +158,6 @@ if __name__ == '__main__':
                     norm_found = re.sub(r'\W+', "",  " ".join([t.norm_ for t in found_tokens])).lower()
                     if norm_annot == norm_found:
                         found_mentions_counter += 1
-                        LOGGER.info(f'FOUND: \"{found_tokens}\"')
 
                         # determine the head of the mention tokens
                         found_token_ids = list(range(start_token_id, start_token_id + len(found_tokens)))
@@ -214,12 +212,6 @@ if __name__ == '__main__':
             if found_mentions_counter:
                 break
 
-        if found_mentions_counter:
-            LOGGER.info(f'FOUND: {found_mentions_counter} mentions.\n')
-        else:
-            LOGGER.warning(f'NOT FOUND: {mention_orig}\n')
-            not_found_list[(doc_name, paragraph_orig, mention_orig, len(group_df))] = mention_orig
-
     LOGGER.warning(f'Not found annotations in the text ({len(not_found_list)}): \n{list(not_found_list)}')
 
     mentions_df = mentions_df.sort_values(by=[COREF_CHAIN, DOC_ID, SENT_ID, MENTION_HEAD_ID, "char_length"],
@@ -271,12 +263,16 @@ if __name__ == '__main__':
                     if token_id not in annot_token_dict[doc_id][sentence_id]:
                         annot_token_dict[doc_id][sentence_id][token_id] = pd.DataFrame()
 
+                    token_text = token.text
+                    if token_text == "\n":
+                        token_text = "\\n"  # avoid unwanted like breaks in the conll file
+
                     conll_list.append(
                         {TOPIC_SUBTOPIC: f'{doc_id.split("_")[0]}/-/{doc_id}',
                          DOC_ID: doc_id,
                          SENT_ID: sentence_id,
                          TOKEN_ID: token_id,
-                         TOKEN: token.text,
+                         TOKEN: token_text,
                          REFERENCE: "-"})
                     token_keys_conll.append("_".join([doc_id, str(sentence_id), str(token_id)]))
 
@@ -285,7 +281,7 @@ if __name__ == '__main__':
     added_corefs = []
 
     LOGGER.info(f'Processing {len(mentions_df_unique)} mentions rows and assigning to the conll text...')
-    for mention_id, mention_values in mentions_unique_dict.items():
+    for mention_id, mention_values in tqdm(mentions_unique_dict.items()):
         if len(mention_values[TOKENS_NUMBER]) == 1:
             annot_token_dict[mention_values[DOC_ID]][mention_values[SENT_ID]][mention_values[MENTION_HEAD_ID]] = \
                 pd.concat([annot_token_dict[mention_values[DOC_ID]][mention_values[SENT_ID]][mention_values[MENTION_HEAD_ID]],
