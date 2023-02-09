@@ -12795,8 +12795,7 @@
 2/-/2_M	6	37	Korean	-	
 2/-/2_M	6	38	official	2_KOR_KOR-I_ACTOR-I)	
 2/-/2_M	6	39	.	-	
-2/-/2_M	6	40	 
-	-	
+2/-/2_M	6	40	 \n	-	
 
 2/-/2_M	7	0	The	(2_PRK_COUNTRY	
 2/-/2_M	7	1	Korean	-	
@@ -15847,8 +15846,7 @@
 3/-/3_L	23	40	presidential	-	
 3/-/3_L	23	41	election	3_USA_election_2016_EVENT)	
 3/-/3_L	23	42	.	-	
-3/-/3_L	23	43	
- 	-	
+3/-/3_L	23	43	\n 	-	
 
 3/-/3_L	24	0	"	-	
 3/-/3_L	24	1	There	-	
@@ -16982,8 +16980,7 @@
 3/-/3_LL	8	35	server	-	
 3/-/3_LL	8	36	.	-	
 
-3/-/3_LL	9	0	
- 	-	
+3/-/3_LL	9	0	\n 	-	
 
 3/-/3_LL	10	0	"	-	
 3/-/3_LL	10	1	This	-	
@@ -17535,8 +17532,7 @@
 3/-/3_LL	27	12	to	-	
 3/-/3_LL	27	13	Reuters	-	
 3/-/3_LL	27	14	.	-	
-3/-/3_LL	27	15	
- 	-	
+3/-/3_LL	27	15	\n 	-	
 
 3/-/3_LL	28	0	The	(3_Lawsuit_MISC	
 3/-/3_LL	28	1	lawsuit	3_Lawsuit_MISC)	
@@ -21122,8 +21118,7 @@
 4/-/4_L	13	27	Tehran	(4_IRN_COUNTRY)	
 4/-/4_L	13	28	.	-	
 
-4/-/4_L	14	0	
- 	-	
+4/-/4_L	14	0	\n 	-	
 
 4/-/4_L	15	0	"	-	
 4/-/4_L	15	1	Nobody	-	
@@ -25353,8 +25348,7 @@
 4/-/4_M	38	7	it	4_Reactions_on_deal_MISC)	
 4/-/4_M	38	8	.	-	
 4/-/4_M	38	9	"	-	
-4/-/4_M	38	10	 
-	-	
+4/-/4_M	38	10	 \n	-	
 
 4/-/4_M	39	0	Trump	(4_USA_Trump_ACTOR)	
 4/-/4_M	39	1	must	-	
@@ -25421,8 +25415,7 @@
 4/-/4_M	41	17	other	-	
 4/-/4_M	41	18	issue	-	
 4/-/4_M	41	19	.	-	
-4/-/4_M	41	20	 
-	-	
+4/-/4_M	41	20	 \n	-	
 
 4/-/4_M	42	0	Macron	(4_FRA_Macron_ACTOR)	
 4/-/4_M	42	1	said	-	
@@ -31528,8 +31521,7 @@
 6/-/6_L	11	30	months	-	
 6/-/6_L	11	31	.	-	
 
-6/-/6_L	12	0	
- 	-	
+6/-/6_L	12	0	\n 	-	
 
 6/-/6_L	13	0	"	-	
 6/-/6_L	13	1	But	-	
@@ -36236,8 +36228,7 @@
 6/-/6_R	2	30	2018	-	
 6/-/6_R	2	31	.	-	
 
-6/-/6_R	3	0	 
-	-	
+6/-/6_R	3	0	 \n	-	
 
 6/-/6_R	4	0	Immigrants	(6_Migrant_caravan_GROUP)	
 6/-/6_R	4	1	making	-	
@@ -40403,8 +40394,7 @@
 7/-/7_M	0	47	largest	-	
 7/-/7_M	0	48	economies	7_CHN_COUNTRY)| 7_JPN_COUNTRY)	
 7/-/7_M	0	49	.	-	
-7/-/7_M	0	50	 
-	-	
+7/-/7_M	0	50	 \n	-	
 
 7/-/7_M	1	0	WASHINGTON	-	
 7/-/7_M	1	1	 	-	
@@ -40578,8 +40568,7 @@
 7/-/7_M	6	12	and	-	
 7/-/7_M	6	13	Russia	-	
 7/-/7_M	6	14	.	-	
-7/-/7_M	6	15	 
-	-	
+7/-/7_M	6	15	 \n	-	
 
 7/-/7_M	7	0	The	(7_Tariffs_OBJECT	
 7/-/7_M	7	1	tariffs	7_Tariffs_OBJECT)	
@@ -40683,8 +40672,7 @@
 7/-/7_M	10	12	and	-	
 7/-/7_M	10	13	bourbon	7_Reactions_to_the_permanent_exemption_MISC)	
 7/-/7_M	10	14	.	-	
-7/-/7_M	10	15	 
-	-	
+7/-/7_M	10	15	 \n	-	
 
 7/-/7_M	11	0	In	-	
 7/-/7_M	11	1	a	-	
@@ -40715,8 +40703,7 @@
 7/-/7_M	11	26	and	-	
 7/-/7_M	11	27	Mexico	(7_MEX_COUNTRY)	
 7/-/7_M	11	28	.	-	
-7/-/7_M	11	29	 
-	-	
+7/-/7_M	11	29	 \n	-	
 
 7/-/7_M	12	0	The	(7_USA_COUNTRY	
 7/-/7_M	12	1	Trump	-	
@@ -40865,8 +40852,7 @@
 7/-/7_M	17	26	from	-	
 7/-/7_M	17	27	tariffs	7_New_import_quotas_OBJECT)	
 7/-/7_M	17	28	.	-	
-7/-/7_M	17	29	 
-	-	
+7/-/7_M	17	29	 \n	-	
 
 7/-/7_M	18	0	Canada	(7_CAN_COUNTRY)	
 7/-/7_M	18	1	and	-	
@@ -44977,8 +44963,7 @@
 8/-/8_M	1	39	.	-	
 
 8/-/8_M	2	0	"	-	
-8/-/8_M	2	1	 
-	-	
+8/-/8_M	2	1	 \n	-	
 8/-/8_M	2	2	WASHINGTON	-	
 8/-/8_M	2	3	–	-	
 8/-/8_M	2	4	Special	(8_USA_Mueller_ACTOR	
@@ -45781,8 +45766,7 @@
 8/-/8_R	7	11	the	(8_RUS_meddling_investigation_EVENT	
 8/-/8_R	7	12	investigation	8_RUS_meddling_investigation_EVENT)	
 8/-/8_R	7	13	.	-	
-8/-/8_R	7	14	 
-	-	
+8/-/8_R	7	14	 \n	-	
 
 8/-/8_R	8	0	Mueller	-	
 8/-/8_R	8	1	led	-	
@@ -46050,8 +46034,7 @@
 8/-/8_R	16	36	's	-	
 8/-/8_R	16	37	team	8_USA_Mueller_Investigators_GROUP)	
 8/-/8_R	16	38	.	-	
-8/-/8_R	16	39	 
-	-	
+8/-/8_R	16	39	 \n	-	
 
 8/-/8_R	17	0	Mueller	(8_USA_Mueller_ACTOR)	
 8/-/8_R	17	1	also	-	
@@ -46134,8 +46117,7 @@
 8/-/8_R	20	1	pleaded	-	
 8/-/8_R	20	2	guilty	-	
 8/-/8_R	20	3	.	-	
-8/-/8_R	20	4	 
-	-	
+8/-/8_R	20	4	 \n	-	
 
 8/-/8_R	21	0	Additionally	-	
 8/-/8_R	21	1	,	-	
@@ -49888,8 +49870,7 @@
 9/-/9_M	2	36	said	-	
 9/-/9_M	2	37	Monday	-	
 9/-/9_M	2	38	.	-	
-9/-/9_M	2	39	 
-	-	
+9/-/9_M	2	39	 \n	-	
 
 9/-/9_M	3	0	Netanyahu	(9_ISR_Netanyahu_ACTOR)	
 9/-/9_M	3	1	,	-	

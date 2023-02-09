@@ -264,8 +264,8 @@ if __name__ == '__main__':
                         annot_token_dict[doc_id][sentence_id][token_id] = pd.DataFrame()
 
                     token_text = token.text
-                    if token_text == "\n":
-                        token_text = "\\n"  # avoid unwanted like breaks in the conll file
+                    if "\n" in token_text:
+                        token_text = token_text.replace("\n", "\\n")  # avoid unwanted like breaks in the conll file
 
                     conll_list.append(
                         {TOPIC_SUBTOPIC: f'{doc_id.split("_")[0]}/-/{doc_id}',
