@@ -19,6 +19,7 @@ MEANTIME-prep/meantime_newsreader_spanish_nov15/*
 NP4E-prep/NP4E/
 NP4E-prep/test_parsing_backup/
 NiDENT-prep/NiDENT/
+WECEng-prep/WEC-Eng/*
 .venv
 venv/
 .idea

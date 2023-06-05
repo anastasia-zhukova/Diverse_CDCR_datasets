@@ -1,7 +1,7 @@
 # PARAMS
 import os
 import json
-from huggingface_hub import hf_hub_url, cached_download
+from huggingface_hub import hf_hub_url, hf_hub_download
 
 CONTEXT_RANGE = 100
 
@@ -28,7 +28,7 @@ ECB_PLUS = "ECBplus-prep"
 MEANTIME = "MEANTIME-prep"
 NIDENT = "NiDENT-prep"
 NP4E = "NP4E-prep"
-WEC_ENG = "WECeng-prep"
+WEC_ENG = "WECEng-prep"
 GVC = "GVC-prep"
 FCC = "FCC-prep"
 
@@ -224,20 +224,24 @@ if __name__ == '__main__':
                         zip_ref.extractall(values[FOLDER])
 
             elif dataset == WEC_ENG:
-                REPO_ID = "datasets/Intel/WEC-Eng"
+                REPO_ID = "Intel/WEC-Eng"
                 splits_files = ["Dev_Event_gold_mentions_validated.json",
                                 "Test_Event_gold_mentions_validated.json",
                                 "Train_Event_gold_mentions.json"]
-                wec_eng = list()
-                for split_file in splits_files:
-                    with open(cached_download(hf_hub_url(REPO_ID, split_file)), encoding='utf-8') as cd:
-                        wec_eng = wec_eng+json.load(cd)
-                print(len(wec_eng))
                 if not os.path.exists(WEC_ENG):
                     os.mkdir(WEC_ENG)
 
                 if not os.path.exists(os.path.join(WEC_ENG, WECENG_FOLDER_NAME)):
                     os.mkdir(os.path.join(WEC_ENG, WECENG_FOLDER_NAME))
+
+                wec_eng = list()
+                for split_filename in splits_files:
+                    with open(hf_hub_download(REPO_ID, filename=split_filename, repo_type="dataset"), encoding='utf-8') as cd:
+                        local_file = json.load(cd)
+                        wec_eng = wec_eng + local_file
+                        with open(os.path.join(WEC_ENG, WECENG_FOLDER_NAME, split_filename), "w") as file:
+                            json.dump(local_file, file)
+                        LOGGER.info(f'Downloaded {split_filename}')
 
                 with open(os.path.join(WEC_ENG, WECENG_FOLDER_NAME, "WEC-Eng.json"), "w") as file:
                     json.dump(wec_eng, file)
