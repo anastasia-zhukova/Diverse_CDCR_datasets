@@ -8,10 +8,6 @@ MEANTIME-prep/MEANTIME
 GVC-prep\GVC
 FCC-prep/FCC/
 MEANTIME-prep/MEANTIME.zip
-#MEANTIME-prep/output_data/test_parsing_en/*
-#MEANTIME-prep/output_data/test_parsing_it/*
-#MEANTIME-prep/output_data/test_parsing_es/*
-#MEANTIME-prep/output_data/test_parsing_nl/*
 MEANTIME-prep/meantime_newsreader_dutch_dec15/*
 MEANTIME-prep/meantime_newsreader_english_oct15/*
 MEANTIME-prep/meantime_newsreader_italian_dec15/*
@@ -20,6 +16,7 @@ NP4E-prep/NP4E/
 NP4E-prep/test_parsing_backup/
 NiDENT-prep/NiDENT/
 WECEng-prep/WEC-Eng/*
+!WECEng-prep/WEC-Eng/.gitkeep
 .venv
 venv/
 .idea
