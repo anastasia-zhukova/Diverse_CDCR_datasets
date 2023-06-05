@@ -1,15 +1,21 @@
 # Cross-document coreference resolution (CDCR) datasets with diverse annotation schemes
 
-The repository contains the code used to report the results in the LREC 2022 paper Zhukova A., Hamborg F., Gipp B. "Towards Evaluation of Cross-document Coreference Resolution Models Using Datasets with Diverse Annotation Schemes".  
+The repository contains the code used to report the results in the [LREC 2022 paper Zhukova A., Hamborg F., Gipp B. "Towards Evaluation of Cross-document Coreference Resolution Models Using Datasets with Diverse Annotation Schemes"](https://aclanthology.org/2022.lrec-1.522/).  
 Please use this .bib to cite the paper:
 ```
-@inproceedings{Zhukova2022a,
-  title        = {{T}owards {E}valuation of {C}ross-document {C}oreference {R}esolution {M}odels {U}sing {D}atasets with {D}iverse {A}nnotation {S}chemes},
-  author       = {Zhukova, Anastasia and Hamborg, Felix and Gipp, Bela},
-  year         = 2022,
-  month        = {June},
-  booktitle    = {Proceedings of the 13th Language Resources and Evaluation Conference},
-  location     = {Marseille, France}
+@inproceedings{Zhukova22a,
+    title = "Towards Evaluation of Cross-document Coreference Resolution Models Using Datasets with Diverse Annotation Schemes",
+    author = "Zhukova, Anastasia  and
+      Hamborg, Felix  and
+      Gipp, Bela",
+    booktitle = "Proceedings of the Thirteenth Language Resources and Evaluation Conference",
+    month = jun,
+    year = "2022",
+    address = "Marseille, France",
+    publisher = "European Language Resources Association",
+    url = "https://aclanthology.org/2022.lrec-1.522",
+    pages = "4884--4893",
+    abstract = "Established cross-document coreference resolution (CDCR) datasets contain event-centric coreference chains of events and entities with identity relations. These datasets establish strict definitions of the coreference relations across related tests but typically ignore anaphora with more vague context-dependent loose coreference relations. In this paper, we qualitatively and quantitatively compare the annotation schemes of ECB+, a CDCR dataset with identity coreference relations, and NewsWCL50, a CDCR dataset with a mix of loose context-dependent and strict coreference relations. We propose a phrasing diversity metric (PD) that encounters for the diversity of full phrases unlike the previously proposed metrics and allows to evaluate lexical diversity of the CDCR datasets in a higher precision. The analysis shows that coreference chains of NewsWCL50 are more lexically diverse than those of ECB+ but annotating of NewsWCL50 leads to the lower inter-coder reliability. We discuss the different tasks that both CDCR datasets create for the CDCR models, i.e., lexical disambiguation and lexical diversity. Finally, to ensure generalizability of the CDCR models, we propose a direction for CDCR evaluation that combines CDCR datasets with multiple annotation schemes that focus of various properties of the coreference chains.",
 }
 ```
 
@@ -87,30 +93,30 @@ Example:
 ## Mentions.json
 The format is adapted and extended from [WEC-Eng](https://huggingface.co/datasets/Intel/WEC-Eng) and from the mention format used by [Barhom et al. 2019](https://github.com/shanybar/event_entity_coref_ecb_plus/tree/master/data/interim/cybulska_setup). 
 
-| Field             | Type            | Description     |
-| :---              | :----:          | :--- |
-| coref_chain       | string          | Unique identifier of a coreference chain to which this mention belongs to.  |
-| description       | string          | Description of a coreference chain.  |
-| coref_type        | string          | Type of a coreference link, e.g., strict indentity.
-| mention_id        | string          | Mention ID.      |
-| mention_type      | string          | Short form of a mention type, e.g., HUM     |
-| mention_full_type | string          | Long form of a mention type, e.g., HUMAN_PART_PER     |
-| tokens_str        | string          | A full mention string, i.e., all consequitive chars of the mention as found in the text.       |
-| tokens_text       | list of strings | A mention split into a list of tokens, text of tokens    |
-| tokens_numbers    | list of int     | A mention split into a list of tokens, token id of these tokens (as occurred in a sentence).      |
-| mention_head      | string          | A head of mention's phrase, e.g., Barack *Obama*      |
-| mention_head_id   | int             | Token id of the head of mention's phrase     |
-| mention_head_pos  | string          | Token's POS tag of the head of mention's phrase      |
-| mention_head_lemma| string          | Token's lemma of the head of mention's phrase      |
-| sent_id           | int             | Sentence ID      |
-| topic_id          | int             | Topic ID      |
-| topic             | string          | Topic description      |
-| subtopic          | string          | Subtopic name |
-| doc_id            | string          | Document ID     |
-| is_continuous     | bool            | If all tokens in the annotated mention continuously occur in the text     |
-| is_singleton      | bool            | If a coreference chain consists of only one mention.      |
-| mention_context   | list of strings | -N and +N tokens before and after the mention (N=100).    |
-| conll_doc_key     | string          | a compositional key for one-to-one mapping documents between .conll and .json files. |
+| Field            |            Type | Description    |
+| ---              |----------------| --- |
+| coref_chain      |          string | Unique identifier of a coreference chain to which this mention belongs to. |
+| description      |          string | Description of a coreference chain. |
+| coref_type       |          string | Type of a coreference link, e.g., strict indentity.|
+| mention_id       |          string | Mention ID.     |
+| mention_type     |          string | Short form of a mention type, e.g., HUM    |
+| mention_full_type|          string | Long form of a mention type, e.g., HUMAN_PART_PER    |
+| tokens_str       |          string | A full mention string, i.e., all consequitive chars of the mention as found in the text.      |
+| tokens_text      | list of strings | A mention split into a list of tokens, text of tokens   |
+| tokens_numbers   |     list of int | A mention split into a list of tokens, token id of these tokens (as occurred in a sentence).     |
+| mention_head     |          string | A head of mention's phrase, e.g., Barack *Obama*     |
+| mention_head_id  |             int | Token id of the head of mention's phrase    |
+| mention_head_pos |          string | Token's POS tag of the head of mention's phrase     |
+| mention_head_lemma|          string | Token's lemma of the head of mention's phrase     |
+| sent_id          |             int | Sentence ID     |
+| topic_id         |             int | Topic ID     |
+| topic            |          string | Topic description     |
+| subtopic         |          string | Subtopic name |
+| doc_id           |          string | Document ID    |
+| is_continuous    |            bool | If all tokens in the annotated mention continuously occur in the text    |
+| is_singleton     |            bool | If a coreference chain consists of only one mention.     |
+| mention_context  | list of strings | -N and +N tokens before and after the mention (N=100).   |
+| conll_doc_key    |          string | a compositional key for one-to-one mapping documents between .conll and .json files. |
 
 Example: 
 ```

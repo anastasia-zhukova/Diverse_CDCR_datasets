@@ -1,6 +1,7 @@
 # PARAMS
 import os
 import json
+from huggingface_hub import hf_hub_url, cached_download
 
 CONTEXT_RANGE = 100
 
@@ -19,7 +20,7 @@ MEANTIME_FOLDER_NAME_SPANISH = "meantime_newsreader_spanish_nov15"
 OUTPUT_FOLDER_NAME = "output_data"
 SUMMARY_FOLDER = "summary"
 TMP_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tmp")
-DATA_PATH = "C:\\Users\\snake\\Documents\\GitHub\\Diverse_CDCR_datasets\\"
+DATA_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 
 # DATASETS
 NEWSWCL50 = "NewsWCL50-prep"
@@ -159,7 +160,7 @@ if __name__ == '__main__':
     datasets = {ECB_PLUS: {LINK: "https://github.com/cltl/ecbPlus/raw/master/ECB%2B_LREC2014/ECB%2B.zip",
                            ZIP: os.path.join(os.getcwd(), ECB_PLUS, ECBPLUS_FOLDER_NAME + ".zip"),
                            FOLDER: os.path.join(os.getcwd(), ECB_PLUS)},
-                MEANTIME: {LINK: "https://drive.google.com/u/0/uc?id=1K0hcWHOomyrFaKigwzrwImHugdb1pjAX&export=download;https://drive.google.com/u/0/uc?id=1qhKFhO-EszieMz_B7rOJhvbWcIeEg1F5&export=download;https://drive.google.com/u/0/uc?id=1-i3DoyenEYV8_jY6bYaNJ4lsmtb4-4Tw&export=download;https://drive.google.com/u/0/uc?id=1NB6Vw_W7KYii7L7OLMnW2qfq1KWPZ4de&export=download",
+                MEANTIME: {LINK: "https://drive.google.com/uc?export=download&confirm=pbef&id=1K0hcWHOomyrFaKigwzrwImHugdb1pjAX;https://drive.google.com/uc?export=download&confirm=pbef&id=1qhKFhO-EszieMz_B7rOJhvbWcIeEg1F5;https://drive.google.com/uc?export=download&confirm=pbef&id=1-i3DoyenEYV8_jY6bYaNJ4lsmtb4-4Tw;https://drive.google.com/uc?export=download&confirm=pbef&id=1NB6Vw_W7KYii7L7OLMnW2qfq1KWPZ4de",
                            ZIP: os.path.join(os.getcwd(), MEANTIME, "MEANTIME_tmp" + ".zip"),
                            FOLDER: os.path.join(os.getcwd(), MEANTIME)},
                 NEWSWCL50: {LINK: "https://drive.google.com/u/1/uc?id=1ZcTnDeY85iIeUX0nvg3cypnRq87tVSVo&export=download",
@@ -211,6 +212,7 @@ if __name__ == '__main__':
         for i, (dataset, values) in enumerate(datasets.items()):
             if i != input_number:   # skip other datasets
                 continue
+
             LOGGER.info(f"Getting: {dataset}")
             if dataset == MEANTIME:
                 # download all languages
@@ -220,6 +222,7 @@ if __name__ == '__main__':
                     gdown.download(link, values[ZIP], quiet=False)
                     with zipfile.ZipFile(values[ZIP], 'r') as zip_ref:
                         zip_ref.extractall(values[FOLDER])
+
             elif dataset == WEC_ENG:
                 REPO_ID = "datasets/Intel/WEC-Eng"
                 splits_files = ["Dev_Event_gold_mentions_validated.json",
@@ -230,15 +233,21 @@ if __name__ == '__main__':
                     with open(cached_download(hf_hub_url(REPO_ID, split_file)), encoding='utf-8') as cd:
                         wec_eng = wec_eng+json.load(cd)
                 print(len(wec_eng))
-                if not os.path.exists(WEC_ENG): os.mkdir(WEC_ENG)
-                if not os.path.exists(os.path.join(WEC_ENG, WECENG_FOLDER_NAME)): os.mkdir(os.path.join(WEC_ENG, WECENG_FOLDER_NAME))
+                if not os.path.exists(WEC_ENG):
+                    os.mkdir(WEC_ENG)
+
+                if not os.path.exists(os.path.join(WEC_ENG, WECENG_FOLDER_NAME)):
+                    os.mkdir(os.path.join(WEC_ENG, WECENG_FOLDER_NAME))
+
                 with open(os.path.join(WEC_ENG, WECENG_FOLDER_NAME, "WEC-Eng.json"), "w") as file:
                     json.dump(wec_eng, file)
+
             elif dataset == ECB_PLUS:
                 gdown.download(
                     "https://raw.githubusercontent.com/cltl/ecbPlus/master/ECB%2B_LREC2014/ECBplus_coreference_sentences.csv",
                     os.path.join(os.getcwd(), ECB_PLUS, ECBPLUS_FOLDER_NAME, "ECBplus_coreference_sentences.csv"),
                     quiet=False)
+
             else:
                 gdown.download(values[LINK], values[ZIP], quiet=False)
                 with zipfile.ZipFile(values[ZIP], 'r') as zip_ref:
