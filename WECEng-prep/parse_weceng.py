@@ -18,7 +18,7 @@ from logger import LOGGER
 path_sample = os.path.join(DATA_PATH, "_sample_doc.json")  # ->root/data/original/_sample_doc.json
 WECENG_PARSING_FOLDER = os.path.join(os.getcwd())
 OUT_PATH = os.path.join(WECENG_PARSING_FOLDER, OUTPUT_FOLDER_NAME)
-source_path = os.path.join(WECENG_PARSING_FOLDER, WECENG_FOLDER_NAME)
+source_path = os.path.join(WECENG_PARSING_FOLDER, WEC_ENG, WECENG_FOLDER_NAME)
 result_path = os.path.join(OUT_PATH, 'test_parsing')
 
 CONTEXT_COMB_SPAN = 5
@@ -40,7 +40,7 @@ def conv_files(path):
         wec_data = json.load(f)
         df = pd.DataFrame.from_dict(wec_data, orient="columns")
 
-    df = df.groupby([DOC_ID])
+    df = df.sort_values([DOC_ID])
 
     prev_doc_id = None
     doc_tokens_list = []
