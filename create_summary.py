@@ -11,6 +11,7 @@ import numpy as np
 from typing import Dict, List
 from nltk.corpus import stopwords
 from tqdm import tqdm
+from datetime import datetime
 
 
 DIRECTORIES_TO_SUMMARIZE = [NEWSWCL50, ECB_PLUS, MEANTIME, NIDENT, NP4E, GVC, FCC]
@@ -208,16 +209,9 @@ if __name__ == '__main__':
             # all other datasets have events and entities
             mentions_zip = zip([EVENT, ENTITY], [MENTIONS_EVENTS_JSON, MENTIONS_ENTITIES_JSON])
 
-
         for mention_type, file_name in mentions_zip:
-            if "MEANTIME" in dataset_folder:
-                full_filenames = [os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, "en", file_name),
-                                  os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, "es", file_name),
-                                  os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, "it", file_name),
-                                  os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, "nl", file_name)
-                                  ]
-            else:
-                full_filenames = [os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, file_name)]
+            full_filenames = [os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, file_name)]
+
             for full_filename in full_filenames:
                 LOGGER.info(f'Processing {full_filename}...')
                 with open(full_filename, encoding='utf-8', mode='r') as file:
@@ -231,6 +225,8 @@ if __name__ == '__main__':
 
                 df_tmp = pd.DataFrame(mentions_read_list, index=list(range(len(mentions_read_list))))
                 df_tmp[TYPE] = [mention_type] * len(df_tmp)
+                if LANGUAGE not in df_tmp.columns:
+                    df_tmp[LANGUAGE] = "english"
                 # kick out "prep" from the name
                 df_tmp[DATASET_NAME] = [dataset_folder.split("-")[0]] * len(df_tmp)
                 mentions_df = pd.concat([mentions_df, df_tmp], ignore_index=True, axis = 0)
@@ -238,15 +234,7 @@ if __name__ == '__main__':
 
         # read texts (conll format)
         df_conll = pd.DataFrame()
-        if "MEANTIME" in dataset_folder:
-            conll_filenames = [
-                os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, "en", CONLL_CSV),
-                os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, "es", CONLL_CSV),
-                os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, "it", CONLL_CSV),
-                os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, "nl", CONLL_CSV)
-                ]
-        else:
-            conll_filenames = [os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, CONLL_CSV)]
+        conll_filenames = [os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, CONLL_CSV)]
 
         for conll_filename in conll_filenames:
             LOGGER.info(f'Reading {conll_filename}...')
@@ -260,7 +248,7 @@ if __name__ == '__main__':
         chain_df[UNIQUE_LEMMAS] = [0] * len(chain_df)
 
         LOGGER.info("Calculating Phrasing Diversity...")
-        for chain in set(mentions_df[COREF_CHAIN].values):
+        for chain in tqdm(set(mentions_df[COREF_CHAIN].values)):
             chain_mentions = [v for v in all_mentions_list if v[COREF_CHAIN] == chain]
             chain_df.loc[chain, PHRASING_DIVERSITY] = phrasing_diversity_calc(chain_mentions)
             chain_df.loc[chain, UNIQUE_LEMMAS] = len(
@@ -288,7 +276,7 @@ if __name__ == '__main__':
                 TOPIC: f'{topic_id}/{subtopic}',
                 TOPICS: len(set(group_df[TOPIC].values)),
                 ARTICLES: len(set(group_df[DOC_ID].values)),
-                TOKENS: len(df_conll[df_conll[TOPIC_SUBTOPIC].str.contains(f'{topic_id}/{subtopic}')]) if subtopic is not None else len(df_conll),
+                TOKENS: len(df_conll[df_conll[TOPIC_SUBTOPIC_DOC].str.contains(f'{topic_id}/{subtopic}')]) if subtopic is not None else len(df_conll),
                 COREF_CHAIN: len(coref_chains),
                 MENTIONS: len(group_df),
                 f'{EVENT}_{MENTIONS}': len(group_df[group_df[TYPE] == EVENT]),
@@ -315,12 +303,13 @@ if __name__ == '__main__':
                 else:
                     summary_dict[F1 + CONLL + suff] = float(format(np.mean(conll_f1_dict[dataset][suff]), '.3f'))
 
-            summary_df = pd.concat([summary_df, pd.DataFrame(summary_dict, index=[f'{dataset}\\{topic_id}\\subtopic'])], axis=0)
+            summary_df = pd.concat([summary_df, pd.DataFrame(summary_dict, index=[f'{dataset}\\{topic_id}\\{subtopic}'])], axis=0)
         chain_df_all = pd.concat([chain_df_all, chain_df], axis=0)
 
     #output the chains statistics
-    chain_df_all.reset_index().to_csv(os.path.join(os.getcwd(), SUMMARY_FOLDER, SUMMARY_CHAINS_CSV))
-    summary_df.to_csv(os.path.join(os.getcwd(), SUMMARY_FOLDER, SUMMARY_TOPICS_CSV))
+    now_ = datetime.now()
+    chain_df_all.reset_index().to_csv(os.path.join(os.getcwd(), SUMMARY_FOLDER, f'{now_.strftime("%Y-%m-%d_%H-%M-%S")}_{SUMMARY_CHAINS_CSV}'))
+    summary_df.to_csv(os.path.join(os.getcwd(), SUMMARY_FOLDER, f'{now_.strftime("%Y-%m-%d_%H-%M-%S")}_{SUMMARY_TOPICS_CSV}'))
 
     LOGGER.info(f'Summary computed over {len(selected_dir_to_summarize)} datasets ({str(selected_dir_to_summarize)}) '
                 f'is completed.')

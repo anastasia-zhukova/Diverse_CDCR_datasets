@@ -43,21 +43,24 @@ The parsing scripts and output folders are located  here:
 
 Each dataset contains three output files suitable for a CDCR model: 
 
-1) ```*dataset_name*.conll```
-2) ```entity_mentions.json```
-3) ```event_mentions.json```
+1) ```*dataset_name*.conll```, i.e., a CoNLL format of the full text corpus with the beginning and end tags, with the newline delimiters between the articles. 
+2) ```conll.csv```, i.e., a CoNLL format in a tabular format without tags and newline delimiters. 
+3) ```entity_mentions.json```, i.e., a list of entity mentions. 
+4) ```event_mentions.json```, i.e., a list of event mentions.
+
+If a dataset has **a predefined split into train/dev/test parts**, the ```output_data``` folder will additionally contain corresponding subfolders with a set of files defined above. 
 
 ## CoNLL format (simplified)
 
 CoNLL format is a standard input format for within-document [coreference resolution](https://paperswithcode.com/dataset/conll-2012-1). The original format contains multiple columns that contain information per each token, e.g., POS tags, NER labels. We use a simplified format (based on the format of input filed used by [Barhom et al. 2019](https://github.com/shanybar/event_entity_coref_ecb_plus/tree/master/data/interim/cybulska_setup)) that contains tokens, their identifiers in the text (e.g., doc_id, sent_id), and labels of coref chains: 
 
-| Column ID       | Type     | Description     |
-| :---        |    :----:   |          :--- |
-| 0      | string       | Composed document id: topic/subtopic/doc ("-" is used if there is no subtopic) |
-| 1   | int        | Sentence ID      |
-| 2   | int        | Token ID      |
-| 3   | string        | Token       |
-| 4   | string       | Coreference chain      |
+| Column ID       | Type     | Description                                                                             |
+| :---        |    :----:   |:----------------------------------------------------------------------------------------|
+| 0      | string       | Composed document id: topic/subtopic/doc ("-" is used if there is no topic or subtopic) |
+| 1   | int        | Sentence ID                                                                             |
+| 2   | int        | Token ID                                                                                |
+| 3   | string        | Token                                                                                   |
+| 4   | string       | Coreference chain                                                                       |
 
 Each document is accompanied with a beginning and end tags, sentences are separated with news lines (warning: some new line delimiters can be tokens themselves (e.g., in NewsWCL50)). 
 
@@ -93,30 +96,32 @@ Example:
 ## Mentions.json
 The format is adapted and extended from [WEC-Eng](https://huggingface.co/datasets/Intel/WEC-Eng) and from the mention format used by [Barhom et al. 2019](https://github.com/shanybar/event_entity_coref_ecb_plus/tree/master/data/interim/cybulska_setup). 
 
-| Field            |            Type | Description    |
-| ---              |----------------| --- |
-| coref_chain      |          string | Unique identifier of a coreference chain to which this mention belongs to. |
-| description      |          string | Description of a coreference chain. |
-| coref_type       |          string | Type of a coreference link, e.g., strict indentity.|
-| mention_id       |          string | Mention ID.     |
-| mention_type     |          string | Short form of a mention type, e.g., HUM    |
-| mention_full_type|          string | Long form of a mention type, e.g., HUMAN_PART_PER    |
-| tokens_str       |          string | A full mention string, i.e., all consequitive chars of the mention as found in the text.      |
-| tokens_text      | list of strings | A mention split into a list of tokens, text of tokens   |
-| tokens_numbers   |     list of int | A mention split into a list of tokens, token id of these tokens (as occurred in a sentence).     |
-| mention_head     |          string | A head of mention's phrase, e.g., Barack *Obama*     |
-| mention_head_id  |             int | Token id of the head of mention's phrase    |
-| mention_head_pos |          string | Token's POS tag of the head of mention's phrase     |
-| mention_head_lemma|          string | Token's lemma of the head of mention's phrase     |
-| sent_id          |             int | Sentence ID     |
-| topic_id         |             int | Topic ID     |
-| topic            |          string | Topic description     |
-| subtopic         |          string | Subtopic name |
-| doc_id           |          string | Document ID    |
-| is_continuous    |            bool | If all tokens in the annotated mention continuously occur in the text    |
-| is_singleton     |            bool | If a coreference chain consists of only one mention.     |
-| mention_context  | list of strings | -N and +N tokens before and after the mention (N=100).   |
-| conll_doc_key    |          string | a compositional key for one-to-one mapping documents between .conll and .json files. |
+| Field              | Type            | Description                                                                                  |
+|--------------------|-----------------|----------------------------------------------------------------------------------------------|
+| coref_chain        | string          | Unique identifier of a coreference chain to which this mention belongs to.                   |
+| description        | string          | Description of a coreference chain.                                                          |
+| coref_type         | string          | Type of a coreference link, e.g., strict indentity.                                          |
+| mention_id         | string          | Mention ID.                                                                                  |
+| mention_type       | string          | Short form of a mention type, e.g., HUM                                                      |
+| mention_full_type  | string          | Long form of a mention type, e.g., HUMAN_PART_PER                                            |
+| tokens_str         | string          | A full mention string, i.e., all consequitive chars of the mention as found in the text.     |
+| tokens_text        | list of strings | A mention split into a list of tokens, text of tokens                                        |
+| tokens_numbers     | list of int     | A mention split into a list of tokens, token id of these tokens (as occurred in a sentence). |
+| mention_head       | string          | A head of mention's phrase, e.g., Barack *Obama*                                             |
+| mention_head_id    | int             | Token id of the head of mention's phrase                                                     |
+| mention_head_pos   | string          | Token's POS tag of the head of mention's phrase                                              |
+| mention_head_lemma | string          | Token's lemma of the head of mention's phrase                                                |
+| sent_id            | int             | Sentence ID                                                                                  |
+| topic_id           | int             | Topic ID                                                                                     |
+| topic              | string          | Topic description                                                                            |
+| subtopic           | string          | Subtopic name                                                                                |
+| doc_id             | string          | Document ID                                                                                  |
+| doc_id_full        | string          | Document ID with the full name                                                               |
+| is_continuous      | bool            | If all tokens in the annotated mention continuously occur in the text                        |
+| is_singleton       | bool            | If a coreference chain consists of only one mention.                                         |
+| mention_context    | list of strings | -N and +N tokens before and after the mention (N=100).                                       |
+| language           | string          | A language of the mention.                                                                   |
+| conll_doc_key      | string          | a compositional key for one-to-one mapping documents between .conll and .json files.         |
 
 Example: 
 ```
@@ -124,6 +129,7 @@ Example:
     "coref_chain": "0_Denuclearization_MISC", 
     "tokens_number": [33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49], 
     "doc_id": "0_L", 
+    "doc_id_full": "0_L", 
     "score": -1, 
     "sent_id": 21, 
     "mention_type": "MISC", 
@@ -144,6 +150,7 @@ Example:
     "mention_context": ["newspaper", ",", "Munhwa", "Ilbo", ",", "reported", "that", "the", "two", "countries", "were", "negotiating", "an", "announcement", "\"", "to", "ease", "military", "tensions", "and", "end", "a", "military", "confrontation", ",", "\"", "as", "part", "of", "the", "summit", "meeting", "planned", "between", "Mr.", "Kim", "and", "President", "Moon", "Jae", "-", "in", "of", "South", "Korea", ".", "\n", "That", "could", "involve", "pulling", "troops", "out", "of", "the", "Demilitarized", "Zone", ",", "making", "it", "a", "genuinely", "\"", "Demilitarized", "Zone", ".", "\"", "A", "South", "Korean", "government", "official", "later", "played", "down", "the", "report", ",", "saying", "it", "was", "too", "soon", "to", "tell", "what", "a", "joint", "statement", "by", "Mr.", "Moon", "and", "Mr.", "Kim", "would", "contain", ",", "other", "than", "broad", "and", "\"", "abstract", "\"", "statements", "about", "the", "need", "for", "North", "Korea", "to", "\"", "denuclearize", ".", "\"", "\n", "But", "analysts", "said", "South", "Korea", "was", "aiming", "for", "a", "comprehensive", "deal", ",", "in", "which", "the", "North", "agreed", "to", "give", "up", "its", "weapons", "in", "return", "for", "a", "security", "guarantee", ",", "including", "a", "peace", "treaty", ".", "Mr.", "Trump", "'s", "comments", "suggested", "he", "backed", "that", "effort", ".", "\n", "\"", "They", "do", "have", "my", "blessing", "to", "discuss", "the", "end", "of", "the", "war", ",", "\"", "he", "said", ".", "\"", "People", "do", "n't", "realize", "that", "the", "Korean", "War", "has", "not", "ended", ".", "It", "'s", "going", "on", "right", "now", ".", "And", "they", "are", "discussing", "an", "end", "to", "war", ".", "Subject", "to", "a", "deal", ",", "they"], 
     "tokens_str": "broad and \"abstract\" statements about the need for North Korea to \"denuclearize.\" ", 
     "tokens_text": ["broad", "and", "\"", "abstract", "\"", "statements", "about", "the", "need", "for", "North", "Korea", "to", "\"", "denuclearize", ".", "\""], 
+    "language": "english"
     "conll_doc_key": "0/-/0_L"
 }]
 ```

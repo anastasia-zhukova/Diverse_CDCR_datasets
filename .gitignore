@@ -1,21 +1,14 @@
 # Ignore
 NewsWCL50-prep/2019_annot/
-NewsWCL50-prep/2019_annot.zip
-ECBplus-prep/__MACOSX
+ECBplus-prep/__MACOSX/
 ECBplus-prep/ECB+/
-ECBplus-prep/ECB+.zip
-MEANTIME-prep/MEANTIME
-GVC-prep\GVC
+GVC-prep/GVC/
 FCC-prep/FCC/
-MEANTIME-prep/MEANTIME.zip
-MEANTIME-prep/meantime_newsreader_dutch_dec15/*
-MEANTIME-prep/meantime_newsreader_english_oct15/*
-MEANTIME-prep/meantime_newsreader_italian_dec15/*
-MEANTIME-prep/meantime_newsreader_spanish_nov15/*
+MEANTIME-prep/meantime_newsreader/
 NP4E-prep/NP4E/
 NP4E-prep/test_parsing_backup/
 NiDENT-prep/NiDENT/
-WECEng-prep/WEC-Eng/*
+WECEng-prep/WEC-Eng/
 !WECEng-prep/WEC-Eng/.gitkeep
 .venv
 venv/

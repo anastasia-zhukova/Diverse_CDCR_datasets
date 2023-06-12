@@ -17,6 +17,7 @@ NP4E_FOLDER_NAME = "NP4E"
 WECENG_FOLDER_NAME = "WEC-Eng"
 GVC_FOLDER_NAME = "GVC"
 FCC_FOLDER_NAME = "FCC"
+MEANTIME_FOLDER_NAME = "meantime_newsreader"
 MEANTIME_FOLDER_NAME_ENGLISH = "meantime_newsreader_english_oct15"
 MEANTIME_FOLDER_NAME_DUTCH = "meantime_newsreader_dutch_dec15"
 MEANTIME_FOLDER_NAME_ITALIAN = "meantime_newsreader_italian_dec15"
@@ -48,7 +49,7 @@ SUMMARY_TOPICS_CSV = "summary_dataset_topics.csv"
 MANUAL_REVIEW_FILE = "manual_review_needed.json"
 
 # coref types
-STRICT = "STRICT"
+IDENTITY = "IDENTITY"
 NEAR_IDENTITY = "NEAR_IDENTITY"
 
 # doc.json fields (from news-please)
@@ -91,12 +92,14 @@ TOKEN_ID = "token_id"
 COREF_TYPE = "coref_type"
 SUBTOPIC = "subtopic"
 CONLL_DOC_KEY = "conll_doc_key"
+LANGUAGE = "language"
 
 # conll fields
 REFERENCE = "reference"
 DOC_IDENTIFIER = "doc_identifier"
 TOKEN = "token"
 TOPIC_SUBTOPIC = "topic/subtopic_name"
+TOPIC_SUBTOPIC_DOC = "topic/subtopic_name/doc"
 
 # summary fields
 DATASET_NAME = "dataset"
@@ -148,18 +151,18 @@ if __name__ == '__main__':
     datasets = {
         ECB_PLUS: {
             LINK: "https://github.com/cltl/ecbPlus/raw/master/ECB%2B_LREC2014/ECB%2B.zip",
-            ZIP: os.path.join(os.getcwd(), ECB_PLUS, ECBPLUS_FOLDER_NAME + ".zip"),
+            ZIP: os.path.join(TMP_PATH, ECBPLUS_FOLDER_NAME + ".zip"),
             FOLDER: os.path.join(os.getcwd(), ECB_PLUS)
         },
         NEWSWCL50: {
             LINK: "https://drive.google.com/uc?export=download&confirm=pbef&id=1ZcTnDeY85iIeUX0nvg3cypnRq87tVSVo",
-            ZIP: os.path.join(os.getcwd(), NEWSWCL50, NEWSWCL50_FOLDER_NAME + ".zip"),
+            ZIP: os.path.join(TMP_PATH, NEWSWCL50_FOLDER_NAME + ".zip"),
             FOLDER: os.path.join(os.getcwd(), NEWSWCL50)
         },
         MEANTIME: {
             LINK: "https://drive.google.com/uc?export=download&confirm=pbef&id=1K0hcWHOomyrFaKigwzrwImHugdb1pjAX;https://drive.google.com/uc?export=download&confirm=pbef&id=1qhKFhO-EszieMz_B7rOJhvbWcIeEg1F5;https://drive.google.com/uc?export=download&confirm=pbef&id=1-i3DoyenEYV8_jY6bYaNJ4lsmtb4-4Tw;https://drive.google.com/uc?export=download&confirm=pbef&id=1NB6Vw_W7KYii7L7OLMnW2qfq1KWPZ4de",
-            ZIP: os.path.join(os.getcwd(), MEANTIME, "MEANTIME_tmp" + ".zip"),
-            FOLDER: os.path.join(os.getcwd(), MEANTIME)
+            ZIP: os.path.join(TMP_PATH, MEANTIME_FOLDER_NAME + ".zip"),
+            FOLDER: os.path.join(os.getcwd(), MEANTIME, MEANTIME_FOLDER_NAME)
         },
         WEC_ENG: {
             LINK: "Intel/WEC-Eng",
