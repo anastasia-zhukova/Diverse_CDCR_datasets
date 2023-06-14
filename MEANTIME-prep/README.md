@@ -1,6 +1,31 @@
 # Parsing MEANTIME
 
-Original repository of ECB+ dataset: http://www.newsreader-project.eu/results/data/wikinews/
+Original repository of MEANTIME dataset: http://www.newsreader-project.eu/results/data/wikinews/
+
+Paper: https://www.aclweb.org/anthology/L16-1699/
+```
+@inproceedings{minard-etal-2016-meantime,
+    title = "{MEANTIME}, the {N}ews{R}eader Multilingual Event and Time Corpus",
+    author = "Minard, Anne-Lyse  and
+      Speranza, Manuela  and
+      Urizar, Ruben  and
+      Altuna, Bego{\~n}a  and
+      van Erp, Marieke  and
+      Schoen, Anneleen  and
+      van Son, Chantal",
+    booktitle = "Proceedings of the Tenth International Conference on Language Resources and Evaluation ({LREC}'16)",
+    month = may,
+    year = "2016",
+    address = "Portoro{\v{z}}, Slovenia",
+    publisher = "European Language Resources Association (ELRA)",
+    url = "https://aclanthology.org/L16-1699",
+    pages = "4417--4422"
+}
+```
+
+The original dataset contained a split into topics and documents, but each document is present in four langauges. 
+Thus, we make a name of one article a subtopic and the four corresponding documents in four languages as its representatives.
+The dataset then extensively allows cross-subtopic coreference clusters. 
 
 To parse MEANTIME:
 1) make sure that you downloaded the dataset by running ```python setup.py``` 
