@@ -8,7 +8,7 @@ from nltk import Tree
 import shortuuid
 from tqdm import tqdm
 from setup import *
-from insert_whitespace import append_text
+from utils import *
 from logger import LOGGER
 
 path_sample = os.path.join(DATA_PATH, "_sample_doc.json") # ->root/data/original/_sample_doc.json
@@ -108,8 +108,8 @@ def conv_files():
                     tree = ET.parse(os.path.join(path, topic, doc_file))
                     root = tree.getroot()
                     title, text, date, url, time, time2, time3 = "", "", "", "", "", "", ""
-
-                    subtopic = doc_file.split(".")[0].split("_")[0]
+                    subtopic_full = doc_file.split(".")[0]
+                    subtopic = subtopic_full.split("_")[0]
                     doc_id_full = f'{language}{doc_file.split(".")[0]}'
                     doc_id = f'{language}{subtopic}'
                     topic_subtopic_doc = f'{topic_id}/{subtopic}/{doc_id}'
@@ -408,9 +408,10 @@ def conv_files():
                                                                             TOKENS_NUMBER: sent_tokens,
                                                                             TOKENS_TEXT: [str(token_dict[t]["text"]) for t in tokens],
                                                                             DOC_ID: doc_id,
-                                                                            DOC_ID_FULL: doc_id_full,
+                                                                            DOC: doc_id_full,
                                                                             SENT_ID: int(sent_id),
                                                                             MENTION_CONTEXT: mention_context_str,
+                                                                            SUBTOPIC: subtopic_full,
                                                                             TOPIC_SUBTOPIC_DOC: topic_subtopic_doc,
                                                                             TOPIC: topic_id_compose}
 
@@ -555,7 +556,7 @@ def conv_files():
                        MENTION_HEAD: m["mention_head"],
                        MENTION_HEAD_ID: m["mention_head_id"],
                        DOC_ID: m[DOC_ID],
-                       DOC_ID_FULL: m[DOC_ID_FULL],
+                       DOC: m[DOC],
                        IS_CONTINIOUS: True if token_numbers == list(
                            range(token_numbers[0], token_numbers[-1] + 1))
                        else False,
@@ -569,9 +570,10 @@ def conv_files():
                        TOKENS_NUMBER: token_numbers,
                        TOKENS_STR: m["text"],
                        TOKENS_TEXT: m[TOKENS_TEXT],
-                       TOPIC_ID: int(m[TOPIC].split("_")[0]),
+                       TOPIC_ID: m[TOPIC].split("_")[0],
                        TOPIC: m[TOPIC],
-                       SUBTOPIC: m[TOPIC_SUBTOPIC_DOC].split("/")[1],
+                       SUBTOPIC_ID: m[TOPIC_SUBTOPIC_DOC].split("/")[1],
+                       SUBTOPIC: m[SUBTOPIC],
                        COREF_TYPE: IDENTITY,
                        DESCRIPTION: chain_vals["descr"],
                        LANGUAGE: m[LANGUAGE],
@@ -641,77 +643,6 @@ def conv_files():
                 f'\nNumber of unique chains: {len(set(df_all_mentions[COREF_CHAIN].values))} ')
 
     LOGGER.info(f'Parsing of MEANTIME annotation done!')
-
-
-def make_save_conll(conll_df, df_all_mentions, output_folder):
-    conll_df = conll_df.reset_index(drop=True)
-    df_all_mentions[SENT_ID] = df_all_mentions[SENT_ID].astype(int)
-
-    # create a conll string from the conll_df
-    LOGGER.info("Generating conll string...")
-    for i, row in tqdm(conll_df.iterrows(), total=conll_df.shape[0]):
-        if row[REFERENCE] is None:
-            reference_str = "-"
-        else:
-            reference_str = row[REFERENCE]
-
-        mention_candidates_df = df_all_mentions[(df_all_mentions[CONLL_DOC_KEY] == row[TOPIC_SUBTOPIC_DOC]) &
-                                                (df_all_mentions[SENT_ID] == row[SENT_ID])]
-        for mentions_row_id, mention_row in mention_candidates_df.iterrows():
-            mention = mention_row.to_dict()
-            # the token_ids in the mention are of type int64 and need to be converted
-            token_numbers = [int(v) for v in re.sub(r'[\[,\]]+', "", mention[TOKENS_NUMBER]).split(" ")]
-            if row[TOKEN_ID] not in token_numbers:
-                continue
-
-            chain = mention[COREF_CHAIN]
-            # one and only token
-            if len(token_numbers) == 1 and token_numbers[0] == row[TOKEN_ID]:
-                reference_str = reference_str + '| (' + str(chain) + ')'
-            # one of multiple tokes
-            elif len(token_numbers) > 1 and token_numbers[0] == row[TOKEN_ID]:
-                reference_str = reference_str + '| (' + str(chain)
-            elif len(token_numbers) > 1 and token_numbers[len(token_numbers) - 1] == row[TOKEN_ID]:
-                reference_str = reference_str + '| ' + str(chain) + ')'
-
-        # remove the leading characters if necessary (left from initialization)
-        if reference_str.startswith("-| "):
-            reference_str = reference_str[3:]
-        conll_df.at[i, REFERENCE] = reference_str
-
-    conll_df = conll_df.drop(columns=[DOC_ID])
-
-    outputdoc_str = ""
-    for (topic_local), topic_df in conll_df.groupby(by=[TOPIC_SUBTOPIC_DOC]):
-        outputdoc_str += f'#begin document ({topic_local}); part 000\n'
-
-        for (sent_id_local), sent_df in topic_df.groupby(by=[SENT_ID], sort=[SENT_ID]):
-            np.savetxt(os.path.join(TMP_PATH, "tmp.txt"), sent_df.values, fmt='%s', delimiter="\t",
-                       encoding="utf-8")
-
-            with open(os.path.join(TMP_PATH, "tmp.txt"), "r", encoding="utf8") as file:
-                saved_lines = file.read()
-
-            outputdoc_str += saved_lines + "\n"
-
-        outputdoc_str += "#end document\n"
-
-    # Check if the brackets ( ) are correct
-    brackets_1 = 0
-    brackets_2 = 0
-    try:
-        for i, row in conll_df.iterrows():  # only count brackets in reference column (exclude token text)
-            brackets_1 += str(row[REFERENCE]).count("(")
-            brackets_2 += str(row[REFERENCE]).count(")")
-        assert brackets_1 == brackets_2
-
-    except AssertionError:
-        LOGGER.warning(f'Number of opening and closing brackets in conll does not match!')
-        LOGGER.warning(f"brackets '(' , ')' : {str(brackets_1)}, {str(brackets_2)}")
-
-    conll_df.to_csv(os.path.join(output_folder, CONLL_CSV))
-    with open(os.path.join(output_folder, 'meantime.conll'), "w", encoding='utf-8') as file:
-        file.write(outputdoc_str)
 
 
 if __name__ == '__main__':

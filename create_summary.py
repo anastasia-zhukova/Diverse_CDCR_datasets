@@ -14,7 +14,7 @@ from tqdm import tqdm
 from datetime import datetime
 
 
-DIRECTORIES_TO_SUMMARIZE = [NEWSWCL50, ECB_PLUS, MEANTIME, NIDENT, NP4E, GVC, FCC]
+DIRECTORIES_TO_SUMMARIZE = [NEWSWCL50, ECB_PLUS, MEANTIME, NP4E, NIDENT, GVC, FCC]
 
 nltk.download('stopwords')
 
@@ -201,13 +201,7 @@ if __name__ == '__main__':
 
         LOGGER.info(f'Reading files with mentions for {dataset_folder} dataset...')
 
-        if NIDENT == dataset_folder or NP4E == dataset_folder:
-            mentions_zip = zip([ENTITY], [MENTIONS_ENTITIES_JSON])    # nident and np4e do only contain entity mentions
-        elif GVC == dataset_folder or FCC == dataset_folder:
-            mentions_zip = zip([EVENT], [MENTIONS_EVENTS_JSON])      # has only one file (events)
-        else:
-            # all other datasets have events and entities
-            mentions_zip = zip([EVENT, ENTITY], [MENTIONS_EVENTS_JSON, MENTIONS_ENTITIES_JSON])
+        mentions_zip = zip([EVENT, ENTITY], [MENTIONS_EVENTS_JSON, MENTIONS_ENTITIES_JSON])
 
         for mention_type, file_name in mentions_zip:
             full_filenames = [os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, file_name)]
@@ -232,6 +226,10 @@ if __name__ == '__main__':
                 mentions_df = pd.concat([mentions_df, df_tmp], ignore_index=True, axis = 0)
                 all_mentions_list.extend(mentions_read_list)
 
+        for mention in all_mentions_list:
+            if LANGUAGE not in mention:
+                mention[LANGUAGE] = "english"
+
         # read texts (conll format)
         df_conll = pd.DataFrame()
         conll_filenames = [os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, CONLL_CSV)]
@@ -244,16 +242,17 @@ if __name__ == '__main__':
 
         # calculate statistics about the chains
 
-        chain_df = pd.DataFrame(columns=[COREF_CHAIN, DATASET_NAME, SUBTOPIC, LANGUAGE, MENTIONS])
+        chain_df = pd.DataFrame(columns=[COREF_CHAIN, DATASET_NAME, SUBTOPIC_ID, LANGUAGE, MENTIONS])
         chain_df = pd.concat([chain_df, mentions_df[[COREF_CHAIN, DATASET_NAME, DOC_ID]].groupby([COREF_CHAIN,
                          DATASET_NAME]).count().rename(columns={DOC_ID: MENTIONS}).reset_index()], axis=0)
                          # DATASET_NAME]).count().rename(columns={DOC_ID: MENTIONS}).reset_index().set_index(COREF_CHAIN)
-        chain_df = pd.concat([chain_df, mentions_df[[COREF_CHAIN, DATASET_NAME, SUBTOPIC, DOC_ID]].groupby([COREF_CHAIN, DATASET_NAME,
-                         SUBTOPIC]).count().rename(columns={DOC_ID: MENTIONS}).reset_index()], axis=0)
-        chain_df = pd.concat([chain_df, mentions_df[[COREF_CHAIN, DATASET_NAME, LANGUAGE, DOC_ID]].groupby([COREF_CHAIN, DATASET_NAME,
-                         LANGUAGE]).count().rename(columns={DOC_ID: MENTIONS}).reset_index()], axis=0)
+        chain_df = pd.concat([chain_df, mentions_df[[COREF_CHAIN, DATASET_NAME, SUBTOPIC_ID, DOC_ID]].groupby([COREF_CHAIN, DATASET_NAME,
+                                                                                                               SUBTOPIC_ID]).count().rename(columns={DOC_ID: MENTIONS}).reset_index()], axis=0)
+        if len(set(mentions_df[LANGUAGE].values)) > 1:
+            chain_df = pd.concat([chain_df, mentions_df[[COREF_CHAIN, DATASET_NAME, LANGUAGE, DOC_ID]].groupby([COREF_CHAIN, DATASET_NAME,
+                            LANGUAGE]).count().rename(columns={DOC_ID: MENTIONS}).reset_index()], axis=0)
         chain_df.fillna("", inplace=True)
-        chain_df["composite_chain_id"] = chain_df.apply(lambda x: f'{x[COREF_CHAIN]}/{x[DATASET_NAME]}/{x[SUBTOPIC]}/{x[LANGUAGE]}', axis=1)
+        chain_df["composite_chain_id"] = chain_df.apply(lambda x: f'{x[COREF_CHAIN]}/{x[DATASET_NAME]}/{x[SUBTOPIC_ID]}/{x[LANGUAGE]}', axis=1)
         chain_df = chain_df.set_index("composite_chain_id")
         chain_df[PHRASING_DIVERSITY] = [0] * len(chain_df)
         chain_df[UNIQUE_LEMMAS] = [0] * len(chain_df)
@@ -262,10 +261,10 @@ if __name__ == '__main__':
         for chain_id_value in tqdm(list(chain_df.index)):
             chain, dataset, subtopic, language = chain_id_value.split("/")
             if subtopic:
-                chain_mentions = [v for v in all_mentions_list if v[COREF_CHAIN] == chain and v[SUBTOPIC] == subtopic]
+                chain_mentions = [v for v in all_mentions_list if v[COREF_CHAIN] == chain and v[SUBTOPIC_ID] == subtopic]
                 chain_df.loc[chain_id_value, UNIQUE_LEMMAS] = len(
                     set([v.lower() for v in mentions_df[
-                        (mentions_df[COREF_CHAIN] == chain) & (mentions_df[SUBTOPIC] == subtopic)][MENTION_HEAD_LEMMA].values]))
+                        (mentions_df[COREF_CHAIN] == chain) & (mentions_df[SUBTOPIC_ID] == subtopic)][MENTION_HEAD_LEMMA].values]))
             elif language:
                 chain_mentions = [v for v in all_mentions_list if v[COREF_CHAIN] == chain and v[LANGUAGE] == language]
                 chain_df.loc[chain_id_value, UNIQUE_LEMMAS] = len(
@@ -280,9 +279,10 @@ if __name__ == '__main__':
         # form dataset as full and split into topics to process
         # per topic/subtopic in the dataset
         process_list = [(dataset, topic_id, subtopic, "", group_df)
-                             for (dataset, topic_id, subtopic), group_df in mentions_df.groupby([DATASET_NAME, TOPIC_ID, SUBTOPIC])]
+                        for (dataset, topic_id, subtopic), group_df in mentions_df.groupby([DATASET_NAME, TOPIC_ID, SUBTOPIC_ID])]
         # per language
-        process_list.extend([(dataset, topic_id, "", language, group_df)
+        if len(set(mentions_df[LANGUAGE].values)) > 1:
+            process_list.extend([(dataset, topic_id, "", language, group_df)
                              for (dataset, topic_id, language), group_df in mentions_df.groupby([DATASET_NAME, TOPIC_ID, LANGUAGE])])
         # full dataset
         process_list.extend([(dataset, "", "", "", dataset_df) for dataset, dataset_df in mentions_df.groupby([DATASET_NAME])])
@@ -302,7 +302,7 @@ if __name__ == '__main__':
             else:
                 tokens_len = len(df_conll)
 
-            cross_topic_chains_df = group_df[[COREF_CHAIN, SUBTOPIC, DOC_ID]].groupby([COREF_CHAIN, SUBTOPIC]).count().reset_index()
+            cross_topic_chains_df = group_df[[COREF_CHAIN, SUBTOPIC_ID, DOC_ID]].groupby([COREF_CHAIN, SUBTOPIC_ID]).count().reset_index()
             cross_topic_chains = 0
             cross_topic_mentions = 0
             for chain_id in set(cross_topic_chains_df[COREF_CHAIN]):
@@ -314,7 +314,7 @@ if __name__ == '__main__':
             # general statistics
             summary_dict = {
                 DATASET_NAME: dataset,
-                TOPIC: f'{topic_id}/{subtopic}',
+                TOPIC_SUBTOPIC: f'{topic_id}/{subtopic}',
                 LANGUAGE: language,
                 TOPICS: len(set(group_df[TOPIC].values)),
                 # "subtopics": len(set(group_df[SUBTOPIC].values)),
@@ -332,7 +332,7 @@ if __name__ == '__main__':
             # various for, of lexical diversity that depend on the presence/absence of singletons
             for suff, filt_criteria in zip([ALL, WO_SINGL], [0, 1]):
                 selected_chains_df = chain_df[(chain_df[MENTIONS] > filt_criteria) &
-                                              (chain_df[COREF_CHAIN].isin(coref_chains)) & (chain_df[SUBTOPIC] == subtopic)
+                                              (chain_df[COREF_CHAIN].isin(coref_chains)) & (chain_df[SUBTOPIC_ID] == subtopic)
                                               & (chain_df[LANGUAGE] == language)]
                 if not len(selected_chains_df):
                     continue
@@ -343,7 +343,7 @@ if __name__ == '__main__':
                 summary_dict[UNIQUE_LEMMAS + suff] = float(format(np.mean(selected_chains_df[UNIQUE_LEMMAS].values), '.3f'))
 
                 if subtopic:
-                    conll_f1 = conll_lemma_baseline([v for v in all_mentions_list if v[COREF_CHAIN] in coref_chains and v[SUBTOPIC] == subtopic]) # hang up in conll_lemma_baseline
+                    conll_f1 = conll_lemma_baseline([v for v in all_mentions_list if v[COREF_CHAIN] in coref_chains and v[SUBTOPIC_ID] == subtopic]) # hang up in conll_lemma_baseline
                     summary_dict[F1 + CONLL + suff] = conll_f1
                     if suff not in conll_f1_dict[dataset]:
                         conll_f1_dict[dataset][suff] = []

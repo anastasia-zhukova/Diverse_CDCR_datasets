@@ -76,7 +76,7 @@ MENTION_HEAD_POS = "mention_head_pos"
 MENTION_HEAD_LEMMA = "mention_head_lemma"
 MENTION_HEAD = "mention_head"
 MENTION_HEAD_ID = "mention_head_id"
-DOC_ID_FULL = "doc_id_full"
+DOC = "doc"
 DOC_ID = "doc_id"
 IS_CONTINIOUS = "is_continuous"
 IS_SINGLETON = "is_singleton"
@@ -90,6 +90,7 @@ TOKENS_TEXT = "tokens_text"
 TOKENS_STR = "tokens_str"
 TOKEN_ID = "token_id"
 COREF_TYPE = "coref_type"
+SUBTOPIC_ID = "subtopic_id"
 SUBTOPIC = "subtopic"
 CONLL_DOC_KEY = "conll_doc_key"
 LANGUAGE = "language"
@@ -168,7 +169,13 @@ if __name__ == '__main__':
             LINK: "Intel/WEC-Eng",
             ZIP: "",
             FOLDER: os.path.join(os.getcwd(), WEC_ENG, WECENG_FOLDER_NAME)
-        }
+        },
+       NP4E: {
+           LINK: "http://clg.wlv.ac.uk/projects/NP4E/mmax/np4e_mmax2.zip",
+           ZIP: os.path.join(TMP_PATH, NP4E_FOLDER_NAME + ".zip"),
+           FOLDER: os.path.join(os.getcwd(), NP4E)
+       }
+
     }
 
     prompt_str = "The following datasets are available for download: \n\n"
@@ -259,6 +266,16 @@ if __name__ == '__main__':
             gdown.download(dataset_params[LINK], dataset_params[ZIP], quiet=False)
             with zipfile.ZipFile(dataset_params[ZIP], 'r') as zip_ref:
                 zip_ref.extractall(dataset_params[FOLDER])
+
+            # download required spacy packages
+            if not spacy.util.is_package(SPACY_EN):
+                spacy.cli.download(SPACY_EN)
+
+        elif dataset == NP4E:
+            gdown.download(dataset_params[LINK], dataset_params[ZIP], quiet=False)
+            with zipfile.ZipFile(dataset_params[ZIP], 'r') as zip_ref:
+                zip_ref.extractall(dataset_params[FOLDER])
+            os.rename(os.path.join(dataset_params[FOLDER], "mmax2"), os.path.join(dataset_params[FOLDER], NP4E_FOLDER_NAME))
 
             # download required spacy packages
             if not spacy.util.is_package(SPACY_EN):
