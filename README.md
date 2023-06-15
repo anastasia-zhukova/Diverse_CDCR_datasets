@@ -165,7 +165,7 @@ Example:
     "doc_id": "0_L", 
     "doc": "0_L", 
     "description": "Denuclearization", 
-    "coref_type": "STRICT", 
+    "coref_type": "IDENTITY", 
     "mention_ner": "O", 
     "mention_head_pos": "PUNCT", 
     "mention_head_lemma": "\"", 

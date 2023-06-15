@@ -8,7 +8,7 @@ import copy
 import re
 import pandas as pd
 import numpy as np
-from insert_whitespace import append_text
+from utils import *
 from nltk import Tree
 from tqdm import tqdm
 import warnings
@@ -546,9 +546,9 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                TOKENS_TEXT: m[TOKENS_TEXT],
                                TOPIC_ID: int(t_number),
                                TOPIC: t_number,
-                               SUBTOPIC: topic_name,
+                               SUBTOPIC_ID: topic_name,
                                # COREF_TYPE: chain_vals[COREF_TYPE],
-                               COREF_TYPE: STRICT,
+                               COREF_TYPE: IDENTITY,
                                DESCRIPTION: chain_vals[DESCRIPTION],
                                CONLL_DOC_KEY: m[TOPIC],
                                }

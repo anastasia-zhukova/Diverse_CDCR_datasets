@@ -13,7 +13,7 @@
     "subtopic_id": "0",
     "subtopic": "0_CIADirectorMikePompeoMeetingNorthKorea",
     "description": "Denuclearization",
-    "coref_type": "INDENT",
+    "coref_type": "IDENTITY",
     "mention_ner": "O",
     "mention_head_pos": "PUNCT",
     "mention_head_lemma": "statements",
