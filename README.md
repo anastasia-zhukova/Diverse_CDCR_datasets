@@ -145,7 +145,7 @@ The format is adapted and extended from [WEC-Eng](https://huggingface.co/dataset
 | is_continuous      | bool            | If all tokens in the annotated mention continuously occur in the text                               |
 | is_singleton       | bool            | If a coreference chain consists of only one mention.                                                |
 | mention_context    | list of strings | -N and +N tokens before and after the mention (N=100).                                              |
-| language           | string          | Optional. A language of the mention. If not provided, the defualt value will be considered english. |
+| language           | string          | Optional. A language of the mention. If not provided, the default value will be considered english. |
 | conll_doc_key      | string          | a compositional key for one-to-one mapping documents between .conll and .json files.                |
 
 Example: 

@@ -1,5 +1,6 @@
 from setup import *
 from logger import LOGGER
+from utils import make_save_conll
 AGGR_FILENAME = 'aggr_m_conceptcategorization.csv'
 
 import spacy
@@ -127,7 +128,7 @@ if __name__ == '__main__':
         segment_tokenized = [t for t in segment_doc]
         found_mentions_counter = 0
 
-        for paragraph_correction in [-1, -2, 0, -3, -4, 1]:
+        for paragraph_correction in [-1, -2, 0, -3, -4, 1, 2]:
             modified_par = paragraph_orig + paragraph_correction
             try:
                 paragraph = docs[doc_name][modified_par]
@@ -156,18 +157,24 @@ if __name__ == '__main__':
 
                     norm_annot = re.sub(r'\W+', "",  " ".join([t.norm_ for t in segment_tokenized])).lower()
                     norm_found = re.sub(r'\W+', "",  " ".join([t.norm_ for t in found_tokens])).lower()
-                    if norm_annot == norm_found:
+                    if norm_annot != norm_found:
+                        a = 1
+                        continue
+                    else:
                         found_mentions_counter += 1
 
                         # determine the head of the mention tokens
                         found_token_ids = list(range(start_token_id, start_token_id + len(found_tokens)))
                         found_tokens_global_ids = [t.i for t in found_tokens]
+                        tokens_text = [t.text for t in found_tokens]
                         mention_head_token = None
                         mention_head_token_id = -1
 
                         for t_id, token in zip(found_token_ids, found_tokens):
                             # mention head's ancestors should not be in the found tokens
                             if all([a.i not in found_tokens_global_ids for a in token.ancestors]):
+                                if token.pos_ in ["DET", "PUNCT"]:
+                                    continue
                                 mention_head_token = token
                                 mention_head_token_id = t_id
 
@@ -177,30 +184,32 @@ if __name__ == '__main__':
                         context_max_id = min(max(found_tokens_global_ids) + CONTEXT_RANGE, len(mention_head_token.doc) - 1)
                         mention_context_str = [t.text for t in mention_head_token.doc[context_min_id:context_max_id]]
                         mentions_dict[mention_id] = {COREF_CHAIN: coref_chain,
-                                                 TOKENS_NUMBER: found_token_ids,
-                                                 DOC_ID: doc_name,
-                                                 SCORE: -1,
-                                                 SENT_ID: sent_id,
-                                                 MENTION_TYPE: coref_chains[coref_chain][MENTION_TYPE],
-                                                 MENTION_FULL_TYPE: coref_chains[coref_chain][MENTION_FULL_TYPE],
-                                                 MENTION_ID: mention_id,
-                                                 TOPIC_ID: int(topic_id),
-                                                 TOPIC: topics_dict[topic_id],
-                                                 SUBTOPIC: "-",
-                                                 DESCRIPTION: code,
-                                                 COREF_TYPE: STRICT,
-                                                 MENTION_NER: mention_head_token.ent_type_ if mention_head_token.ent_type_ else "O",
-                                                 MENTION_HEAD_POS: mention_head_token.pos_,
-                                                 MENTION_HEAD_LEMMA: mention_head_token.lemma_,
-                                                 MENTION_HEAD: mention_head_token.text,
-                                                 MENTION_HEAD_ID: mention_head_token_id,
-                                                 IS_CONTINIOUS: bool(check_continuous([t.i for t in found_tokens])),
-                                                 IS_SINGLETON: False,
-                                                 MENTION_CONTEXT: mention_context_str,
-                                                 TOKENS_STR: "".join([t.text_with_ws for t in found_tokens]),
-                                                 TOKENS_TEXT: [t.text for t in found_tokens],
-                                                 CONLL_DOC_KEY: f'{topic_id}/-/{doc_name}'
-                                                 }
+                                                     TOKENS_NUMBER: found_token_ids,
+                                                     DOC_ID: doc_name,
+                                                     DOC: doc_name,
+                                                     SCORE: -1,
+                                                     SENT_ID: sent_id,
+                                                     MENTION_TYPE: coref_chains[coref_chain][MENTION_TYPE],
+                                                     MENTION_FULL_TYPE: coref_chains[coref_chain][MENTION_FULL_TYPE],
+                                                     MENTION_ID: mention_id,
+                                                     TOPIC_ID: str(topic_id),
+                                                     TOPIC: str(topic_id),
+                                                     SUBTOPIC: topics_dict[topic_id],
+                                                     SUBTOPIC_ID: str(topic_id),
+                                                     DESCRIPTION: code,
+                                                     COREF_TYPE: IDENTITY,
+                                                     MENTION_NER: mention_head_token.ent_type_ if mention_head_token.ent_type_ else "O",
+                                                     MENTION_HEAD_POS: mention_head_token.pos_,
+                                                     MENTION_HEAD_LEMMA: mention_head_token.lemma_,
+                                                     MENTION_HEAD: mention_head_token.text,
+                                                     MENTION_HEAD_ID: mention_head_token_id,
+                                                     IS_CONTINIOUS: bool(check_continuous([t.i for t in found_tokens])),
+                                                     IS_SINGLETON: False,
+                                                     MENTION_CONTEXT: mention_context_str,
+                                                     TOKENS_STR: "".join([t.text_with_ws for t in found_tokens]),
+                                                     TOKENS_TEXT: [t.text for t in found_tokens],
+                                                     CONLL_DOC_KEY: f'{topic_id}/{topic_id}/{doc_name}'
+                                                     }
 
                         mentions_df = pd.concat([mentions_df, pd.DataFrame({
                                                COREF_CHAIN: coref_chain,
@@ -211,6 +220,9 @@ if __name__ == '__main__':
                             index=[mention_id])], axis=0)
             if found_mentions_counter:
                 break
+
+        if not found_mentions_counter:
+            LOGGER.warning(f'A mention \"{mention_orig}\" was not found in document {doc_name} and will be skipped. ')
 
     LOGGER.warning(f'Not found annotations in the text ({len(not_found_list)}): \n{list(not_found_list)}')
 
@@ -224,25 +236,28 @@ if __name__ == '__main__':
     mentions_entities_list = []
     chain_df = mentions_df_unique[[DOC_ID, COREF_CHAIN]].groupby(COREF_CHAIN).count()
     for index, row in mentions_df_unique.iterrows():
+        if mentions_unique_dict[index][MENTION_FULL_TYPE] in ["MISC", "ACTOR-I"]:
+            continue
         mentions_unique_dict[index][IS_SINGLETON] = bool(chain_df.loc[row[COREF_CHAIN], DOC_ID] == 1)
         if mentions_unique_dict[index][MENTION_FULL_TYPE] in events:
             mentions_events_list.append(mentions_unique_dict[index])
         else:
             mentions_entities_list.append(mentions_unique_dict[index])
 
-    with open(os.path.join(os.getcwd(), OUTPUT_FOLDER_NAME, MENTIONS_EVENTS_JSON), 'w', encoding='utf-8') as file:
+    output_path = os.path.join(os.getcwd(), OUTPUT_FOLDER_NAME)
+
+    with open(os.path.join(output_path, MENTIONS_EVENTS_JSON), 'w', encoding='utf-8') as file:
         json.dump(mentions_events_list, file)
 
-    with open(os.path.join(os.getcwd(), OUTPUT_FOLDER_NAME, MENTIONS_ENTITIES_JSON), 'w', encoding='utf-8') as file:
+    with open(os.path.join(output_path, MENTIONS_ENTITIES_JSON), 'w', encoding='utf-8') as file:
         json.dump(mentions_entities_list, file)
 
     # save all mentions as csv
     df_all_mentions = pd.DataFrame()
-    for k, v in mentions_unique_dict.items():
+    for mention in mentions_entities_list + mentions_events_list:
         df_all_mentions = pd.concat([df_all_mentions, pd.DataFrame({
-               attr: str(value) if type(value) == list else value for attr, value in v.items()
-        }, index=[k])], axis=0)
-
+            attr: str(value) if type(value) == list else value for attr, value in mention.items()
+        }, index=[mention[MENTION_ID]])], axis=0)
     df_all_mentions.to_csv(os.path.join(os.getcwd(), OUTPUT_FOLDER_NAME, MENTIONS_ALL_CSV))
 
     LOGGER.info("Generating conll...")
@@ -268,7 +283,7 @@ if __name__ == '__main__':
                         token_text = token_text.replace("\n", "\\n")  # avoid unwanted like breaks in the conll file
 
                     conll_list.append(
-                        {TOPIC_SUBTOPIC: f'{doc_id.split("_")[0]}/-/{doc_id}',
+                        {TOPIC_SUBTOPIC_DOC: f'{doc_id.split("_")[0]}/{doc_id.split("_")[0]}/{doc_id}',
                          DOC_ID: doc_id,
                          SENT_ID: sentence_id,
                          TOKEN_ID: token_id,
@@ -277,11 +292,13 @@ if __name__ == '__main__':
                     token_keys_conll.append("_".join([doc_id, str(sentence_id), str(token_id)]))
 
     df_conll = pd.DataFrame(conll_list, index=token_keys_conll)
+
     # then annotate each token (i.e. row) in the conll df with the coref_chain id
     added_corefs = []
 
     LOGGER.info(f'Processing {len(mentions_df_unique)} mentions rows and assigning to the conll text...')
-    for mention_id, mention_values in tqdm(mentions_unique_dict.items()):
+    for mention_values in tqdm(mentions_entities_list + mentions_events_list):
+        mention_id = mention_values[MENTION_ID]
         if len(mention_values[TOKENS_NUMBER]) == 1:
             annot_token_dict[mention_values[DOC_ID]][mention_values[SENT_ID]][mention_values[MENTION_HEAD_ID]] = \
                 pd.concat([annot_token_dict[mention_values[DOC_ID]][mention_values[SENT_ID]][mention_values[MENTION_HEAD_ID]],
@@ -318,30 +335,6 @@ if __name__ == '__main__':
                 token_values_sort = token_values.sort_values(by=[FIRST_TOKEN, LAST_TOKEN], ascending=[False, False])
                 df_conll.loc["_".join([doc_id, str(sent_id), str(token_id)]), REFERENCE] = "| ".join(token_values_sort[COREF_CHAIN].values)
 
-    df_conll.to_csv(os.path.join(os.getcwd(), OUTPUT_FOLDER_NAME, CONLL_CSV))
-
-    # Make the conll file string from the dataframe
-    df_as_string = ""
-    LOGGER.info("Creating a conll string...")
-    with open(os.path.join(os.getcwd(), OUTPUT_FOLDER_NAME, NEWSWCL50.split("-")[0] + ".conll"), 'w', encoding='utf-8') as f:
-        for doc_id, group_df in tqdm(df_conll.groupby([TOPIC_SUBTOPIC])):
-
-            #line breaks at new sentences and #header and #end
-            df_as_string = df_as_string + "#begin document " + doc_id + "; part 000" + "\n"
-            for sent_id, sent_df in group_df.groupby([SENT_ID]):
-
-                for index, row in sent_df.iterrows():
-                    df_as_string = df_as_string + "\t".join(
-                        [doc_id, str(row[SENT_ID]), str(row[TOKEN_ID]), row[TOKEN], row[REFERENCE], "\n"])
-                df_as_string = df_as_string + "\n"
-            df_as_string = df_as_string + "#end document" + "\n"
-        f.write(df_as_string)
-
-    # check conll by counting brackets (should be equal)
-    LOGGER.info("Checking equal brackets in conll (if unequal, the result may be incorrect):")
-    try:
-        assert df_as_string.count("(") == df_as_string.count(")")
-    except AssertionError:
-        LOGGER.warning(f'Number of opening and closing brackets in conll does not match! ')
+    make_save_conll(df_conll, df_all_mentions, output_path)
 
     LOGGER.info(f'Done! \nNumber of unique mentions: {len(mentions_df_unique)} \nNumber of unique chains: {len(chain_df)} ')

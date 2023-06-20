@@ -211,11 +211,11 @@ if __name__ == '__main__':
                 with open(full_filename, encoding='utf-8', mode='r') as file:
                     mentions_read_list = json.load(file)
 
-                for v in mentions_read_list:
-                    missed_attributes = set(sample_mention.keys()) - set(v.keys())
-                    if len(missed_attributes):
-                        LOGGER.warning(f'Dataset {dataset_folder.split("-")[0]} misses mentions\' attributes {missed_attributes} '
-                                       f'and this may cause troubles in the script execution')
+                # for v in mentions_read_list:
+                #     missed_attributes = set(sample_mention.keys()) - set(v.keys())
+                #     if len(missed_attributes):
+                #         LOGGER.warning(f'Dataset {dataset_folder.split("-")[0]} misses mentions\' attributes {missed_attributes} '
+                #                        f'and this may cause troubles in the script execution')
 
                 df_tmp = pd.DataFrame(mentions_read_list, index=list(range(len(mentions_read_list))))
                 df_tmp[TYPE] = [mention_type] * len(df_tmp)
