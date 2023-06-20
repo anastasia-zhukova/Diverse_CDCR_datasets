@@ -19,14 +19,25 @@ Paper: https://www.aclweb.org/anthology/L14-1646/
 }
 ```
 
+We take only mentions from the manually validated sentences as described in [Cybulska and Vossen (2015)](https://aclanthology.org/W15-0801/). 
+We assign the subtopic names from [the ECB+ annotation guide](http://www.newsreader-project.eu/files/2013/01/NWR-2014-1.pdf), 
+which are saved in ```subtopic_names.json```. 
+Additionally to the files with the overall dataset, the parsing script uses a file ```train_dev_test_split.json``` with the split was proposed by 
+[Barhom et al. (2019)](https://aclanthology.org/P19-1409/)to create folders with the train/dev/test splits located in the ```\output_data```. 
+
+The dataset is organized as following: 
+
+```
+-> topic (original topic_id)
+    -> subtopic (topic_id + ecb/ecbplus)
+        -> documents (enumerated doc_id extracted from the original doc name)
+   ```
+
 To parse ECB+:
 1) make sure that you downloaded the dataset by running ```python setup.py``` 
 2) execute ```python parse_ecbplus.py```
 
-We take only mentions from the manually validated sentences as described in [Cybulska and Vossen (2015)](https://aclanthology.org/W15-0801/). 
 
-Additionally to the files with the overall dataset, the parsing script creates folders with the train/dev/test splits located in the ```\output_data```. 
-The split was proposed by [Barhom et al. (2019)](https://aclanthology.org/P19-1409/) and reused in our parsing script.  
 
 __________________
 

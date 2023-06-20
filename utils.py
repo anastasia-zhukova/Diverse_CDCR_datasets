@@ -6,14 +6,14 @@ import numpy as np
 import pandas as pd
 
 
-def make_save_conll(conll_df: pd.DataFrame, mentions: Union[List, pd.DataFrame], output_folder: str):
+def make_save_conll(conll_df: pd.DataFrame, mentions: Union[List, pd.DataFrame], output_folder: str, assign_reference_labels=True):
     """
     Universal function that converst a dataframe into a simplified ConLL format for coreference resolution.
     Args:
         conll_df: a conll format in the dataframe format
         mentions: a list or a dataframe of mentions
         output_folder: a path where the files will be saved
-
+        assign_reference_labels: if to perform assignment of the reference labels (last column of CoNLL) or just form a conll file
     Returns:
 
     """
@@ -29,40 +29,44 @@ def make_save_conll(conll_df: pd.DataFrame, mentions: Union[List, pd.DataFrame],
     conll_df = conll_df.reset_index(drop=True)
     df_all_mentions[SENT_ID] = df_all_mentions[SENT_ID].astype(int)
 
+    if assign_reference_labels:
+        # assigning reference labels to the tokens
+        LOGGER.info("Assigning reference labels to the tokens...")
+        for i, row in tqdm(conll_df.iterrows(), total=conll_df.shape[0]):
+            if row[REFERENCE] is None:
+                reference_str = "-"
+            else:
+                reference_str = row[REFERENCE]
+
+            mention_candidates_df = df_all_mentions[(df_all_mentions[CONLL_DOC_KEY] == row[TOPIC_SUBTOPIC_DOC]) &
+                                                    (df_all_mentions[SENT_ID] == row[SENT_ID])]
+            for mentions_row_id, mention_row in mention_candidates_df.iterrows():
+                mention = mention_row.to_dict()
+                # the token_ids in the mention are of type int64 and need to be converted
+                token_numbers = [int(v) for v in re.sub(r'[\[,\]]+', "", mention[TOKENS_NUMBER]).split(" ")]
+                if row[TOKEN_ID] not in token_numbers:
+                    continue
+
+                chain = mention[COREF_CHAIN]
+                # one and only token
+                if len(token_numbers) == 1 and token_numbers[0] == row[TOKEN_ID]:
+                    reference_str = reference_str + '| (' + str(chain) + ')'
+                # one of multiple tokes
+                elif len(token_numbers) > 1 and token_numbers[0] == row[TOKEN_ID]:
+                    reference_str = reference_str + '| (' + str(chain)
+                elif len(token_numbers) > 1 and token_numbers[len(token_numbers) - 1] == row[TOKEN_ID]:
+                    reference_str = reference_str + '| ' + str(chain) + ')'
+
+            # remove the leading characters if necessary (left from initialization)
+            if reference_str.startswith("-| "):
+                reference_str = reference_str[3:]
+            conll_df.at[i, REFERENCE] = reference_str
+
+    if DOC_ID in conll_df.columns:
+        conll_df = conll_df.drop(columns=[DOC_ID])
+
     # create a conll string from the conll_df
     LOGGER.info("Generating conll string...")
-    for i, row in tqdm(conll_df.iterrows(), total=conll_df.shape[0]):
-        if row[REFERENCE] is None:
-            reference_str = "-"
-        else:
-            reference_str = row[REFERENCE]
-
-        mention_candidates_df = df_all_mentions[(df_all_mentions[CONLL_DOC_KEY] == row[TOPIC_SUBTOPIC_DOC]) &
-                                                (df_all_mentions[SENT_ID] == row[SENT_ID])]
-        for mentions_row_id, mention_row in mention_candidates_df.iterrows():
-            mention = mention_row.to_dict()
-            # the token_ids in the mention are of type int64 and need to be converted
-            token_numbers = [int(v) for v in re.sub(r'[\[,\]]+', "", mention[TOKENS_NUMBER]).split(" ")]
-            if row[TOKEN_ID] not in token_numbers:
-                continue
-
-            chain = mention[COREF_CHAIN]
-            # one and only token
-            if len(token_numbers) == 1 and token_numbers[0] == row[TOKEN_ID]:
-                reference_str = reference_str + '| (' + str(chain) + ')'
-            # one of multiple tokes
-            elif len(token_numbers) > 1 and token_numbers[0] == row[TOKEN_ID]:
-                reference_str = reference_str + '| (' + str(chain)
-            elif len(token_numbers) > 1 and token_numbers[len(token_numbers) - 1] == row[TOKEN_ID]:
-                reference_str = reference_str + '| ' + str(chain) + ')'
-
-        # remove the leading characters if necessary (left from initialization)
-        if reference_str.startswith("-| "):
-            reference_str = reference_str[3:]
-        conll_df.at[i, REFERENCE] = reference_str
-
-    conll_df = conll_df.drop(columns=[DOC_ID])
-
     outputdoc_str = ""
     for (topic_local), topic_df in conll_df.groupby(by=[TOPIC_SUBTOPIC_DOC]):
         outputdoc_str += f'#begin document ({topic_local}); part 000\n'
