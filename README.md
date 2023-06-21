@@ -36,12 +36,12 @@ Parsing scripts per dataset are contained in each separate folder, whereas the s
 
 The parsing scripts and output folders are located  here:
 
-| Dataset   | Parsing script                          | Output files                     |
-|:----------|:----------------------------------------|:---------------------------------|
-| ECB+      | ```ECBplus-prep/parse_ecbplus.py```     | ```ECBplus-prep/output_data```   |
-| NewsWCL50 | ```NewsWCL50-prep/parse_newswcl50.py``` | ```NewsWCL50-prep/output_data``` |
-| MEANTIME  | ```MEANTIME-prep/parse_meantime.py```   | ```MEANTIME-prep/output_data```  |
-| NP4E      | ```NP4E-prep/parse_np4e.py```           | ```NP4E-prep/output_data```      |
+| Dataset   | Parsing script                          | Output files                     | Has original train/val/test split |
+|:----------|:----------------------------------------|:---------------------------------|-----------------------------------|
+| ECB+      | ```ECBplus-prep/parse_ecbplus.py```     | ```ECBplus-prep/output_data```   | yes                               |
+| NewsWCL50 | ```NewsWCL50-prep/parse_newswcl50.py``` | ```NewsWCL50-prep/output_data``` | no                                |
+| MEANTIME  | ```MEANTIME-prep/parse_meantime.py```   | ```MEANTIME-prep/output_data```  | no                                |
+| NP4E      | ```NP4E-prep/parse_np4e.py```           | ```NP4E-prep/output_data```      | no                                |
 
 Each dataset contains three output files suitable for a CDCR model: 
 
@@ -54,10 +54,11 @@ Same data in the csv format (used to compute statistics of the datasets):
 1) ```conll.csv```, i.e., a CoNLL format in a tabular format without tags and newline delimiters.
 2) ```all_mentions.csv```, i.e., a csv file with all mentions combined.
 
-If a dataset has **a predefined split into train/dev/test parts**, the ```output_data``` folder will additionally contain corresponding subfolders with a set of files defined above. 
+### Train/val/test subsets
+If a dataset has **a predefined split** into _**train/ val/ test**_ parts, the ```output_data``` folder will additionally contain corresponding subfolders with a set of files defined above. 
 
 
-## CDCR structure
+### CDCR structure
 The articles are organized in the following structure: 
 ```
 - topic
@@ -69,14 +70,18 @@ The articles are organized in the following structure:
 **Document** is a specific text, e.g., a news article. 
 
 The composion of these attributes as ```topic_id/subtopic_id/doc_id``` will be used as a unique document key within a dataset. 
-To make a document unique across the datasets, modify the key into ```dataset/topic/subtopic/document```.
+To make a document unique across the datasets, modify the key into ```dataset/topic_id/subtopic_id/doc_id```.
 
 If a dataset contains only subtopics, but they are all related to one topic, e.g., football, then they are organized under one topic. 
 If a dataset contains multiple subtopics but they do not share same topics, then for each subtopic separate topics are artificially created.  
 
-## CoNLL format (simplified)
+## Input formats
+### 1) (simplified) CoNLL format: Full document texts & annotations
 
-CoNLL format is a standard input format for within-document [coreference resolution](https://paperswithcode.com/dataset/conll-2012-1). The original format contains multiple columns that contain information per each token, e.g., POS tags, NER labels. We use a simplified format (based on the format of input filed used by [Barhom et al. 2019](https://github.com/shanybar/event_entity_coref_ecb_plus/tree/master/data/interim/cybulska_setup)) that contains tokens, their identifiers in the text (e.g., doc_id, sent_id), and labels of coref chains: 
+CoNLL format is a standard input format for within-document [coreference resolution](https://paperswithcode.com/dataset/conll-2012-1). 
+The original format contains multiple columns that contain information per each token, e.g., POS tags, NER labels. 
+We use a simplified format (based on the format of input filed used by [Barhom et al. 2019](https://github.com/shanybar/event_entity_coref_ecb_plus/tree/master/data/interim/cybulska_setup)) 
+that contains tokens, their identifiers in the text (e.g., doc_id, sent_id), and labels of coref chains: 
 
 | Column ID |  Type  | Description                               |
 |:----------|:------:|:------------------------------------------|
@@ -117,7 +122,7 @@ Example:
 ```
 
 
-## Mentions.json
+### 2) ***_mentions.json: Annotations and mention context
 The format is adapted and extended from [WEC-Eng](https://huggingface.co/datasets/Intel/WEC-Eng) and from the mention format used by [Barhom et al. 2019](https://github.com/shanybar/event_entity_coref_ecb_plus/tree/master/data/interim/cybulska_setup). 
 
 | Field              | Type            | Description                                                                                         |
@@ -182,9 +187,9 @@ Example:
 ```
 
 
-## Dataset summary metrics
+## Metrics for the dataset comparison
 
-The following values enable comparison of the CDCR datasets on dataset and topic levels.    
+The following values enable comparison of the CDCR datasets on dataset, topic+subtopic, and language (optional) levels.    
 
 | Field                                | Type     | Description                                                                                                                                                                               |
 | :---                                 | :----:   |:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
