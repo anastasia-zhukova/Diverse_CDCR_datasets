@@ -34,7 +34,7 @@ validated_sentences_df = pd.read_csv(os.path.join(ECB_PARSING_FOLDER, ECBPLUS_FO
                                                   "ECBplus_coreference_sentences.csv")).set_index(
     ["Topic", "File", "Sentence Number"])
 
-with open(os.path.join(ECB_PARSING_FOLDER, "train_dev_test_split.json"), "r") as file:
+with open(os.path.join(ECB_PARSING_FOLDER, "train_val_test_split.json"), "r") as file:
     train_dev_test_split_dict = json.load(file)
 
 with open(os.path.join(ECB_PARSING_FOLDER, "subtopic_names.json"), "r") as file:
@@ -51,145 +51,16 @@ def to_nltk_tree(node):
         return node.orth_
 
 
-def count_annotations():
-    doc_files = {}
-    coref_dics = {}
-
-    selected_topics = os.listdir(source_path)
-
-    conll_df = pd.DataFrame()
-    final_output_str = ""
-    entity_mentions = []
-    event_mentions = []
-    topic_names = []
-    need_manual_review_mention_head = {}
-
-    mention_count = 0
-    coref_count = 0
-
-    for topic_id in selected_topics:
-        if topic_id == "__MACOSX":
-            continue
-
-        # if a file with confirmed sentences
-        if os.path.isfile(os.path.join(source_path, topic_id)):
-            continue
-
-        LOGGER.info(f'Converting topic {topic_id}')
-        diff_folders = {ECB_FILE: [], ECBPLUS_FILE: []}
-
-        # assign the different folders according to the topics in the variable "diff_folders"
-        for topic_file in os.listdir(os.path.join(source_path, topic_id)):
-            if ECBPLUS_FILE in topic_file:
-                diff_folders[ECBPLUS_FILE].append(topic_file)
-            else:
-                diff_folders[ECB_FILE].append(topic_file)
-
-        for annot_folders in list(diff_folders.values()):
-            t_number = annot_folders[0].split(".")[0].split("_")[0]
-            t_name = re.search(r'[a-z]+', annot_folders[0].split(".")[0])[0]
-            subtopic_id = t_number + t_name
-            topic_names.append(subtopic_id)
-            coref_dict = {}
-            doc_sent_map = {}
-
-            # for every themed-file in "commentated files"
-            for topic_file in tqdm(annot_folders):
-                doc_name_ecb = topic_file.split(".")[0].split("_")[-1]
-                # mention_counter_got, mentions_counter_found = 0, 0
-                doc_id = re.search(r'[\d+]+', topic_file.split(".")[0].split("_")[1])[0]
-                topic_subtopic_doc = f'{topic_id}/{subtopic_id}/{doc_id}'
-
-                # import the XML-Datei topic_file
-                tree = ET.parse(os.path.join(source_path, topic_id, topic_file))
-                root = tree.getroot()
-
-                title, text, url, time, time2, time3 = "", "", "", "", "", ""
-
-                token_dict, mentions, mentions_map = {}, {}, {}
-
-                t_id = -1
-                old_sent = -1
-                sent_dict = {}
-
-                for elem in root:
-                    if elem.tag == "token":
-                        try:
-                            # increase t_id value by 1 if the sentence value in the xml element ''equals the value of old_sent
-                            if old_sent == int(elem.attrib[SENTENCE]):
-                                t_id += 1
-                                # else set old_sent to the value of sentence and t_id to 0
-                            else:
-                                old_sent = int(elem.attrib[SENTENCE])
-                                t_id = 0
-
-                            # fill the token-dictionary with fitting attributes
-                            token_dict[elem.attrib[T_ID]] = {TEXT: elem.text, SENT: elem.attrib[SENTENCE], ID: t_id,
-                                                             NUM: elem.attrib[NUM]}
-
-                            # prev_word = ""
-                            # if t_id >= 0:
-                            #     prev_word = root[t_id - 1].text
-                            #
-                            # if elem.tag == TOKEN:
-                            #     _, word, space = append_text(prev_word, elem.text)
-                            #     conll_df = conll_df.append(pd.DataFrame({
-                            #         TOPIC_SUBTOPIC_DOC: topic_subtopic_doc,
-                            #         DOC_ID: subtopic_id,
-                            #         SENT_ID: int(token_dict[elem.attrib[T_ID]][SENT]),
-                            #         TOKEN_ID: int(t_id),
-                            #         TOKEN: word,
-                            #         REFERENCE: "-"
-                            #     }, index=[elem.attrib[T_ID]]))
-                            #
-                            # if ECB_FILE in topic_file:
-                            #     # set the title-attribute of all words of the first sentence together und the text-attribute of the rest
-                            #     if int(elem.attrib[SENTENCE]) == 0:
-                            #         title, _, _ = append_text(title, elem.text)
-                            #     else:
-                            #         text, _, _ = append_text(text, elem.text)
-                            #
-                            # if ECBPLUS_FILE in topic_file:
-                            #     # add a string with the complete sentence to the sentence-dictionary for every different sentence
-                            #     new_text, _, _ = append_text(sent_dict.get(int(elem.attrib[SENTENCE]), ""),
-                            #                                  elem.text)
-                            #     sent_dict[int(elem.attrib[SENTENCE])] = new_text
-
-                        except KeyError as e:
-                            LOGGER.warning(f'Value with key {e} not found and will be skipped from parsing.')
-
-                    if elem.tag == "Markables":
-                        for i, subelem in enumerate(elem):
-                            tokens = [token.attrib[T_ID] for token in subelem]
-                            tokens.sort(key=int)  # sort tokens by their id
-                            sent_tokens = [int(token_dict[t][NUM]) for t in tokens]
-                            # if "tokens" has values -> fill the "mention" dict with the value of the corresponding m_id
-                            if len(tokens):
-                                mention_counter_got += 1
-                                sent_id = int(token_dict[tokens[0]][SENT])
-
-                                # take only validated sentences
-                                if (int(t_number), doc_name_ecb, sent_id) not in validated_sentences_df.index:
-                                    continue
-                                mention_count += 1
-    LOGGER.info(f'Found annotated mentions: {mention_count}')
-    a = 1
-
-
 def convert_files(topic_number_to_convert=3, check_with_list=True):
-    doc_files = {}
     coref_dics = {}
-
     selected_topics = os.listdir(source_path)[:topic_number_to_convert]
-
     conll_df = pd.DataFrame()
-    final_output_str = ""
     entity_mentions = []
     event_mentions = []
     topic_names = []
     need_manual_review_mention_head = {}
     counter_annotated_mentions = 0
-    counter_parsed_metions = 0
+    counter_parsed_mentions = 0
 
     for topic_id in selected_topics:
         if topic_id == "__MACOSX":
@@ -324,21 +195,23 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                             break
 
                                 # whole mention string processed, look for the head
-                                mention_head_id = None
+                                mention_head_id = token_ids[0]
                                 mention_head = None
                                 if mention_id not in need_manual_review_mention_head:
-                                    found_mentions_tokens = doc[min([t for t in token_found.values() if t is not None]): max(
-                                        [t for t in token_found.values() if t is not None]) + 1]
-                                    if len(found_mentions_tokens) == 1:
-                                        mention_head = found_mentions_tokens[0]
-                                        # remap the mention head back to the np4e original tokenization to get the ID for the output
-                                        for t_orig, t_mapped in token_found.items():
-                                            if t_mapped == mention_head.i:
-                                                mention_head_id = t_orig
-                                                break
+                                    found_mentions_tokens_ids = list([t for t in token_found.values() if t is not None])
+                                    found_mentions_tokens = []
+                                    if len(found_mentions_tokens_ids):
+                                        found_mentions_tokens = doc[min(found_mentions_tokens_ids): max(
+                                            found_mentions_tokens_ids) + 1]
+                                        if len(found_mentions_tokens) == 1:
+                                            mention_head = found_mentions_tokens[0]
+                                            # remap the mention head back to the np4e original tokenization to get the ID for the output
+                                            for t_orig, t_mapped in token_found.items():
+                                                if t_mapped == mention_head.i:
+                                                    mention_head_id = t_orig
+                                                    break
 
                                     if mention_head is None:
-                                        found_mentions_tokens_ids = list([t for t in token_found.values() if t is not None])
                                         # found_mentions_tokens_ids = set([t.i for t in found_mentions_tokens])
                                         for i, t in enumerate(found_mentions_tokens):
                                             if t.head.i == t.i:
@@ -369,7 +242,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
                                 # add to manual review if the resulting token is not inside the mention
                                 # (error must have happened)
-                                if mention_head_id is None:  # also "if is None"
+                                if mention_head is None:  # also "if is None"
                                     if mention_id not in need_manual_review_mention_head:
                                         need_manual_review_mention_head[mention_id] = \
                                             {
@@ -406,7 +279,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                                                       MENTION_CONTEXT: mention_context_str,
                                                                       TOPIC_SUBTOPIC_DOC: topic_subtopic_doc,
                                                                       TOPIC: topic_subtopic_doc}
-                                    counter_parsed_metions += 1
+                                    counter_parsed_mentions += 1
                             else:
                                 # form coreference chain
                                 # m_id points to the target
@@ -489,7 +362,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                                     m.attrib["m_id"]]
                                 except KeyError as e:
                                     LOGGER.warning(
-                                        f'Document {doc_id}: Mention with ID {str(e)} is not amoung the Markables and will be skipped.')
+                                        f'Document {doc_id}: Mention with ID {str(e)} is not among the Markables and will be skipped.')
                             for m in subelem:
                                 mentions_map[m.attrib[M_ID]] = True
 
@@ -517,11 +390,11 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                         DESCRIPTION:  m[TOKENS_STR],
                                     })
 
-            try:
-                assert counter_parsed_metions == counter_annotated_mentions
-            except AssertionError:
-                LOGGER.warning(f'Document {subtopic_id}: Not everything from the annotated mentions '
-                               f'({counter_annotated_mentions}) was parsed ({counter_parsed_metions}).')
+            # try:
+            #     assert counter_parsed_metions == counter_annotated_mentions
+            # except AssertionError:
+            #     LOGGER.warning(f'Document {subtopic_id}: Not everything from the annotated mentions '
+            #                    f'({counter_annotated_mentions}) was parsed ({counter_parsed_metions}).')
 
             coref_dics[topic_id] = coref_dict
 
@@ -585,6 +458,8 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
                     if not mention[IS_SINGLETON]:
                         mentions_local.append(mention)
+            entity_mentions.extend(entity_mentions_local)
+            event_mentions.extend(event_mentions_local)
 
     if len(need_manual_review_mention_head):
         LOGGER.warning(f'Mentions ignored: {len(need_manual_review_mention_head)}. The ignored mentions are available here for a manual review: '
@@ -608,8 +483,8 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
             continue
         event_mention_validated.append(mention)
 
-    for save_options in [[entity_mentions, event_mentions, out_path],
-                         [entity_mention_validated, event_mention_validated, os.path.join(ECB_PARSING_FOLDER, OUTPUT_FOLDER_NAME+"-unvalidated")]]:
+    for save_options in [[entity_mentions, event_mentions, os.path.join(ECB_PARSING_FOLDER, OUTPUT_FOLDER_NAME+"-unvalidated")],
+                         [entity_mention_validated, event_mention_validated, out_path]]:
         entity_m, event_m, save_folder = save_options
         LOGGER.info(f'Saving ECB+ into {save_folder}...')
 
@@ -662,11 +537,11 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                             conll_df[conll_df[TOPIC_SUBTOPIC_DOC].str.contains(f'{t_id}/')]], axis=0)
             make_save_conll(conll_df_split, selected_event_mentions+selected_entity_mentions, split_folder, False)
     LOGGER.info(f'Parsing ECB+ is done!')
-    LOGGER.info(f'The annotated mentions ({counter_annotated_mentions}) and parsed mentions ({counter_parsed_metions}).')
+    LOGGER.info(f'The annotated mentions ({counter_annotated_mentions}) and parsed mentions ({counter_parsed_mentions}).')
+
 
 # main function for the input which topics of the ecb corpus are to be converted
 if __name__ == '__main__':
-    # count_annotations()
     topic_num = 45
     convert_files(topic_num)
     LOGGER.info("\nConversion of {0} topics from xml to newsplease format and to annotations in a json file is "

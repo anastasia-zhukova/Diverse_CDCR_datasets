@@ -1,4 +1,9 @@
 # Ignore
+NewsWCL50-prep/output_data/test_parsing/
+ECBplus-prep/output_data/test_parsing/
+MEANTIME-prep/output_data/test_parsing/
+NP4E-prep/output_data/test_parsing/
+NiDENT-prep/output_data/test_parsing/
 NewsWCL50-prep/2019_annot/
 ECBplus-prep/__MACOSX/
 ECBplus-prep/ECB+/
