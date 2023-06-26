@@ -14,7 +14,16 @@ from tqdm import tqdm
 from datetime import datetime
 
 
-DIRECTORIES_TO_SUMMARIZE = [NEWSWCL50, ECB_PLUS, MEANTIME, NP4E, NIDENT, GVC, FCC]
+DIRECTORIES_TO_SUMMARIZE = {
+       NEWSWCL50: os.path.join(os.getcwd(), NEWSWCL50, OUTPUT_FOLDER_NAME),
+       ECB_PLUS: os.path.join(os.getcwd(), ECB_PLUS, OUTPUT_FOLDER_NAME),
+       "ECBplus_unvalidated": os.path.join(os.getcwd(), ECB_PLUS, "output_data-unvalidated"),
+       MEANTIME: os.path.join(os.getcwd(), MEANTIME, OUTPUT_FOLDER_NAME),
+       NP4E: os.path.join(os.getcwd(), NP4E, OUTPUT_FOLDER_NAME),
+       # NIDENT: "",
+       # GVC: "",
+       # FCC: ""
+}
 
 nltk.download('stopwords')
 
@@ -179,7 +188,7 @@ def conll_lemma_baseline(mentions: List[dict]) -> float:
 
 
 if __name__ == '__main__':
-    for i, dataset in enumerate(DIRECTORIES_TO_SUMMARIZE):
+    for i, dataset in enumerate(list(DIRECTORIES_TO_SUMMARIZE)):
         print(f'{i}: {dataset.split("-")[0]}')
 
     input_str = input("List dataset IDs with comma separation which to include into the summary or print \"all\" to summarize all: ")
@@ -187,7 +196,8 @@ if __name__ == '__main__':
         selected_dir_to_summarize = DIRECTORIES_TO_SUMMARIZE
     else:
         selected_dataset_ids = [int(part.strip()) for part in input_str.split(',')]
-        selected_dir_to_summarize = [DIRECTORIES_TO_SUMMARIZE[i] for i in selected_dataset_ids]
+        directories_dict = {i: {name: dir} for i, (name, dir) in enumerate(DIRECTORIES_TO_SUMMARIZE.items())}
+        selected_dir_to_summarize = [directories_dict[i] for i in selected_dataset_ids]
 
     LOGGER.info(f'Selected dataset to summarize: {selected_dir_to_summarize}')
 
@@ -195,16 +205,16 @@ if __name__ == '__main__':
     chain_df_all = pd.DataFrame()
 
     # read annotated mentions and corresponding texts
-    for dataset_folder in selected_dir_to_summarize:
+    for dataset_name, dataset_folder in selected_dir_to_summarize:
         all_mentions_list = []
         mentions_df = pd.DataFrame()
 
-        LOGGER.info(f'Reading files with mentions for {dataset_folder} dataset...')
+        LOGGER.info(f'Reading files with mentions for {dataset_name} dataset...')
 
         mentions_zip = zip([EVENT, ENTITY], [MENTIONS_EVENTS_JSON, MENTIONS_ENTITIES_JSON])
 
         for mention_type, file_name in mentions_zip:
-            full_filenames = [os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, file_name)]
+            full_filenames = [os.path.join(dataset_folder, file_name)]
 
             for full_filename in full_filenames:
                 LOGGER.info(f'Processing {full_filename}...')
@@ -222,7 +232,7 @@ if __name__ == '__main__':
                 if LANGUAGE not in df_tmp.columns:
                     df_tmp[LANGUAGE] = "english"
                 # kick out "prep" from the name
-                df_tmp[DATASET_NAME] = [dataset_folder.split("-")[0]] * len(df_tmp)
+                df_tmp[DATASET_NAME] = [dataset_name.split("-")[0]] * len(df_tmp)
                 mentions_df = pd.concat([mentions_df, df_tmp], ignore_index=True, axis = 0)
                 all_mentions_list.extend(mentions_read_list)
 
@@ -232,7 +242,7 @@ if __name__ == '__main__':
 
         # read texts (conll format)
         df_conll = pd.DataFrame()
-        conll_filenames = [os.path.join(os.getcwd(), dataset_folder, OUTPUT_FOLDER_NAME, CONLL_CSV)]
+        conll_filenames = [os.path.join(os.getcwd(), dataset_name, OUTPUT_FOLDER_NAME, CONLL_CSV)]
 
         for conll_filename in conll_filenames:
             LOGGER.info(f'Reading {conll_filename}...')

@@ -36,12 +36,13 @@ Parsing scripts per dataset are contained in each separate folder, whereas the s
 
 The parsing scripts and output folders are located  here:
 
-| Dataset   | Parsing script                          | Output files                     | Has original train/val/test split |
-|:----------|:----------------------------------------|:---------------------------------|-----------------------------------|
-| ECB+      | ```ECBplus-prep/parse_ecbplus.py```     | ```ECBplus-prep/output_data```   | yes                               |
-| NewsWCL50 | ```NewsWCL50-prep/parse_newswcl50.py``` | ```NewsWCL50-prep/output_data``` | no                                |
-| MEANTIME  | ```MEANTIME-prep/parse_meantime.py```   | ```MEANTIME-prep/output_data```  | no                                |
-| NP4E      | ```NP4E-prep/parse_np4e.py```           | ```NP4E-prep/output_data```      | no                                |
+| Dataset          | Parsing script                          | Output files                               | Has original train/val/test split |
+|:-----------------|:----------------------------------------|:-------------------------------------------|-----------------------------------|
+| ECB+             | ```ECBplus-prep/parse_ecbplus.py```     | ```ECBplus-prep/output_data```             | yes                               |
+| ECB+ unvalidated | ```ECBplus-prep/parse_ecbplus.py```     | ```ECBplus-prep/output_data-unvalidated``` | yes                               |
+| NewsWCL50        | ```NewsWCL50-prep/parse_newswcl50.py``` | ```NewsWCL50-prep/output_data```           | no                                |
+| MEANTIME         | ```MEANTIME-prep/parse_meantime.py```   | ```MEANTIME-prep/output_data```            | no                                |
+| NP4E             | ```NP4E-prep/parse_np4e.py```           | ```NP4E-prep/output_data```                | no                                |
 
 Each dataset contains three output files suitable for a CDCR model: 
 
