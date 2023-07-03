@@ -29,7 +29,7 @@ To parse NP4E:
 The dataset is organized as following: 
 
 ```
--> topic
+-> topic (one topic about bomb, explosion, and kidnap)
     -> subtopic (event)
         -> documents (news articles)
    ```

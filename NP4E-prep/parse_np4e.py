@@ -238,8 +238,6 @@ def conv_files():
                                 "spacy_sentence_tokens": [(i,t.text) for i,t in enumerate(doc)],
                                 "tolerance": tolerance
                             }
-                        with open(os.path.join(out_path, MANUAL_REVIEW_FILE), "w", encoding='utf-8') as file:
-                            json.dump(need_manual_review_mention_head, file)
 
                         LOGGER.warning(
                             f"Mention with ID {doc_id}/{mention_id} ({token_str}) needs manual review. Could not "
@@ -293,31 +291,31 @@ def conv_files():
                         MENTION_NER: mention_ner
                     }, index=[mention_id])], axis=0)
 
-            newsplease_custom = copy.copy(newsplease_format)
-
-            title = ""
-            for t in list(doc_df[doc_df[SENT_ID] == 0][TOKEN].values):
-                title, _, _ = append_text(title, t)
-
-            text = ""
-            for t in list(doc_df[doc_df[SENT_ID] > 0][TOKEN].values):
-                text, _, _ = append_text(text, t)
-
-            newsplease_custom["title"] = title
-            newsplease_custom["date_publish"] = None
-
-            newsplease_custom["text"] = text
-            newsplease_custom["source_domain"] = doc_text_name.split(".xml")[0]
-            if newsplease_custom["title"][-1] not in string.punctuation:
-                newsplease_custom["title"] += "."
-
-            doc_files[doc_text_name.split(".")[0]] = newsplease_custom
-            if subtopic_name_composite not in os.listdir(result_path):
-                os.mkdir(os.path.join(result_path, subtopic_name_composite))
-
-            with open(os.path.join(result_path, subtopic_name_composite, newsplease_custom["source_domain"] + ".json"),
-                      "w") as file:
-                json.dump(newsplease_custom, file)
+            # newsplease_custom = copy.copy(newsplease_format)
+            #
+            # title = ""
+            # for t in list(doc_df[doc_df[SENT_ID] == 0][TOKEN].values):
+            #     title, _, _ = append_text(title, t)
+            #
+            # text = ""
+            # for t in list(doc_df[doc_df[SENT_ID] > 0][TOKEN].values):
+            #     text, _, _ = append_text(text, t)
+            #
+            # newsplease_custom["title"] = title
+            # newsplease_custom["date_publish"] = None
+            #
+            # newsplease_custom["text"] = text
+            # newsplease_custom["source_domain"] = doc_text_name.split(".xml")[0]
+            # if newsplease_custom["title"][-1] not in string.punctuation:
+            #     newsplease_custom["title"] += "."
+            #
+            # doc_files[doc_text_name.split(".")[0]] = newsplease_custom
+            # if subtopic_name_composite not in os.listdir(result_path):
+            #     os.mkdir(os.path.join(result_path, subtopic_name_composite))
+            #
+            # with open(os.path.join(result_path, subtopic_name_composite, newsplease_custom["source_domain"] + ".json"),
+            #           "w") as file:
+            #     json.dump(newsplease_custom, file)
 
         grouped_dfs = coref_pre_df.groupby([COREF_CHAIN, DOC_ID])
         cand_chains_df = pd.DataFrame(np.zeros((len(grouped_dfs), len(grouped_dfs))),
@@ -405,24 +403,6 @@ def conv_files():
                 entity_mentions_local.append(mention)
             checked_sets = checked_sets.union(to_check)
 
-        annot_path = os.path.join(result_path, subtopic_name_composite, "annotation", "original")
-        if subtopic_name_composite not in os.listdir(os.path.join(result_path)):
-            os.mkdir(os.path.join(result_path, subtopic_name_composite))
-
-        if "annotation" not in os.listdir(os.path.join(result_path, subtopic_name_composite)):
-            os.mkdir(os.path.join(result_path, subtopic_name_composite, "annotation"))
-            os.mkdir(annot_path)
-
-        with open(os.path.join(annot_path, MENTIONS_ENTITIES_JSON), "w",
-                  encoding='utf-8') as file:
-            json.dump(entity_mentions_local, file)
-
-        with open(os.path.join(annot_path, MENTIONS_EVENTS_JSON), "w",
-                  encoding='utf-8') as file:
-            json.dump([], file)
-
-        topic_conll_df = conll_df[conll_df[TOPIC_SUBTOPIC_DOC].str.contains(subtopic_name_composite)].reset_index(drop=True)
-        make_save_conll(topic_conll_df, entity_mentions_local, annot_path)
 
         entity_mentions.extend(entity_mentions_local)
 

@@ -107,7 +107,6 @@ def conv_files():
                 for doc_file in tqdm(topic_files):
                     tree = ET.parse(os.path.join(path, topic, doc_file))
                     root = tree.getroot()
-                    title, text, date, url, time, time2, time3 = "", "", "", "", "", "", ""
                     subtopic_full = doc_file.split(".")[0]
                     subtopic = subtopic_full.split("_")[0]
                     doc_id_full = f'{language}{doc_file.split(".")[0]}'
@@ -134,13 +133,6 @@ def conv_files():
                                 token_dict[elem.attrib["t_id"]] = {"text": elem.text, "sent": elem.attrib["sentence"],
                                                                    "id": t_id}
 
-                                if int(elem.attrib["sentence"]) == 0:
-                                    title, word, no_whitespace = append_text(title, elem.text)
-                                elif int(elem.attrib["sentence"]) == 1:
-                                    title, word, no_whitespace = append_text(date, elem.text)
-                                else:
-                                    title, word, no_whitespace = append_text(text, elem.text)
-
                                 if elem.tag == "token" and len(conll_df.loc[(conll_df[TOPIC_SUBTOPIC_DOC] == topic_subtopic_doc) &
                                                                             (conll_df[DOC_ID] == doc_id) &
                                                                             (conll_df[SENT_ID] == int(
@@ -154,7 +146,6 @@ def conv_files():
                                         TOKEN: elem.text,
                                         REFERENCE: "-"
                                     }
-                                    text, word, no_whitespace = append_text(text, elem.text)
 
                             except KeyError as e:
                                 LOGGER.warning(f'Value with key {e} not found and will be skipped from parsing.')
@@ -510,28 +501,6 @@ def conv_files():
                                 for m in subelem:
                                     mentions_map[m.attrib["m_id"]] = True
 
-                    newsplease_custom = copy.copy(newsplease_format)
-
-                    newsplease_custom["date_publish"] = None
-                    newsplease_custom["filename"] = doc_file
-                    newsplease_custom["text"] = text
-                    newsplease_custom["source_domain"] = doc_file.split(".")[0]
-                    newsplease_custom["language"] = language
-                    newsplease_custom["title"] = " ".join(doc_file.split(".")[0].split("_")[1:])
-                    if newsplease_custom["title"][-1] not in string.punctuation:
-                        newsplease_custom["title"] += "."
-
-                    # doc_files[topic_file.split(".")[0]] = newsplease_custom
-
-                    """
-                    topic
-                        subtopic as original doc_id 
-                            language-original_doc_name
-                    """
-                    doc_files[doc_id] = newsplease_custom
-
-                    with open(os.path.join(result_subtopic_path, doc_id_full + ".json"), "w") as file:
-                        json.dump(newsplease_custom, file)
 
         LOGGER.info(f'Parsing of MEANTIME annotation with language {language} done!')
 
@@ -604,31 +573,6 @@ def conv_files():
     # make_save_conll(conll_df, entity_mentions, event_mentions, out_path)
     make_save_conll(conll_df, df_all_mentions, OUT_PATH)
 
-    for topic_id_full in topic_list:
-        topic_id = int(topic_id_full.split("_")[0])
-        result_topic_path = os.path.join(out_path, topic_id_full)
-        if topic_id_full not in os.listdir(out_path):
-            os.mkdir(result_topic_path)
-
-        annot_path = os.path.join(result_topic_path, "annotation", "original")
-
-        if "annotation" not in os.listdir(os.path.join(result_topic_path)):
-            os.mkdir(os.path.join(result_topic_path, "annotation"))
-            os.mkdir(annot_path)
-
-        conll_topic_df = conll_df[conll_df[TOPIC_SUBTOPIC_DOC].str.contains(f'{topic_id}/')]
-        local_entity_mentions = [v for v in entity_mentions if v[TOPIC] == topic_id_full]
-        local_event_mentions = [v for v in event_mentions if v[TOPIC] == topic_id_full]
-        df_local_mentions = df_all_mentions[df_all_mentions[TOPIC] == topic_id_full]
-        with open(os.path.join(annot_path, MENTIONS_ENTITIES_JSON), "w",
-                  encoding='utf-8') as file:
-            json.dump(local_entity_mentions, file)
-
-        with open(os.path.join(annot_path, MENTIONS_EVENTS_JSON), "w",
-                  encoding='utf-8') as file:
-            json.dump(local_event_mentions, file)
-        # make_save_conll(conll_topic_df, local_entity_mentions, local_event_mentions, os.path.join(out_path, topic))
-        make_save_conll(conll_topic_df, df_local_mentions, result_topic_path)
 
     LOGGER.info(
         "Mentions that need manual review to define the head and its attributes have been saved to: " +
