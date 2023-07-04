@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 
-def make_save_conll(conll_df: pd.DataFrame, mentions: Union[List, pd.DataFrame], output_folder: str, assign_reference_labels=True):
+def make_save_conll(conll_df: pd.DataFrame, mentions: Union[List, pd.DataFrame], output_folder: str, assign_reference_labels=True) -> pd.DataFrame:
     """
     Universal function that converst a dataframe into a simplified ConLL format for coreference resolution.
     Args:
@@ -98,6 +98,7 @@ def make_save_conll(conll_df: pd.DataFrame, mentions: Union[List, pd.DataFrame],
     conll_df.to_csv(os.path.join(output_folder, CONLL_CSV))
     with open(os.path.join(output_folder, 'dataset.conll'), "w", encoding='utf-8') as file:
         file.write(outputdoc_str)
+    return conll_df
 
 
 def append_text(text, word) -> Tuple[str, str, bool]:

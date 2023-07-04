@@ -43,6 +43,8 @@ The parsing scripts and output folders are located  here:
 | NewsWCL50        | ```NewsWCL50-prep/parse_newswcl50.py``` | ```NewsWCL50-prep/output_data```           | no                                |
 | MEANTIME         | ```MEANTIME-prep/parse_meantime.py```   | ```MEANTIME-prep/output_data```            | no                                |
 | NP4E             | ```NP4E-prep/parse_np4e.py```           | ```NP4E-prep/output_data```                | no                                |
+| FCC              | ```FCC-prep/parse_fcc.py```             | ```FCC-prep/output_data_FCC```             | yes                               |
+| FCC-T            | ```FCC-prep/parse_fcc.py```             | ```FCC-prep/output_data_FCC-T```           | yes                               |
 
 Each dataset contains three output files suitable for a CDCR model: 
 
