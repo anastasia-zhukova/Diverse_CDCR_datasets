@@ -22,7 +22,8 @@ DIRECTORIES_TO_SUMMARIZE = {
        NP4E: os.path.join(os.getcwd(), NP4E, OUTPUT_FOLDER_NAME),
        # NIDENT: "",
        # GVC: "",
-       # FCC: ""
+       FCC: os.path.join(os.getcwd(), FCC, OUTPUT_FOLDER_NAME+"_FCC"),
+       "FCC_T": os.path.join(os.getcwd(), FCC, OUTPUT_FOLDER_NAME+"_FCC-T")
 }
 
 nltk.download('stopwords')
@@ -193,11 +194,12 @@ if __name__ == '__main__':
 
     input_str = input("List dataset IDs with comma separation which to include into the summary or print \"all\" to summarize all: ")
     if "all" in input_str:
-        selected_dir_to_summarize = DIRECTORIES_TO_SUMMARIZE
+        selected_dir_to_summarize = list(DIRECTORIES_TO_SUMMARIZE)
     else:
         selected_dataset_ids = [int(part.strip()) for part in input_str.split(',')]
-        directories_dict = {i: {name: dir} for i, (name, dir) in enumerate(DIRECTORIES_TO_SUMMARIZE.items())}
-        selected_dir_to_summarize = [directories_dict[i] for i in selected_dataset_ids]
+        # directories_dict = {i: {name: dir} for i, (name, dir) in enumerate(DIRECTORIES_TO_SUMMARIZE.items())}
+        # selected_dir_to_summarize = [directories_dict[i] for i in selected_dataset_ids]
+        selected_dir_to_summarize = [list(DIRECTORIES_TO_SUMMARIZE.items())[i]]
 
     LOGGER.info(f'Selected dataset to summarize: {selected_dir_to_summarize}')
 
@@ -242,7 +244,7 @@ if __name__ == '__main__':
 
         # read texts (conll format)
         df_conll = pd.DataFrame()
-        conll_filenames = [os.path.join(os.getcwd(), dataset_name, OUTPUT_FOLDER_NAME, CONLL_CSV)]
+        conll_filenames = [os.path.join(dataset_folder, CONLL_CSV)]
 
         for conll_filename in conll_filenames:
             LOGGER.info(f'Reading {conll_filename}...')
