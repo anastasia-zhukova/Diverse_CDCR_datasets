@@ -199,7 +199,7 @@ if __name__ == '__main__':
         selected_dataset_ids = [int(part.strip()) for part in input_str.split(',')]
         # directories_dict = {i: {name: dir} for i, (name, dir) in enumerate(DIRECTORIES_TO_SUMMARIZE.items())}
         # selected_dir_to_summarize = [directories_dict[i] for i in selected_dataset_ids]
-        selected_dir_to_summarize = [list(DIRECTORIES_TO_SUMMARIZE.items())[i]]
+        selected_dir_to_summarize = [list(DIRECTORIES_TO_SUMMARIZE.items())[i] for i in selected_dataset_ids]
 
     LOGGER.info(f'Selected dataset to summarize: {selected_dir_to_summarize}')
 

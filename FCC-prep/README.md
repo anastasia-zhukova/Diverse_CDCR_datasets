@@ -38,11 +38,11 @@ folders need to be placed into ```FCC-prep/FCC``` folder.
 
 ### Output format
 
-The dataset is organized as following: 
+The dataset articles is organized as following: 
 
 ```
--> topic (one topic about football)
-    -> subtopic (event)
+-> topic (one topic about football matches)
+    -> subtopic (seminal event)
         -> documents (news articles)
    ```
 
@@ -50,23 +50,26 @@ The dataset contains _one topic_ about football. Subtopics report about differen
 
 The script produced two folders: 
 1. ```FCC-prep/output_folder_FCC``` with the original event annotation on the sentence level
-2. ```FCC-prep/output_folder_FCC-T``` with the original event annotation on the token level with annotated mentions of entities (no coreferences).
-
-### Entity coreference
-
-Since there is no coreferences among the entities, all of them are created as singletons. The ```chain_id``` is a compositional key and 
-consists of the event(s) it belongs, a semantic role label that this entity mention has, and a unique ID, if the same entity mention had multiple roles. 
-For example, ```chain_id: "uefa_euro_2016_tournament/participants/aa11"```. 
-
+2. ```FCC-prep/output_folder_FCC-T``` with the original event annotation on the token level. Since the entities are not 
+annotated into the entity clusters (i.e., no coreferences), we save them separately into a ```entity_mentions_attr.json``` file.
+The regular ```entity_mentions.json``` is hence empty. 
 
 ### Event coreference
-If there is an event with a label "other_event", we create an additional unique ID for each mention to make it a singleton event, e.g., 
-```other_event_aa111aa```. 
-Since we don't know any additional information about such event mentions, we keep them on a singleton level instead of merging into one 
-event cluster called "other_event". Attribute entities will contain same unique chain_id as created for each other event, e.g., 
-```other_event_aa111aa/participants/bb22```.
+If there is an event with a label "other_event", we create compositional ID per collection to make it a less general event, e.g., 
+```other_event-uefa_euro_2016```. 
 
+### Entity (non)coreference
+Since there is no coreferences among the entities, all of them are created as singletons but saved into an additional file 
+called ```entity_mentions_attr.json``` . 
 
+The ```chain_id``` is a compositional key and consists of the event(s) it belongs, i.e., event type + a unique ID based on its name, 
+a semantic role label that this entity mention has, and a unique ID, if the same entity mention had multiple roles. 
+For example, ```chain_id: "OCCaaalll111_participants_aa11"```. To preserve semantic roles of the entities in the existing 
+mention's format, we save the labels in the ```coref_type``` attributes, e.g., ```coref_type: "participants"```. 
+
+### Subtopics
+Each split might contain a subtopic called "other_event". To make the subtopic less general, we create a compositional subtopic that includes a split name, 
+e.g., "other_event-test". 
 
 
 

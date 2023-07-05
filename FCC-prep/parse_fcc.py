@@ -18,7 +18,7 @@ LOGGER.info("Spacy model loaded.")
 
 
 def conv_files():
-    topic_name = "0_football"
+    topic_name = "0_football_matches"
     topic_id = "0"
     documents_df = pd.DataFrame()
     conll_df_fcc = pd.DataFrame()
@@ -31,13 +31,15 @@ def conv_files():
         all_mentions_dict_local = {"event": [], "entity": [], "event_sentence": []}
         documents_df = pd.concat([documents_df,
                                   pd.read_csv(os.path.join(source_path, "2020-10-05_FCC_cleaned", split, "documents.csv"), index_col=[0]).fillna("")])
+        documents_df.fillna(f"other_event-{split}", inplace=True)
+        documents_df["subtopic-id"] = [shortuuid.uuid(v) for v in documents_df["seminal-event"].values]
 
         tokens_df = pd.read_csv(os.path.join(source_path, "2020-10-05_FCC_cleaned", split, "tokens.csv"))
 
         conll_df_local = pd.DataFrame()
         for index, row in tqdm(tokens_df.iterrows(), total=tokens_df.shape[0]):
             conll_df_local = pd.concat([conll_df_local, pd.DataFrame({
-                TOPIC_SUBTOPIC_DOC: f"{topic_id}/{documents_df.loc[row['doc-id'], 'collection']}/{row['doc-id']}",
+                TOPIC_SUBTOPIC_DOC: f"{topic_id}/{documents_df.loc[row['doc-id'], 'subtopic-id']}/{row['doc-id']}",
                 DOC_ID: row["doc-id"],
                 SENT_ID: int(row["sentence-idx"]),
                 TOKEN_ID: int(row["token-idx"]),
@@ -47,10 +49,13 @@ def conv_files():
 
         mentions_sent_level_df_local = pd.read_csv(
             os.path.join(source_path, "2020-10-05_FCC_cleaned", split, "mentions_cross_subtopic.csv"))
+        mentions_sent_level_df_local["chain-id"] = [shortuuid.uuid(mention_row["event"]) for index, mention_row in
+                                         mentions_sent_level_df_local.iterrows()]
 
         event_mentions_df = pd.read_csv(os.path.join(source_path, "2020-10-05_FCC-T", split, "with_stacked_actions",
                                                      "cross_subtopic_mentions_action.csv"))
-        event_mentions_df["event"] = [re.sub("other_event", "other_event_" + shortuuid.uuid(f'{row["doc-id"]}/{row["mention-id"]}')[:6], row["event"])
+        event_mentions_df["chain-id"] = [shortuuid.uuid(mention_row["event"]) for index, mention_row in event_mentions_df.iterrows()]
+        event_mentions_df["event"] = [re.sub("other_event", "other_event-" + documents_df.loc[row["doc-id"], "collection"], row["event"])
                                       if "other_event" in row["event"] else row["event"]
                                       for index, row in event_mentions_df.iterrows()]
 
@@ -70,14 +75,16 @@ def conv_files():
         entity_mentions_df = pd.merge(entity_mentions_df, event_mentions_df[["doc-id", "mention-id", "event"]].rename(columns={"mention-id": "event-mention-id"}),
                                       how="left", left_on=["doc-id", "event-mention-id"],
                                       right_on=["doc-id", "event-mention-id"])
+        entity_mentions_df["chain-id"] = [shortuuid.uuid(mention_row["event"]) for index, mention_row in
+                                         entity_mentions_df.iterrows()]
 
         for mention_annot_type, mention_init_df in zip(["event", "entity", "event_sentence"],
                                                             [event_mentions_df, entity_mentions_df, mentions_sent_level_df_local]):
             LOGGER.info(f"Parsing {mention_annot_type} mentions...")
             for index, mention_row in tqdm(mention_init_df.iterrows(), total=mention_init_df.shape[0]):
                 doc_id = mention_row["doc-id"]
+                # create a unique ID for each mention's occurrence
                 mention_id_global = f'{mention_row["doc-id"]}/{mention_row["mention-id"]}/{shortuuid.uuid()[:4]}'
-                # mention_id = mention_row["mention-id"]
 
                 sentence_df = conll_df_local[(conll_df_local[DOC_ID] == mention_row["doc-id"])
                                              & ((conll_df_local[SENT_ID] == mention_row["sentence-idx"]))]
@@ -139,27 +146,31 @@ def conv_files():
                             break
 
                 # whole mention string processed, look for the head
-                mention_head_id = None
+                mention_head_id = token_ids[0]
                 mention_head = None
                 if mention_id_global not in need_manual_review_mention_head:
-                    found_mentions_tokens = doc[min([t for t in token_found.values()]): max([t for t in token_found.values()]) + 1]
-                    if len(found_mentions_tokens) == 1:
-                        mention_head = found_mentions_tokens[0]
-                        # remap the mention head back to the np4e original tokenization to get the ID for the output
-                        for t_orig, t_mapped in token_found.items():
-                            if t_mapped == mention_head.i:
-                                mention_head_id = t_orig
-                                break
+                    found_mentions_tokens_ids = list([t for t in token_found.values() if t is not None])
+                    found_mentions_tokens = []
+                    if len(found_mentions_tokens_ids):
+                        found_mentions_tokens = doc[min(found_mentions_tokens_ids): max(
+                            found_mentions_tokens_ids) + 1]
+                        if len(found_mentions_tokens) == 1:
+                            mention_head = found_mentions_tokens[0]
+                            # remap the mention head back to the np4e original tokenization to get the ID for the output
+                            for t_orig, t_mapped in token_found.items():
+                                if t_mapped == mention_head.i:
+                                    mention_head_id = t_orig
+                                    break
 
                     if mention_head is None:
-                        found_mentions_tokens_ids = list(token_found.values())
                         # found_mentions_tokens_ids = set([t.i for t in found_mentions_tokens])
                         for i, t in enumerate(found_mentions_tokens):
                             if t.head.i == t.i:
                                 # if a token is a root, it is a candidate for the head
                                 pass
 
-                            elif t.head.i >= min(found_mentions_tokens_ids) and t.head.i <= max(found_mentions_tokens_ids):
+                            elif t.head.i >= min(found_mentions_tokens_ids) and t.head.i <= max(
+                                    found_mentions_tokens_ids):
                                 # check if a head the candidate head is outside the mention's boundaries
                                 if t.head.text in tokens_text:
                                     # a head of a candiate head cannot be in the text of the mention
@@ -171,7 +182,7 @@ def conv_files():
                                 continue
 
                             to_break = False
-                            # remap the mention head back to the np4e original tokenization to get the ID for the output
+                            # remap the mention head back to the fcc original tokenization to get the ID for the output
                             for t_orig, t_mapped in token_found.items():
                                 if t_mapped == mention_head.i:
                                     mention_head_id = t_orig
@@ -182,7 +193,7 @@ def conv_files():
 
                 # add to manual review if the resulting token is not inside the mention
                 # (error must have happened)
-                if mention_head_id is None:  # also "if is None"
+                if mention_head is None:  # also "if is None"
                     if mention_id_global not in need_manual_review_mention_head:
                         need_manual_review_mention_head[mention_id_global] = \
                             {
@@ -208,12 +219,11 @@ def conv_files():
                 if mention_id_global not in need_manual_review_mention_head:
                     # mention_id = mention_row["mention-id"]
                     mention_ner = mention_head.ent_type_ if mention_head.ent_type_ != "" else "O"
-                    srl_type = mention_row["mention-type-coarse"] if "mention-type-coarse" in mention_init_df.columns else ""
-                    chain_id = mention_row["event"] if "event" in mention_annot_type \
-                        else f'{mention_row["event"]}/{srl_type}/{shortuuid.uuid(mention_head.lemma_)[:4]}'
-
-                    subtopic_id = documents_df.loc[doc_id, "collection"]
                     mention_type = mention_row["mention-type"] if "mention-type" in mention_init_df.columns else "OCCURENCE"
+                    srl_type = mention_row["mention-type-coarse"] if "mention-type-coarse" in mention_init_df.columns else ""
+                    chain_id = mention_type[:3] + mention_row["chain-id"] if "event" in mention_annot_type \
+                            else f'{mention_type[:3] + mention_row["chain-id"]}_{srl_type}_{shortuuid.uuid(mention_head.lemma_)[:4]}'
+                    subtopic_id = documents_df.loc[doc_id, "subtopic-id"]
                     is_singleton = len(mention_init_df[mention_init_df["event"] == chain_id]) == 1 if "event" in mention_init_df.columns else True
 
                     mention = {COREF_CHAIN: chain_id,
@@ -238,9 +248,10 @@ def conv_files():
                                TOPIC_ID: topic_id,
                                TOPIC: topic_name,
                                SUBTOPIC_ID: subtopic_id,
-                               SUBTOPIC: subtopic_id,
-                               COREF_TYPE: IDENTITY,
-                               DESCRIPTION: mention_row["event"] if "event" in mention_init_df.columns else "",
+                               SUBTOPIC: documents_df.loc[doc_id, "seminal-event"],
+                               COREF_TYPE: IDENTITY if not srl_type else srl_type,
+                               DESCRIPTION: mention_row["event"] if "event" in mention_init_df.columns
+                                                        else f'{mention_row["event"]}_{srl_type}_{mention_head.lemma_}',
                                CONLL_DOC_KEY: f'{topic_id}/{subtopic_id}/{doc_id}',
                                }
                     all_mentions_dict_local[mention_annot_type].append(mention)
@@ -269,8 +280,12 @@ def conv_files():
                                         mentions=all_mentions_dict_local["event_sentence"],
                                         output_folder=save_folder_fcc)])
 
-        with open(os.path.join(save_folder_fcc_t, MENTIONS_ENTITIES_JSON), "w", encoding='utf-8') as file:
+        # since there are no entity coreference chains, save attributes separately
+        with open(os.path.join(save_folder_fcc_t, "entity_mentions_attr.json"), "w", encoding='utf-8') as file:
             json.dump(all_mentions_dict_local["entity"], file)
+
+        with open(os.path.join(save_folder_fcc_t, MENTIONS_ENTITIES_JSON), "w", encoding='utf-8') as file:
+            json.dump([], file)
 
         with open(os.path.join(save_folder_fcc_t, MENTIONS_EVENTS_JSON), "w", encoding='utf-8') as file:
             json.dump(all_mentions_dict_local["event"], file)
@@ -292,8 +307,11 @@ def conv_files():
                     mentions=all_mentions_dict["event_sentence"],
                     output_folder=save_folder_fcc, assign_reference_labels=False)
 
-    with open(os.path.join(save_folder_fcc_t, MENTIONS_ENTITIES_JSON), "w", encoding='utf-8') as file:
+    with open(os.path.join(save_folder_fcc_t, "entity_mentions_attr.json"), "w", encoding='utf-8') as file:
         json.dump(all_mentions_dict["entity"], file)
+
+    with open(os.path.join(save_folder_fcc_t, MENTIONS_ENTITIES_JSON), "w", encoding='utf-8') as file:
+        json.dump([], file)
 
     with open(os.path.join(save_folder_fcc_t, MENTIONS_EVENTS_JSON), "w", encoding='utf-8') as file:
         json.dump(all_mentions_dict["event"], file)
