@@ -84,6 +84,7 @@ def conv_files(path):
     # TODO: Can we extract Topics from wikipedia urls?
     df[TOPIC] = '-'
     df[TOPIC_ID] = 0
+    df[TOKENS_NUMBER]= df[TOKENS_NUMBER].astype(str)
 
     conll_df = df[[DOC_ID, CONLL_DOC_KEY, MENTION_CONTEXT, 
                    TOKENS_NUMBER, COREF_CHAIN, SENT_ID]
@@ -91,17 +92,18 @@ def conv_files(path):
         columns={'index' : 'df_index',
                  MENTION_CONTEXT:TOKEN,
                  CONLL_DOC_KEY:TOPIC_SUBTOPIC_DOC})
-    conll_df['token_id'] = conll_df.groupby('df_index').cumcount()
+    conll_df['token_id'] = conll_df.groupby('df_index').cumcount().astype(str)
     conll_df['reference'] = conll_df.apply(lambda x: assign_reference(x), axis=1)
     conll_df = conll_df.drop(['df_index', 'coref_chain'], axis=1)
     all_mentions_df = df.copy()
-    all_mentions_df[TOKENS_NUMBER]= all_mentions_df[TOKENS_NUMBER].astype(str)
+    
     # make_save_conll(conll_df, df, OUT_PATH)
     
     
     if not os.path.exists(OUT_PATH):
         os.mkdir(OUT_PATH)
     
+    make_save_conll(conll_df, df, OUT_PATH)
     all_mentions_df.to_csv(OUT_PATH + '/' + MENTIONS_ALL_CSV)
     conll_df.to_csv(OUT_PATH + '/' + CONLL_CSV)
     with open(os.path.join(OUT_PATH, MENTIONS_EVENTS_JSON), "w") as file:
@@ -109,6 +111,11 @@ def conv_files(path):
     
     with open(os.path.join(OUT_PATH, MENTIONS_ENTITIES_JSON), "w") as file:
         json.dump(pd.DataFrame(columns=all_mentions_df.columns).to_dict(), file)
+
+    outputdoc_str= create_conll_string(conll_df)
+
+    with open(os.path.join(OUT_PATH, 'wec.conll'), "w", encoding='utf-8') as file:
+        file.write(outputdoc_str)
 
 if __name__ == '__main__':
     LOGGER.info(f"Processing WEC-Eng {source_path[-34:].split('_')[2]}.")
