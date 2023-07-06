@@ -27,7 +27,7 @@ we turn each original topic into a subtopic and place the subtopics under the to
 
 Since the dataset contained newline delimiters in the original texts to separate paragraphs, we kept them in the datasets as original tokens. 
 To ensure that these symbols do cause troubles in parsing CoNLL format, we saved them as ```\\n```. So if you want to 
-convert the dataset into the original plain text, remember to replace these symbold with the correct ```\n```. 
+convert the dataset into the original plain text, remember to replace these symbols with the correct ```\n```. 
 
 
 ### Topic organization
