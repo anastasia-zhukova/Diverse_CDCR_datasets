@@ -3,7 +3,7 @@
 Original repository of English NiDENT dataset: http://clic.ub.edu/corpus/en/
 
 ### Papers
-* Concept of near-identity 
+* Concept of near-identity https://aclanthology.org/L10-1103/ 
 ```
 @inproceedings{recasens-etal-2010-typology,
     title = "A Typology of Near-Identity Relations for Coreference ({NIDENT})",
@@ -18,7 +18,7 @@ Original repository of English NiDENT dataset: http://clic.ub.edu/corpus/en/
     url = "http://www.lrec-conf.org/proceedings/lrec2010/pdf/160_Paper.pdf"
 }
   ```
-* NiDENT dataset 
+* NiDENT dataset https://aclanthology.org/L12-1391/
 ```
 @inproceedings{recasens-etal-2012-annotating,
     title = "Annotating Near-Identity from Coreference Disagreements",
@@ -54,5 +54,5 @@ The dataset contains _one topic_ about bomb, explosion, and kidnap. Subtopics re
 
 ### Entity coreference 
 NiDENT annotated only entities, so ```event_mentions.json``` are saved as empty list. MMAX format didn't provide an extra tag to 
-link coreference chains from the event-releted documents into crocc-document clusters, so we applied a simple yet reliable heuristic 
+link coreference chains from the event-related documents into cross-document clusters, so we applied a simple yet reliable heuristic 
 to restore CDCR clusters. If at least two non-pronoun mentions or their heads are identical, we merge the chains into clusters. 
