@@ -2,7 +2,10 @@
 
 Original repository of MEANTIME dataset: http://www.newsreader-project.eu/results/data/wikinews/
 
-Paper: https://www.aclweb.org/anthology/L16-1699/
+### Paper
+
+https://www.aclweb.org/anthology/L16-1699/
+
 ```
 @inproceedings{minard-etal-2016-meantime,
     title = "{MEANTIME}, the {N}ews{R}eader Multilingual Event and Time Corpus",
@@ -23,23 +26,28 @@ Paper: https://www.aclweb.org/anthology/L16-1699/
 }
 ```
 
+
+### To parse MEANTIME
+1) make sure that you downloaded the dataset by running ```python setup.py``` 
+2) execute ```python parse_meantime.py``` 
+
 The original dataset contained a split into topics and documents, but each document is present in four langauges. 
 Thus, we make a name of one article a subtopic and the four corresponding documents in four languages as its representatives.
 The dataset then extensively allows cross-subtopic coreference clusters. 
 
-To parse MEANTIME:
-1) make sure that you downloaded the dataset by running ```python setup.py``` 
-2) execute ```python parse_meantime.py``` 
 
-The dataset is organized as following: 
+### Topic organization
+News articles in the dataset are organized as following: 
 
 ```
--> topic 
+-> topic (original topic)
     -> subtopic (article id)
-        -> documents (articles in the various languages)
+        -> documents (articles in four languages)
    ```
 
-************** NewsReader MEANTIME corpus **************
+______________________________________________
+
+# *** NewsReader MEANTIME corpus ***
 
 By downloading or using these data, you accept the terms and conditions of the Creative Commons Attribution 4.0 International (CC BY 4.0) license agreement (http://creativecommons.org/licenses/by/4.0/).
 
