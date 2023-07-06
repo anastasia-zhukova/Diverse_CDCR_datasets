@@ -170,12 +170,21 @@ if __name__ == '__main__':
             ZIP: "",
             FOLDER: os.path.join(os.getcwd(), WEC_ENG, WECENG_FOLDER_NAME)
         },
-       NP4E: {
+        NP4E: {
            LINK: "http://clg.wlv.ac.uk/projects/NP4E/mmax/np4e_mmax2.zip",
            ZIP: os.path.join(TMP_PATH, NP4E_FOLDER_NAME + ".zip"),
            FOLDER: os.path.join(os.getcwd(), NP4E)
-       }
-
+        },
+        NIDENT: {
+            LINK: "https://drive.google.com/uc?export=download&confirm=pbef&id=1BtjKwRGW0dWm4AqdkYRtwS7IGys1jnQx",
+            ZIP: os.path.join(TMP_PATH, NIDENT_FOLDER_NAME + ".zip"),
+            FOLDER: os.path.join(os.getcwd(), NIDENT)
+        },
+        FCC: {
+            LINK: "https://drive.google.com/uc?export=download&confirm=pbef&id=1ZBe0JZAI-hJ-QzXcunDOzpfcl5s-1eTF",
+            ZIP: os.path.join(TMP_PATH, FCC_FOLDER_NAME + ".zip"),
+            FOLDER: os.path.join(os.getcwd(), FCC)
+        }
     }
 
     prompt_str = "The following datasets are available for download: \n\n"
