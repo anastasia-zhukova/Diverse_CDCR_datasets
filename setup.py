@@ -186,7 +186,7 @@ if __name__ == '__main__':
             FOLDER: os.path.join(os.getcwd(), FCC)
         },
         GVC: {
-            LINK: "https://github.com/cltl/GunViolenceCorpus",
+            LINK: "https://raw.githubusercontent.com/cltl/GunViolenceCorpus/master/",
             ZIP: os.path.join(TMP_PATH, GVC_FOLDER_NAME + ".zip"),
             FOLDER: os.path.join(os.getcwd(), GVC, GVC_FOLDER_NAME)
         }
@@ -297,9 +297,8 @@ if __name__ == '__main__':
 
         elif dataset == GVC:
             for file_name in ["gold.conll", "system_input.conll", "verbose.conll"]:
-                gdown.download(f'{dataset_params[LINK]}/blob/master/{file_name}',
+                gdown.download(f'{dataset_params[LINK]}{file_name}',
                                os.path.join(dataset_params[FOLDER],  file_name), quiet=False)
-                a = 1
         else:
             NotImplementedError(f'There is no data download script implemented for the dataset {dataset}. Please make sure '
                                 f'that you have manully downloaded the raw data before parsing it. ')
