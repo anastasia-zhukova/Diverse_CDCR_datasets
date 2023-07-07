@@ -184,6 +184,11 @@ if __name__ == '__main__':
             LINK: "https://drive.google.com/uc?export=download&confirm=pbef&id=1ZBe0JZAI-hJ-QzXcunDOzpfcl5s-1eTF",
             ZIP: os.path.join(TMP_PATH, FCC_FOLDER_NAME + ".zip"),
             FOLDER: os.path.join(os.getcwd(), FCC)
+        },
+        GVC: {
+            LINK: "https://github.com/cltl/GunViolenceCorpus",
+            ZIP: os.path.join(TMP_PATH, GVC_FOLDER_NAME + ".zip"),
+            FOLDER: os.path.join(os.getcwd(), GVC, GVC_FOLDER_NAME)
         }
     }
 
@@ -290,6 +295,11 @@ if __name__ == '__main__':
             if not spacy.util.is_package(SPACY_EN):
                 spacy.cli.download(SPACY_EN)
 
+        elif dataset == GVC:
+            for file_name in ["gold.conll", "system_input.conll", "verbose.conll"]:
+                gdown.download(f'{dataset_params[LINK]}/blob/master/{file_name}',
+                               os.path.join(dataset_params[FOLDER],  file_name), quiet=False)
+                a = 1
         else:
             NotImplementedError(f'There is no data download script implemented for the dataset {dataset}. Please make sure '
                                 f'that you have manully downloaded the raw data before parsing it. ')
