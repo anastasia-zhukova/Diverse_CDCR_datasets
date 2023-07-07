@@ -136,7 +136,7 @@ def conv_files():
                 continue
 
             # mention attributes
-            token_ids = list(markable_df[TOKEN_ID].values)
+            token_ids = [int(t) for t in list(markable_df[TOKEN_ID].values)]
             tokens = {}
             token_str = ""
             tokens_text = list(markable_df[TOKEN].values)
@@ -266,7 +266,7 @@ def conv_files():
                     MENTION_HEAD_POS: mention_head.pos_,
                     MENTION_HEAD_LEMMA: mention_head.lemma_,
                     MENTION_HEAD: mention_head.text,
-                    MENTION_HEAD_ID: mention_head_id,
+                    MENTION_HEAD_ID: int(mention_head_id),
                     DOC_ID: doc_id,
                     DOC: doc_id,
                     IS_CONTINIOUS: token_ids == list(
@@ -276,9 +276,9 @@ def conv_files():
                     MENTION_TYPE: None,
                     MENTION_FULL_TYPE: None,
                     SCORE: -1.0,
-                    SENT_ID: sent_id,
+                    SENT_ID: int(sent_id),
                     MENTION_CONTEXT: mention_context_str,
-                    TOKENS_NUMBER: token_ids,
+                    TOKENS_NUMBER: [int(t) for t in token_ids],
                     TOKENS_STR: token_str,
                     TOKENS_TEXT: tokens_text,
                     TOPIC_ID: topic_subtopic_doc.split("/")[0],
