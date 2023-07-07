@@ -8,6 +8,7 @@ NewsWCL50-prep/2019_annot/
 ECBplus-prep/__MACOSX/
 ECBplus-prep/ECB+/
 GVC-prep/GVC/
+!GVC-prep/GVC/.gitkeep
 FCC-prep/FCC/
 MEANTIME-prep/meantime_newsreader/
 NP4E-prep/NP4E/
@@ -89,5 +90,3 @@ fabric.properties
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
 *.json
-GVC-prep/output_data.7z
-GVC-prep/output_data.zip
