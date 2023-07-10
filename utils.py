@@ -4,6 +4,7 @@ from tqdm import tqdm
 from setup import  *
 import numpy as np
 import pandas as pd
+pd.options.mode.chained_assignment = None
 
 
 def make_save_conll(conll_df: pd.DataFrame, mentions: Union[List, pd.DataFrame], output_folder: str, assign_reference_labels=True) -> pd.DataFrame:
@@ -17,19 +18,21 @@ def make_save_conll(conll_df: pd.DataFrame, mentions: Union[List, pd.DataFrame],
     Returns:
 
     """
-    if type(mentions) == pd.DataFrame:
-        df_all_mentions = mentions
-    else:
-        df_all_mentions = pd.DataFrame()
-        for mention in tqdm(mentions):
-            df_all_mentions = pd.concat([df_all_mentions, pd.DataFrame({
-                attr: str(value) if type(value) == list else value for attr, value in mention.items()
-            }, index=[mention[MENTION_ID]])], axis=0)
-
     conll_df = conll_df.reset_index(drop=True)
-    df_all_mentions[SENT_ID] = df_all_mentions[SENT_ID].astype(int)
 
     if assign_reference_labels:
+        if type(mentions) == pd.DataFrame:
+            df_all_mentions = mentions
+        else:
+            LOGGER.info("Creating a dataframe of mentions...")
+            df_all_mentions = pd.DataFrame()
+            for mention in tqdm(mentions):
+                df_all_mentions = pd.concat([df_all_mentions, pd.DataFrame({
+                    attr: str(value) if type(value) == list else value for attr, value in mention.items()
+                }, index=[mention[MENTION_ID]])], axis=0)
+
+        df_all_mentions[SENT_ID] = df_all_mentions[SENT_ID].astype(int)
+
         # assigning reference labels to the tokens
         LOGGER.info("Assigning reference labels to the tokens...")
         for i, row in tqdm(conll_df.iterrows(), total=conll_df.shape[0]):
@@ -40,9 +43,20 @@ def make_save_conll(conll_df: pd.DataFrame, mentions: Union[List, pd.DataFrame],
 
             mention_candidates_df = df_all_mentions[(df_all_mentions[CONLL_DOC_KEY] == row[TOPIC_SUBTOPIC_DOC]) &
                                                     (df_all_mentions[SENT_ID] == row[SENT_ID])]
+            mention_candidates_df["start_token"] = 0
+            mention_candidates_df["end_token"] = 0
+            mention_candidates_df["diff"] = 0
             for mentions_row_id, mention_row in mention_candidates_df.iterrows():
                 mention = mention_row.to_dict()
                 # the token_ids in the mention are of type int64 and need to be converted
+                token_numbers = [int(v) for v in re.sub(r'[\[,\]]+', "", mention[TOKENS_NUMBER]).split(" ")]
+                mention_candidates_df.loc[mentions_row_id, "start_token"] = token_numbers[0]
+                mention_candidates_df.loc[mentions_row_id, "end_token"] = token_numbers[-1]
+                mention_candidates_df.loc[mentions_row_id, "diff"] = token_numbers[-1] - token_numbers[0]
+
+            mention_candidates_df.sort_values(by=["end_token", "diff"], ascending=[False, True], inplace=True)
+            for mentions_row_id, mention_row in mention_candidates_df.iterrows():
+                mention = mention_row.to_dict()
                 token_numbers = [int(v) for v in re.sub(r'[\[,\]]+', "", mention[TOKENS_NUMBER]).split(" ")]
                 if row[TOKEN_ID] not in token_numbers:
                     continue
