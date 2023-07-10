@@ -236,7 +236,7 @@ if __name__ == '__main__':
     mentions_entities_list = []
     chain_df = mentions_df_unique[[DOC_ID, COREF_CHAIN]].groupby(COREF_CHAIN).count()
     for index, row in mentions_df_unique.iterrows():
-        if mentions_unique_dict[index][MENTION_FULL_TYPE] in ["MISC", "ACTOR-I"]:
+        if mentions_unique_dict[index][MENTION_FULL_TYPE] in ["ACTOR-I"]:
             continue
         mentions_unique_dict[index][IS_SINGLETON] = bool(chain_df.loc[row[COREF_CHAIN], DOC_ID] == 1)
         if mentions_unique_dict[index][MENTION_FULL_TYPE] in events:
@@ -335,6 +335,30 @@ if __name__ == '__main__':
                 token_values_sort = token_values.sort_values(by=[FIRST_TOKEN, LAST_TOKEN], ascending=[False, False])
                 df_conll.loc["_".join([doc_id, str(sent_id), str(token_id)]), REFERENCE] = "| ".join(token_values_sort[COREF_CHAIN].values)
 
-    make_save_conll(df_conll, df_all_mentions, output_path)
+    conll_df_labeled = make_save_conll(df_conll, df_all_mentions, output_path, assign_reference_labels=False)
 
-    LOGGER.info(f'Done! \nNumber of unique mentions: {len(mentions_df_unique)} \nNumber of unique chains: {len(chain_df)} ')
+    with open("train_val_test_split.json", "r") as file:
+        train_val_test_dict = json.load(file)
+
+    for split, topic_ids in train_val_test_dict.items():
+        conll_df_split = pd.DataFrame()
+        for topic_id in topic_ids:
+            conll_df_split = pd.concat([conll_df_split,
+                                        conll_df_labeled[conll_df_labeled[TOPIC_SUBTOPIC_DOC].str.contains(f'^{topic_id}/')]])
+        event_mentions_split = [m for m in mentions_events_list if m[TOPIC_ID] in topic_ids]
+        entity_mentions_split = [m for m in mentions_entities_list if m[TOPIC_ID] in topic_ids]
+
+        output_folder_split = os.path.join(output_path, split)
+        if not os.path.exists(output_folder_split):
+            os.mkdir(output_folder_split)
+
+        with open(os.path.join(output_folder_split, MENTIONS_EVENTS_JSON), 'w', encoding='utf-8') as file:
+            json.dump(event_mentions_split, file)
+
+        with open(os.path.join(output_folder_split, MENTIONS_ENTITIES_JSON), 'w', encoding='utf-8') as file:
+            json.dump(entity_mentions_split, file)
+
+        make_save_conll(conll_df_split, event_mentions_split+entity_mentions_split, output_folder_split, assign_reference_labels=False)
+
+    LOGGER.info(f'\nNumber of unique mentions: {len(mentions_df_unique)} \nNumber of unique chains: {len(chain_df)} ')
+    LOGGER.info("Parsing of NewsWCL50 is done!")

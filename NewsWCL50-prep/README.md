@@ -29,6 +29,8 @@ Since the dataset contained newline delimiters in the original texts to separate
 To ensure that these symbols do cause troubles in parsing CoNLL format, we saved them as ```\\n```. So if you want to 
 convert the dataset into the original plain text, remember to replace these symbols with the correct ```\n```. 
 
+Similar to Zhukova et al. (2022), we exclude an ambiguous category "ACTOR-I". 
+
 
 ### Topic organization
 News articles in the dataset are organized as following:

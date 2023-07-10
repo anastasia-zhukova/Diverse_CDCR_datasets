@@ -36,15 +36,17 @@ Parsing scripts per dataset are contained in each separate folder, whereas the s
 
 The parsing scripts and output folders are located  here:
 
-| Dataset          | Parsing script                          | Output files                               | Has original train/val/test split |
-|:-----------------|:----------------------------------------|:-------------------------------------------|-----------------------------------|
-| ECB+             | ```ECBplus-prep/parse_ecbplus.py```     | ```ECBplus-prep/output_data```             | yes                               |
-| ECB+ unvalidated | ```ECBplus-prep/parse_ecbplus.py```     | ```ECBplus-prep/output_data-unvalidated``` | yes                               |
-| NewsWCL50        | ```NewsWCL50-prep/parse_newswcl50.py``` | ```NewsWCL50-prep/output_data```           | no                                |
-| MEANTIME         | ```MEANTIME-prep/parse_meantime.py```   | ```MEANTIME-prep/output_data```            | no                                |
-| NP4E             | ```NP4E-prep/parse_np4e.py```           | ```NP4E-prep/output_data```                | no                                |
-| FCC              | ```FCC-prep/parse_fcc.py```             | ```FCC-prep/output_data_FCC```             | yes                               |
-| FCC-T            | ```FCC-prep/parse_fcc.py```             | ```FCC-prep/output_data_FCC-T```           | yes                               |
+| Dataset          | Parsing script                          | Output files                               | Train/val/test split      |
+|:-----------------|:----------------------------------------|:-------------------------------------------|---------------------------|
+| ECB+             | ```ECBplus-prep/parse_ecbplus.py```     | ```ECBplus-prep/output_data```             | original (reused)         |
+| ECB+ unvalidated | ```ECBplus-prep/parse_ecbplus.py```     | ```ECBplus-prep/output_data-unvalidated``` | original (reused)         |
+| FCC              | ```FCC-prep/parse_fcc.py```             | ```FCC-prep/output_data_FCC```             | original (reused)         |
+| FCC-T            | ```FCC-prep/parse_fcc.py```             | ```FCC-prep/output_data_FCC-T```           | original (reused)         |
+| GVC              | ```GVC-prep/parse_nident.py```          | ```GVC-prep/output_data```                 | original (reused)         |
+| NewsWCL50        | ```NewsWCL50-prep/parse_newswcl50.py``` | ```NewsWCL50-prep/output_data```           | new (didn't exist before) |
+| MEANTIME         | ```MEANTIME-prep/parse_meantime.py```   | ```MEANTIME-prep/output_data```            | new (didn't exist before) |
+| NP4E             | ```NP4E-prep/parse_np4e.py```           | ```NP4E-prep/output_data```                | new (didn't exist before) |
+| NiDENT           | ```NiDENT-prep/parse_nident.py```       | ```NiDENT-prep/output_data```              | new (didn't exist before) |
 
 Each dataset contains three output files suitable for a CDCR model: 
 
@@ -53,7 +55,7 @@ Main files:
 2) ```entity_mentions.json```, i.e., a list of entity mentions. 
 3) ```event_mentions.json```, i.e., a list of event mentions.
 
-Same data in the csv format (used to compute statistics of the datasets):
+Same data in the csv format (used to compute statistics of the datasets or have an overview of the datasets):
 1) ```conll.csv```, i.e., a CoNLL format in a tabular format without tags and newline delimiters.
 2) ```all_mentions.csv```, i.e., a csv file with all mentions combined.
 
