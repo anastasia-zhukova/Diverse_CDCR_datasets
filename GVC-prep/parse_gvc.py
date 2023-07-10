@@ -10,443 +10,335 @@ import re
 import pandas as pd
 import numpy as np
 sys.path.insert(0, '..')
-from insert_whitespace import append_text
+from utils import *
+import shortuuid
 from nltk import Tree
 from tqdm import tqdm
 import warnings
 from setup import *
 from logger import LOGGER
 
-path_sample = os.path.join(DATA_PATH, "_sample_doc.json")  # ->root/data/original/_sample_doc.json
 GVC_PARSING_FOLDER = os.path.join(os.getcwd())
 OUT_PATH = os.path.join(GVC_PARSING_FOLDER, OUTPUT_FOLDER_NAME)
 source_path = os.path.join(GVC_PARSING_FOLDER, GVC_FOLDER_NAME)
-result_path = os.path.join(OUT_PATH, 'test_parsing')
-
-CONTEXT_COMB_SPAN = 5
 
 nlp = spacy.load('en_core_web_sm')
 
-# opens and loads the newsplease-format out of the json file: _sample_doc.json
-with open(path_sample, "r") as file:
-    newsplease_format = json.load(file)
 
-def conv_files(path):
-    """
-    Converts the given dataset into the desired format.
-    :param path: The path desired to process (intra- & cross_intra annotations)
-    """
-    conll_df = pd.DataFrame(
-        columns=[TOPIC_SUBTOPIC, DOC_ID, SENT_ID, TOKEN_ID, "doc_token_id", TOKEN, "title_text_id", REFERENCE])
-    summary_df = pd.DataFrame(
-        columns=[DOC_ID, COREF_CHAIN, DESCRIPTION, MENTION_TYPE, MENTION_FULL_TYPE, MENTION_ID, TOKENS_STR])
-
-    # --> process the datasets conll into a pd dataframe for processing
-    LOGGER.info("Reading verbose.conll...")
-    mention_identifiers = []
-    prev_doc_id = "placeholder"
-    doc_token_counter = int(0)
-    doc_ids = []
-    with open(os.path.join(path, 'verbose.conll'), encoding="utf-8") as f:
-        conll_str = f.read()
-        conll_lines = conll_str.split("\n")
-        for i, conll_line in tqdm(enumerate(conll_lines), total=len(conll_lines)):
-            if i+1 == len(conll_lines):
-                break
-            if "#begin document" in conll_line or "#end document" in conll_line:
-                continue
-            if conll_line.split("\t")[0].split(".")[1] == "DCT":
-                continue
-
-            if "t" in conll_line.split("\t")[0].split(".")[1]:
-                sent_id = 0
-            else:
-                sent_id = int(conll_line.split("\t")[0].split(".")[1][1:])
-
-            doc_id = conll_line.split("\t")[0].split(".")[0]
-            if doc_id != prev_doc_id:
-                doc_ids.append(doc_id)
-                prev_doc_id = doc_id
-                doc_token_counter = 0
-
-            if "(" in conll_line.split("\t")[4]:
-                # format: corefID_docID_sentID_token1ID
-                mention_identifiers.append(conll_line.split("\t")[4].replace('(','').replace(')','')+"_"+conll_line.split("\t")[0].split(".")[0]+"_"+str(sent_id)+"_"+str(conll_line.split("\t")[0].split(".")[2]))
-
-            conll_df = pd.concat([conll_df, pd.DataFrame({
-                TOPIC_SUBTOPIC: conll_line.split("\t")[3].split(".")[0],
-                DOC_ID: conll_line.split("\t")[0].split(".")[0],
-                SENT_ID: sent_id,
-                TOKEN_ID: int(conll_line.split("\t")[0].split(".")[2]),
-                "doc_token_id": doc_token_counter,
-                TOKEN: conll_line.split("\t")[1],
-                "title_text_id": conll_line.split("\t")[2],
-                REFERENCE: conll_line.split("\t")[4]
-            }, index=[0])])
-
-            doc_token_counter = int(doc_token_counter + 1)
-
-    # count punctuations in a string (used to determine best tolerance for mention detection)
-    count_punct = lambda l: sum([1 for x in l if x in string.punctuation])
-
-    # --> reassemble the conll data into its original articles
-    LOGGER.info("Reassembling the original articles from the conll data...")
-    doc_files = {}
-    for i, mention_identifier in tqdm(enumerate(mention_identifiers), total=len(mention_identifiers)):
-        doc_id = mention_identifier.split("_")[1]
-        doc_conll = conll_df[conll_df[DOC_ID] == doc_id]
-
-        doc_str = ""
-        for i, row in doc_conll[doc_conll["title_text_id"] == "BODY"].iterrows():
-            doc_str, word_fixed, no_whitespace = append_text(doc_str, row[TOKEN])
-        title_str = ""
-        for i, row in doc_conll[doc_conll["title_text_id"] == "TITLE"].iterrows():
-            title_str, word_fixed, no_whitespace = append_text(title_str, row[TOKEN])
-
-        newsplease_custom = copy.copy(newsplease_format)
-
-        newsplease_custom["filename"] = "verbose.conll"
-        newsplease_custom["text"] = doc_str
-        newsplease_custom["source_domain"] = doc_id
-        newsplease_custom["language"] = "en"
-        newsplease_custom["title"] = title_str
-        if newsplease_custom["title"][-1] not in string.punctuation:
-            newsplease_custom["title"] += "."
-
-        doc_files[doc_id] = newsplease_custom
-
-        with open(os.path.join(result_path, newsplease_custom["source_domain"] + ".json"),
-                  "w") as file:
-            json.dump(newsplease_custom, file)
-
+def conv_files():
+    topic_name = "0_gun_violence"
+    topic_id = "0"
+    train_dev_test_split_dict = {}
+    conll_df = pd.DataFrame()
     need_manual_review_mention_head = {}
     event_mentions = []
-    topic_id = 0
 
-    # --> generate coref mention files
+    for file_name in ["dev", "test", "train"]:
+        df = pd.read_csv(os.path.join(source_path, f'{file_name}.csv'), header=None)
+        train_dev_test_split_dict[file_name] = list(df[1])
 
-    # go through every mention identifier and determine its attributes to save into event_mentions
-    LOGGER.info("Generating the mentions file...")
-    for i, mention_identifier in tqdm(enumerate(mention_identifiers), total=len(mention_identifiers)):
-        coref_id = mention_identifier.split("_")[0]
-        if mention_identifier.split("_")[1] != doc_id and i != 0:
-            topic_id = topic_id + 1
-        doc_id = mention_identifier.split("_")[1]
-        sent_id = int(mention_identifier.split("_")[2])
+    subtopic_structure_dict = {}
+    for index, row in pd.read_csv(os.path.join(source_path, "gvc_doc_to_event.csv")).iterrows():
+        subtopic_structure_dict[row["doc-id"]] = row["event-id"]
 
-        # get only the conll data that corresponds to the sentence we want to process
-        sent_conll = conll_df[(conll_df[SENT_ID] == sent_id) & (conll_df[DOC_ID] == doc_id)]
+    #
+    with open(os.path.join(source_path, 'verbose.conll'), encoding="utf-8") as f:
+        conll_str = f.read()
 
+    conll_lines = conll_str.split("\n")
+    doc_id_prev = ""
+    orig_sent_id_prev = ""
+    sent_id = 0
+    token_id = 0
+    mentions_dict = {}
+    mention_id = ""
+    doc_title_dict = {}
+    coref_dict = {}
+
+    for i, conll_line in tqdm(enumerate(conll_lines), total=len(conll_lines)):
+        if i+1 == len(conll_lines):
+            break
+
+        if "#begin document" in conll_line or "#end document" in conll_line:
+            continue
+
+        original_key, token, part_of_text, chain_description, chain_value = conll_line.split("\t")
+        try:
+            doc_id, orig_sent_id, _ = original_key.split(".")
+        except ValueError:
+            doc_id, orig_sent_id = original_key.split(".")
+
+        chain_id = re.sub("\D+", "", chain_value)
+        coref_dict[chain_id] = coref_dict.get(chain_id, 0) + 1
+        subtopic_id = subtopic_structure_dict[doc_id]
+        topic_subtopic_doc = f'{topic_id}/{subtopic_id}/{doc_id}'
+
+        if doc_id != doc_id_prev:
+            sent_id = 0
+            token_id = 0
+        else:
+            if orig_sent_id_prev != orig_sent_id:
+                sent_id += 1
+                token_id = 0
+
+        if part_of_text == "TITLE":
+            if doc_id not in doc_title_dict:
+                doc_title_dict[doc_id] = []
+            doc_title_dict[doc_id].append(token)
+
+        if chain_value.strip() == f'({chain_id}' or chain_value.strip() == f'({chain_id})':
+            mention_id = shortuuid.uuid(original_key)
+            if chain_id == "0":
+                chain_id = mention_id
+                coref_dict[chain_id] = coref_dict.get(chain_id, 0) + 1
+
+            mentions_dict[mention_id] = {
+                COREF_CHAIN: chain_id,
+                DESCRIPTION: chain_description,
+                MENTION_ID: mention_id,
+                DOC_ID: doc_id,
+                DOC: "",
+                SENT_ID: int(sent_id),
+                SUBTOPIC_ID: str(subtopic_id),
+                SUBTOPIC: str(subtopic_id),
+                TOPIC_ID: topic_id,
+                TOPIC: topic_name,
+                COREF_TYPE: IDENTITY,
+                CONLL_DOC_KEY: topic_subtopic_doc,
+                "words": []}
+            mentions_dict[mention_id]["words"].append((token, token_id))
+            if chain_value.strip() == f'({chain_id})':
+                mention_id = ""
+
+        elif mention_id and chain_value == chain_id:
+            mentions_dict[mention_id]["words"].append((token, token_id))
+
+        elif chain_value.strip() == f'{chain_id})':
+            mentions_dict[mention_id]["words"].append((token, token_id))
+            mention_id = ""
+
+        conll_df = pd.concat([conll_df, pd.DataFrame({
+            TOPIC_SUBTOPIC_DOC: topic_subtopic_doc,
+            DOC_ID: conll_line.split("\t")[0].split(".")[0],
+            SENT_ID: sent_id,
+            TOKEN_ID: token_id,
+            TOKEN: token.replace("NEWLINE", "//n"),
+            REFERENCE: "-"
+        }, index=[f'{doc_id}/{sent_id}/{token_id}'])])
+        token_id += 1
+        doc_id_prev = doc_id
+        orig_sent_id_prev = orig_sent_id
+
+    # parse information about mentions
+    for mention_id, mention in tqdm(mentions_dict.items()):
+        word_start = mention["words"][0][1]
+        word_end = mention["words"][-1][1]
+        # coref_id = mention_orig["entity"]
+        doc_id = mention[DOC_ID]
+        sent_id = mention[SENT_ID]
+        markable_df = conll_df.loc[f'{doc_id}/{sent_id}/{word_start}': f'{doc_id}/{sent_id}/{word_end}']
+        if not len(markable_df):
+            continue
+
+        # mention attributes
+        token_ids = [int(t) for t in list(markable_df[TOKEN_ID].values)]
+        token_str = ""
+        tokens_text = list(markable_df[TOKEN].values)
+        for token in tokens_text:
+            token_str, word_fixed, no_whitespace = append_text(token_str, token)
+
+        sent_id = list(markable_df[SENT_ID].values)[0]
+
+        # determine the sentences as a string
         sentence_str = ""
-        mention_tokenized = []
-        split_mention_text = []
-        mention_text = ""
-        currently_adding = False
-        whole_mention_added = False
-        for i, row in sent_conll.iterrows():
-            sentence_str, word_fixed, no_whitespace = append_text(sentence_str, row[TOKEN])
-            if coref_id in row[REFERENCE] and not whole_mention_added:
-                currently_adding = True
-                mention_tokenized.append(row[TOKEN_ID])
-                mention_text, word_fixed, no_whitespace = append_text(mention_text, row[TOKEN])
-                split_mention_text.append(row[TOKEN])
-            else:
-                if currently_adding == True:
-                    whole_mention_added = True
+        sent_tokens = list(conll_df[(conll_df[DOC_ID] == doc_id) & (conll_df[SENT_ID] == sent_id)][TOKEN])
+        for t in sent_tokens:
+            sentence_str, _, _ = append_text(sentence_str, t)
 
+        # pass the string into spacy
         doc = nlp(sentence_str)
 
-        # counting character up to the first character of the mention within the sentence
-        if len(split_mention_text) > 1:
-            first_char_of_mention = sentence_str.find(
-                split_mention_text[0] + " " + split_mention_text[
-                    1])  # more accurate finding (reduce error if first word is occurring multiple times (i.e. "the")
-        else:
-            first_char_of_mention = sentence_str.find(split_mention_text[0])
-        # last character directly behind mention
-        last_char_of_mention = sentence_str.find(split_mention_text[-1], len(sentence_str[
-                                                                             :first_char_of_mention]) + len(
-            mention_text) - len(split_mention_text[-1])) + len(
-            split_mention_text[-1])
-        if last_char_of_mention == 0:  # last char can't be first char of string
-            # handle special case if the last punctuation is part of mention
-            last_char_of_mention = len(sentence_str)
-
-        token_str = mention_text
-        t_subt = sent_conll[sent_conll[TOPIC_SUBTOPIC] != "-"].iloc[0][TOPIC_SUBTOPIC]
-        conll_df.loc[(conll_df[DOC_ID] == doc_id), TOPIC_SUBTOPIC] = t_subt  # set subtopics in conll
-        counter = 0
-        while True:
-            if counter > 50:  # an error must have occurred, so break and add to manual review
-                need_manual_review_mention_head[str(t_subt) + "_" + str(mention_text)[:10]] = {
-                    "mention_text": mention_text,
-                    "sentence_str": sentence_str,
-                    "mention_head": "unknown",
-                    "mention_tokens_amount": len(mention_tokenized),
-                    "tolerance": tolerance
-                }
-                LOGGER.info(
-                    f"Mention with ID {str(t_subt)}_{str(mention_text)} needs manual review. Could not determine the mention head automatically \n(Exceeded max iterations). {str(tolerance)}")
-                break
-
-            if sentence_str[-1] not in ".!?" or mention_text[-1] == ".":
-                # if the sentence does not end with a ".", we have to add one
-                # for the algorithm to understand the sentence.
-                # (this "." isn't represented in the output later)
-                sentence_str = sentence_str + "."
-            char_after_first_token = sentence_str[
-                first_char_of_mention + len(split_mention_text[0])]
-
-            if len(split_mention_text) < len(re.split(" ", sentence_str[
-                                                           first_char_of_mention:last_char_of_mention])) + 1 and \
-                    (last_char_of_mention >= len(sentence_str) or
-                     sentence_str[last_char_of_mention] in string.punctuation or
-                     sentence_str[last_char_of_mention] == " ") and \
-                    str(sentence_str[first_char_of_mention - 1]) in str(
-                string.punctuation + " ") and \
-                    char_after_first_token in str(string.punctuation + " "):
-                # The end of the sentence was reached or the next character is a punctuation
-
-                processed_chars = 0
-                added_spaces = 0
-                mention_doc_ids = []
-
-                # get the tokens within the spacy doc
-                for t in doc:
-                    processed_chars = processed_chars + len(t.text)
-                    spaces = sentence_str[:processed_chars].count(" ") - added_spaces
-                    added_spaces = added_spaces + spaces
-                    processed_chars = processed_chars + spaces
-
-                    if last_char_of_mention >= processed_chars >= first_char_of_mention:
-                        # mention token detected
-                        mention_doc_ids.append(t.i)
-                    elif processed_chars > last_char_of_mention:
-                        # whole mention has been processed
+        tolerance = 0
+        token_found = {t: None for t in token_ids}
+        prev_id = 0
+        for t_id, t in zip(token_ids, tokens_text):
+            to_break = False
+            for tolerance in range(10):
+                for token in doc[max(0, t_id - tolerance): t_id + tolerance + 1]:
+                    if token.i < prev_id:
+                        continue
+                    if token.text == t:
+                        token_found[t_id] = token.i
+                        prev_id = token.i
+                        to_break = True
+                        break
+                    elif t.startswith(token.text):
+                        token_found[t_id] = token.i
+                        prev_id = token.i
+                        to_break = True
+                        break
+                    elif token.text.startswith(t):
+                        token_found[t_id] = token.i
+                        prev_id = token.i
+                        to_break = True
+                        break
+                    elif t.endswith(token.text):
+                        token_found[t_id] = token.i
+                        prev_id = token.i
+                        to_break = True
+                        break
+                if to_break:
+                    break
+        # whole mention string processed, look for the head
+        mention_head_id = None
+        mention_head = None
+        if f'{doc_id}/{mention_id}' not in need_manual_review_mention_head:
+            found_mentions_tokens = doc[min([t for t in token_found.values()]): max(
+                [t for t in token_found.values()]) + 1]
+            if len(found_mentions_tokens) == 1:
+                mention_head = found_mentions_tokens[0]
+                # remap the mention head back to the np4e original tokenization to get the ID for the output
+                for t_orig, t_mapped in token_found.items():
+                    if t_mapped == mention_head.i:
+                        mention_head_id = t_orig
                         break
 
-                # allow for dynamic differences in tokenization
-                # (longer mention texts may lead to more differences)
-                tolerance = 0
-                if tolerance > 2:
-                    tolerance = 2
-                # tolerance for website mentions
-                if ".com" in mention_text or ".org" in mention_text:
-                    tolerance = tolerance + 2
-                # tolerance when the mention has external tokens inbetween mention tokens
-                tolerance = tolerance \
-                            + int(count_punct(token_str)) \
-                            + 1
+            if mention_head is None:
+                found_mentions_tokens_ids = list(token_found.values())
+                # found_mentions_tokens_ids = set([t.i for t in found_mentions_tokens])
+                for i, t in enumerate(found_mentions_tokens):
+                    if t.head.i == t.i:
+                        # if a token is a root, it is a candidate for the head
+                        pass
 
-                if abs(len(re.split(" ", sentence_str[
-                                         first_char_of_mention:last_char_of_mention])) - len(
-                    mention_tokenized)) <= tolerance and sentence_str[
-                    first_char_of_mention - 1] in string.punctuation + " " and sentence_str[
-                    last_char_of_mention] in string.punctuation + " ":
-                    # Whole mention found in sentence (and tolerance is OK)
-                    break
-                else:
-                    counter = counter + 1
-                    # The next char is not a punctuation, so it therefore it is just a part of a bigger word
-                    first_char_of_mention = sentence_str.find(
-                        re.split(" ", mention_text)[0],
-                        first_char_of_mention + 2)
-                    last_char_of_mention = sentence_str.find(
-                        re.split(" ", mention_text)[-1],
-                        first_char_of_mention + len(
-                            re.split(" ", mention_text)[0])) + len(
-                        re.split(" ", mention_text)[-1])
+                    elif t.head.i >= min(found_mentions_tokens_ids) and t.head.i <= max(found_mentions_tokens_ids):
+                        # check if a head the candidate head is outside the mention's boundaries
+                        if t.head.text in tokens_text:
+                            # a head of a candiate head cannot be in the text of the mention
+                            continue
 
-            else:
-                counter = counter + 1
-                # The next char is not a punctuation, so it therefore we just see a part of a bigger word
-                # i.g. do not accept "her" as a full word if the next letter is "s" ("herself")
-                first_char_of_mention = sentence_str.find(re.split(" ", mention_text)[0],
-                                                          first_char_of_mention + 2)
-                if len(re.split(" ", mention_text)) == 1:
-                    last_char_of_mention = first_char_of_mention + len(mention_text)
-                else:
-                    last_char_of_mention = sentence_str.find(re.split(" ", mention_text)[-1],
-                                                             first_char_of_mention + len(
-                                                                 re.split(" ", mention_text)[
-                                                                     0])) + len(
-                        re.split(" ", mention_text)[-1])
+                    mention_head = t
+                    if mention_head.pos_ == "DET":
+                        mention_head = None
+                        continue
 
-        # whole mention string processed, look for the head
-        if str(t_subt) + "_" + str(mention_text) not in need_manual_review_mention_head:
-            for i in mention_doc_ids:
-                ancestors_in_mention = 0
-                for a in doc[i].ancestors:
-                    if a.i in mention_doc_ids:
-                        ancestors_in_mention = ancestors_in_mention + 1
-                        break  # one is enough to make the token inviable as a head
-                if ancestors_in_mention == 0 and doc[i].text not in string.punctuation:  # puncts should not be heads
-                    # head within the mention
-                    mention_head = doc[i]
-        else:
-            mention_head = doc[0]  # as placeholder for manual checking
-
-        mention_head_lemma = mention_head.lemma_
-        mention_head_pos = mention_head.pos_
-
-        mention_ner = mention_head.ent_type_
-        if mention_ner == "":
-            mention_ner = "O"
-
-        # remap the mention head back to the original tokenization to get the ID for the output
-        mention_head_id = None
-        mention_head_text = mention_head.text
-        for i, t in enumerate(split_mention_text):
-            if t.startswith(mention_head_text):
-                mention_head_id = mention_tokenized[i]
-
-        if not mention_head_id:
-            for i, t in enumerate(split_mention_text):
-                if mention_head_text.startswith(t):
-                    mention_head_id = mention_tokenized[i]
-        if not mention_head_id:
-            for i, t in enumerate(split_mention_text):
-                if t.endswith(mention_head_text):
-                    mention_head_id = mention_tokenized[i]
+                    to_break = False
+                    # remap the mention head back to the np4e original tokenization to get the ID for the output
+                    for t_orig, t_mapped in token_found.items():
+                        if t_mapped == mention_head.i:
+                            mention_head_id = t_orig
+                            to_break = True
+                            break
+                    if to_break:
+                        break
 
         # add to manual review if the resulting token is not inside the mention
         # (error must have happened)
-        if mention_head_id not in mention_tokenized:  # also "if is None"
-            if str(t_subt) + "_" + str(mention_text) not in need_manual_review_mention_head:
-                need_manual_review_mention_head[str(t_subt) + "_" + str(mention_text)[:10]] = \
+        if mention_head_id is None:  # also "if is None"
+            if f'{doc_id}/{mention_id}' not in need_manual_review_mention_head:
+                need_manual_review_mention_head[f'{doc_id}/{mention_id}'] = \
                     {
-                        "mention_text": mention_text,
-                        "sentence_str": sentence_str,
-                        "mention_head": str(mention_head),
-                        "mention_tokens_amount": len(mention_tokenized),
+                        "mention_text": list(zip(token_ids, tokens_text)),
+                        "sentence_tokens": list(enumerate(sent_tokens)),
+                        "spacy_sentence_tokens": [(i, t.text) for i, t in enumerate(doc)],
                         "tolerance": tolerance
                     }
-                with open(os.path.join(OUT_PATH, MANUAL_REVIEW_FILE),
-                          "w",
-                          encoding='utf-8') as file:
-                    json.dump(need_manual_review_mention_head, file)
-                LOGGER.info(
-                    f"Mention with ID {str(t_subt)}_{str(mention_text)} needs manual review. Could not determine the mention head automatically. {str(tolerance)}")
 
-        # get the context range
-        context_min_id, context_max_id = [0 if int(min(mention_tokenized)) - CONTEXT_RANGE < 0 else
-                                          int(min(mention_tokenized)) - CONTEXT_RANGE,
-                                          int(max(mention_tokenized)) + CONTEXT_RANGE]
+                LOGGER.warning(
+                    f"Mention with ID {doc_id}/{mention_id} ({token_str}) needs manual review. Could not "
+                    f"determine the mention head automatically. {str(tolerance)}")
 
-        # iterate over tokens and append if they are in context range
-        mention_context_str = []
-        for i, row in conll_df[conll_df[DOC_ID] == doc_id].iterrows():
-            if row["doc_token_id"] > context_max_id:
-                break
-            elif context_min_id <= row["doc_token_id"] <= context_max_id:
-                mention_context_str.append(row[TOKEN])
+        doc_df = conll_df[conll_df[DOC_ID] == doc_id]
+        token_mention_start_id = list(doc_df.index).index(f'{doc_id}/{sent_id}/{word_start}')
+        context_min_id = 0 if token_mention_start_id - CONTEXT_RANGE < 0 else token_mention_start_id - CONTEXT_RANGE
+        context_max_id = min(token_mention_start_id + CONTEXT_RANGE, len(doc_df))
 
-        # add attributes to mentions if the variables are correct ( do not add when manual review needed )
-        if str(t_subt) + "_" + str(mention_text) not in need_manual_review_mention_head:
-            mention = {COREF_CHAIN: coref_id,
-                       MENTION_NER: mention_ner,
-                       MENTION_HEAD_POS: mention_head_pos,
-                       MENTION_HEAD_LEMMA: mention_head_lemma,
-                       MENTION_HEAD: mention_head_text,
-                       MENTION_HEAD_ID: mention_head_id,
-                       DOC_ID: doc_id,
-                       DOC_ID_FULL: doc_id,
-                       IS_CONTINIOUS: mention_tokenized == list(range(mention_tokenized[0], mention_tokenized[-1] + 1)),
-                       IS_SINGLETON: len(mention_tokenized) == 1,
-                       MENTION_ID: mention_identifier,
-                       MENTION_TYPE: "MIS",
-                       MENTION_FULL_TYPE: "MISC",
-                       SCORE: -1.0,
-                       SENT_ID: sent_id,
-                       MENTION_CONTEXT: mention_context_str,
-                       TOKENS_NUMBER: mention_tokenized,
-                       TOKENS_STR: token_str,
-                       TOKENS_TEXT: split_mention_text,
-                       TOPIC_ID: 0,    # topic_id if subtopic desired
-                       TOPIC: "-",
-                       SUBTOPIC: t_subt,
-                       TOPIC_SUBTOPIC: t_subt,
-                       COREF_TYPE: STRICT,
-                       DESCRIPTION: None,
-                       CONLL_DOC_KEY: "-/"+t_subt+"/"+doc_id
-                       }
+        mention_context_str = list(doc_df.iloc[context_min_id:context_max_id][TOKEN].values)
 
-            # add to mentions list
+        # add to mentions if the variables are correct ( do not add for manual review needed )
+        if f'{doc_id}/{mention_id}' not in need_manual_review_mention_head:
+            mention_ner = mention_head.ent_type_ if mention_head.ent_type_ != "" else "O"
+            mention_type = "OCCURRENCE"
+            mention.update({
+                MENTION_NER: mention_ner,
+                MENTION_HEAD_POS: mention_head.pos_,
+                MENTION_HEAD_LEMMA: mention_head.lemma_,
+                MENTION_HEAD: mention_head.text,
+                MENTION_HEAD_ID: int(mention_head_id),
+                DOC: "_".join(doc_title_dict[doc_id]),
+                IS_CONTINIOUS: token_ids == list(
+                    range(token_ids[0], token_ids[-1] + 1)),
+                IS_SINGLETON: coref_dict[mention[COREF_CHAIN]] == 1,
+                MENTION_TYPE: mention_type[:3],
+                MENTION_FULL_TYPE: mention_type,
+                SCORE: -1.0,
+                MENTION_CONTEXT: mention_context_str,
+                TOKENS_NUMBER: token_ids,
+                TOKENS_STR: token_str,
+                TOKENS_TEXT: tokens_text
+            })
+            mention.pop("words")
             event_mentions.append(mention)
 
-            summary_df.loc[len(summary_df)] = {
-                DOC_ID: doc_id,
-                COREF_CHAIN: coref_id,
-                DESCRIPTION: "",
-                MENTION_TYPE: "MIS",
-                MENTION_FULL_TYPE: "MISC",
-                MENTION_ID: mention_identifier,
-                TOKENS_STR: token_str
-            }
-
-    # --> output files
-
-    if len(need_manual_review_mention_head):
-        LOGGER.warning(
-            f'Mentions ignored: {len(need_manual_review_mention_head)}. The ignored mentions are available here for a manual review: '
-            f'{os.path.join(OUT_PATH, MANUAL_REVIEW_FILE)}')
-        with open(os.path.join(OUT_PATH, MANUAL_REVIEW_FILE), "w", encoding='utf-8') as file:
-            json.dump(need_manual_review_mention_head, file)
-
-    with open(os.path.join(OUT_PATH, MENTIONS_EVENTS_JSON), "w", encoding='utf-8') as file:
-        json.dump(event_mentions, file)
-
-    summary_df.drop(columns=[MENTION_ID], inplace=True)
-    summary_df.to_csv(os.path.join(OUT_PATH, MENTIONS_ALL_CSV))
-
-    # --> create an output conll string from the conll_df in our format
+    entity_mentions = []
+    df_all_mentions = pd.DataFrame()
+    for mention in tqdm(entity_mentions + event_mentions):
+        df_all_mentions = pd.concat([df_all_mentions, pd.DataFrame({
+            attr: str(value) if type(value) == list else value for attr, value in mention.items()
+        }, index=[mention[MENTION_ID]])], axis=0)
+    df_all_mentions.to_csv(os.path.join(OUT_PATH, MENTIONS_ALL_CSV))
 
     conll_df = conll_df.reset_index(drop=True)
-    LOGGER.info("Generating conll string...")
-    for i, row in tqdm(conll_df.iterrows(), total=conll_df.shape[0]):
-        conll_df.iloc[i][TOPIC_SUBTOPIC] = "-/" + row[TOPIC_SUBTOPIC] + "/" + row[DOC_ID]
-        if not "(" in row[REFERENCE] and not ")" in row[REFERENCE]:
-            conll_df.iloc[i][REFERENCE] = "-"
+    conll_df_labels = make_save_conll(conll_df, df_all_mentions, OUT_PATH)
 
-    conll_df = conll_df.drop(columns=[DOC_ID, "doc_token_id", "title_text_id"])
-    outputdoc_str = ""
-    for (topic_local), topic_df in conll_df.groupby(by=[TOPIC_SUBTOPIC]):
-        outputdoc_str += f'#begin document ({topic_local}); part 000\n'
+    with open(os.path.join(OUT_PATH, MENTIONS_ENTITIES_JSON), "w") as file:
+        json.dump(entity_mentions, file)
 
-        for (sent_id_local), sent_df in topic_df.groupby(by=[SENT_ID], sort=[SENT_ID]):
-            np.savetxt(os.path.join(GVC_PARSING_FOLDER, "tmp.txt"), sent_df.values, fmt='%s', delimiter="\t",
-                       encoding="utf-8")
-            with open(os.path.join(GVC_PARSING_FOLDER, "tmp.txt"), "r", encoding="utf8") as file:
-                saved_lines = file.read()
-            outputdoc_str += saved_lines + "\n"
+    with open(os.path.join(OUT_PATH, MENTIONS_EVENTS_JSON), "w") as file:
+        json.dump(event_mentions, file)
 
-        outputdoc_str += "#end document\n"
+    LOGGER.info(
+        "Mentions that need manual review to define the head and its attributes have been saved to: " +
+        MANUAL_REVIEW_FILE + " - Total: " + str(len(need_manual_review_mention_head)))
 
-    # --> Check if the brackets ( ) are correct
-    try:
-        brackets_1 = 0
-        brackets_2 = 0
-        for i, row in conll_df.iterrows():  # only count brackets in reference column (exclude token text)
-            brackets_1 += str(row[REFERENCE]).count("(")
-            brackets_2 += str(row[REFERENCE]).count(")")
-        LOGGER.info(
-            f"Amount of mentions in this topic: {str(len(event_mentions))}")
-        LOGGER.info(f"brackets '(' , ')' : {str(brackets_1)}, {str(brackets_2)}")
-        assert brackets_1 == brackets_2
-    except AssertionError:
-        print(outputdoc_str)
-        LOGGER.warning(f'Number of opening and closing brackets in conll does not match!')
-        conll_df.to_csv(os.path.join(OUT_PATH, CONLL_CSV))
-        with open(os.path.join(OUT_PATH, 'gvc.conll'), "w", encoding='utf-8') as file:
-            file.write(outputdoc_str)
-        # sys.exit()
+    with open(os.path.join(TMP_PATH, MANUAL_REVIEW_FILE), "w", encoding='utf-8') as file:
+        json.dump(need_manual_review_mention_head, file)
 
-    # --> output conll in out format
+    LOGGER.info(f'Done! \nNumber of unique mentions: {len(df_all_mentions)} '
+                f'\nNumber of unique chains: {len(set(df_all_mentions[COREF_CHAIN].values))} ')
 
-    conll_df.to_csv(os.path.join(OUT_PATH, CONLL_CSV))
-    with open(os.path.join(OUT_PATH, 'gvc.conll'), "w", encoding='utf-8') as file:
-        file.write(outputdoc_str)
+    LOGGER.info(f'Splitting GVC into train/dev/test subsets...')
+    for subset, subtopic_ids in train_dev_test_split_dict.items():
+        LOGGER.info(f'Creating data for {subset} subset...')
+        split_folder = os.path.join(OUT_PATH, subset)
+        if subset not in os.listdir(OUT_PATH):
+            os.mkdir(split_folder)
+
+        selected_entity_mentions = []
+        for mention in entity_mentions:
+            if int(mention[SUBTOPIC_ID]) in subtopic_ids:
+                selected_entity_mentions.append(mention)
+
+        selected_event_mentions = []
+        for mention in event_mentions:
+            if int(mention[SUBTOPIC_ID]) in subtopic_ids:
+                selected_event_mentions.append(mention)
+
+        with open(os.path.join(split_folder, MENTIONS_ENTITIES_JSON), "w", encoding='utf-8') as file:
+            json.dump(selected_entity_mentions, file)
+
+        with open(os.path.join(split_folder, MENTIONS_EVENTS_JSON), "w", encoding='utf-8') as file:
+            json.dump(selected_event_mentions, file)
+
+        conll_df_split = pd.DataFrame()
+        for t_id in subtopic_ids:
+            conll_df_split = pd.concat([conll_df_split,
+                                        conll_df_labels[conll_df_labels[TOPIC_SUBTOPIC_DOC].str.contains(f'{t_id}/')]], axis=0)
+        make_save_conll(conll_df_split, selected_event_mentions + selected_entity_mentions, split_folder, False)
+
+    LOGGER.info(f'Parsing of GVC done!')
+
 
 if __name__ == '__main__':
     LOGGER.info(f"Processing GVC {source_path[-34:].split('_')[2]}.")
-    conv_files(source_path)
+    conv_files()

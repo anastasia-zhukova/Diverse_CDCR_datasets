@@ -4,6 +4,7 @@ import json
 import spacy
 import gdown
 import zipfile
+import requests
 from logger import LOGGER
 from huggingface_hub import hf_hub_url, hf_hub_download
 
@@ -186,7 +187,7 @@ if __name__ == '__main__':
             FOLDER: os.path.join(os.getcwd(), FCC)
         },
         GVC: {
-            LINK: "https://raw.githubusercontent.com/cltl/GunViolenceCorpus/master/",
+            LINK: "https://raw.githubusercontent.com/cltl/GunViolenceCorpus/master/;https://raw.githubusercontent.com/UKPLab/cdcr-beyond-corpus-tailored/master/resources/data/gun_violence/",
             ZIP: os.path.join(TMP_PATH, GVC_FOLDER_NAME + ".zip"),
             FOLDER: os.path.join(os.getcwd(), GVC, GVC_FOLDER_NAME)
         }
@@ -239,24 +240,16 @@ if __name__ == '__main__':
                             "Test_Event_gold_mentions_validated.json",
                             "Train_Event_gold_mentions.json"]
 
-            if not os.path.exists(WEC_ENG):
-                os.mkdir(WEC_ENG)
-
             if not os.path.exists(dataset_params[FOLDER]):
                 os.mkdir(dataset_params[FOLDER])
 
-            wec_eng = list()
             for split_filename in splits_files:
                 with open(hf_hub_download(dataset_params[LINK], filename=split_filename, repo_type="dataset"), encoding='utf-8') as cd:
                     local_file = json.load(cd)
-                    wec_eng = wec_eng + local_file
                     with open(os.path.join(dataset_params[FOLDER], split_filename), "w") as file:
                         json.dump(local_file, file)
 
                     LOGGER.info(f'Downloaded {split_filename}')
-
-            with open(os.path.join(dataset_params[FOLDER], "WEC-Eng.json"), "w") as file:
-                json.dump(wec_eng, file)
 
             # download required spacy packages
             if not spacy.util.is_package(SPACY_EN):
@@ -296,9 +289,16 @@ if __name__ == '__main__':
                 spacy.cli.download(SPACY_EN)
 
         elif dataset == GVC:
-            for file_name in ["gold.conll", "system_input.conll", "verbose.conll"]:
-                gdown.download(f'{dataset_params[LINK]}{file_name}',
-                               os.path.join(dataset_params[FOLDER],  file_name), quiet=False)
+            for url, file_names in zip(dataset_params[LINK].split(";"),
+                                       [["gold.conll", "system_input.conll", "verbose.conll"],
+                                        ["dev.csv", "gvc_doc_to_event.csv", "test.csv", "train.csv"]]):
+                for file_name in file_names:
+                    gdown.download(f'{url}{file_name}',
+                                   os.path.join(dataset_params[FOLDER],  file_name), quiet=False)
+
+            # download required spacy packages
+            if not spacy.util.is_package(SPACY_EN):
+                spacy.cli.download(SPACY_EN)
         else:
             NotImplementedError(f'There is no data download script implemented for the dataset {dataset}. Please make sure '
                                 f'that you have manully downloaded the raw data before parsing it. ')

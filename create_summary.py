@@ -21,7 +21,7 @@ DIRECTORIES_TO_SUMMARIZE = {
        MEANTIME: os.path.join(os.getcwd(), MEANTIME, OUTPUT_FOLDER_NAME),
        NP4E: os.path.join(os.getcwd(), NP4E, OUTPUT_FOLDER_NAME),
        NIDENT: os.path.join(os.getcwd(), NIDENT, OUTPUT_FOLDER_NAME),
-       # GVC: "",
+       GVC: os.path.join(os.getcwd(), GVC, OUTPUT_FOLDER_NAME),
        FCC: os.path.join(os.getcwd(), FCC, OUTPUT_FOLDER_NAME+"_FCC"),
        "FCC_T": os.path.join(os.getcwd(), FCC, OUTPUT_FOLDER_NAME+"_FCC-T")
 }
