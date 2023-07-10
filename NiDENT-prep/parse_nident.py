@@ -137,7 +137,6 @@ def conv_files():
 
             # mention attributes
             token_ids = [int(t) for t in list(markable_df[TOKEN_ID].values)]
-            tokens = {}
             token_str = ""
             tokens_text = list(markable_df[TOKEN].values)
             for token in tokens_text:
@@ -271,7 +270,7 @@ def conv_files():
                     DOC: doc_id,
                     IS_CONTINIOUS: token_ids == list(
                         range(token_ids[0], token_ids[-1] + 1)),
-                    IS_SINGLETON: len(tokens) == 1,
+                    IS_SINGLETON: None,
                     MENTION_ID: mention_id,
                     MENTION_TYPE: None,
                     MENTION_FULL_TYPE: None,
@@ -333,7 +332,7 @@ def conv_files():
                     if list(overlap)[0][0].isupper():
                         overlap_size = 1.5
                 cand_chains_df.loc[f'{doc_id_1}/{coref_chain_orig_id_1}', f'{doc_id_2}/{coref_chain_orig_id_2}'] = overlap_size
-                cand_chains_df.loc[ f'{doc_id_2}/{coref_chain_orig_id_2}', f'{doc_id_1}/{coref_chain_orig_id_1}',] = overlap_size
+                cand_chains_df.loc[ f'{doc_id_2}/{coref_chain_orig_id_2}', f'{doc_id_1}/{coref_chain_orig_id_1}'] = overlap_size
 
         chain_dict = {}
         checked_sets = set()
@@ -382,6 +381,7 @@ def conv_files():
                 mention[MENTION_FULL_TYPE] = mention_type
                 mention[DESCRIPTION] = description
                 mention[COREF_CHAIN] = chain_id
+                mention[IS_SINGLETON] = len(sim_mentions_df) == 1
                 if chain_id not in chain_dict:
                     chain_dict[chain_id] = []
                 chain_dict[chain_id].append(mention)
@@ -399,7 +399,7 @@ def conv_files():
     df_all_mentions.to_csv(os.path.join(OUT_PATH, MENTIONS_ALL_CSV))
 
     conll_df = conll_df.reset_index(drop=True)
-    make_save_conll(conll_df, df_all_mentions, OUT_PATH)
+    conll_df_labeled = make_save_conll(conll_df, df_all_mentions, OUT_PATH)
 
     with open(os.path.join(OUT_PATH, MENTIONS_ENTITIES_JSON), "w") as file:
         json.dump(entity_mentions, file)
@@ -413,6 +413,31 @@ def conv_files():
 
     with open(os.path.join(TMP_PATH, MANUAL_REVIEW_FILE), "w", encoding='utf-8') as file:
         json.dump(need_manual_review_mention_head, file)
+
+    LOGGER.info("Splitting the dataset into train/val/test subsets...")
+
+    with open("train_val_test_split.json", "r") as file:
+        train_val_test_dict = json.load(file)
+
+    for split, subtopic_ids in train_val_test_dict.items():
+        conll_df_split = pd.DataFrame()
+        for subtopic_id in subtopic_ids:
+            conll_df_split = pd.concat([conll_df_split,
+                                        conll_df_labeled[conll_df_labeled[TOPIC_SUBTOPIC_DOC].str.contains(f'0/{subtopic_id}')]])
+        event_mentions_split = [m for m in event_mentions if any([subtopic_id in m[SUBTOPIC_ID] for subtopic_id in subtopic_ids])]
+        entity_mentions_split = [m for m in entity_mentions if any([subtopic_id in m[SUBTOPIC_ID] for subtopic_id in subtopic_ids])]
+
+        output_folder_split = os.path.join(OUT_PATH, split)
+        if not os.path.exists(output_folder_split):
+            os.mkdir(output_folder_split)
+
+        with open(os.path.join(output_folder_split, MENTIONS_EVENTS_JSON), 'w', encoding='utf-8') as file:
+            json.dump(event_mentions_split, file)
+
+        with open(os.path.join(output_folder_split, MENTIONS_ENTITIES_JSON), 'w', encoding='utf-8') as file:
+            json.dump(entity_mentions_split, file)
+
+        make_save_conll(conll_df_split, event_mentions_split+entity_mentions_split, output_folder_split, assign_reference_labels=False)
 
     LOGGER.info(f'Done! \nNumber of unique mentions: {len(df_all_mentions)} '
                 f'\nNumber of unique chains: {len(set(df_all_mentions[COREF_CHAIN].values))} ')

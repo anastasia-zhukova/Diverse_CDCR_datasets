@@ -41,6 +41,20 @@ Original repository of English NiDENT dataset: http://clic.ub.edu/corpus/en/
 2. download NP4E via ```setup.py```. NP4E is required to maintain the subtopic structure (NiDENT is reannotated NP4E). 
 3. execute ```python parse_nident.py``` 
 
+NiDENT annotated only entities, so ```event_mentions.json``` are saved as empty list. MMAX format didn't provide an extra tag to 
+link coreference chains from the event-related documents into cross-document clusters, so we applied a simple yet reliable heuristic 
+to restore CDCR clusters. If at least two non-pronoun mentions or their heads are identical, we merge the chains into clusters. 
+
+We propose a train-val-test split for NiDENT in the ```train_val_test_split.json``` file. The split is on the subtopic level
+and assigns three subtopics for training and one per validation and test. 
+
+A mapping of the subtopic IDs to topic names is the following: 
+0) bukavu
+1) china 
+2) israel 
+3) peru
+4) tajikistan
+
 ### Topic organization
 News articles in the dataset are organized as following: 
 
@@ -51,8 +65,3 @@ News articles in the dataset are organized as following:
    ```
 
 The dataset contains _one topic_ about bomb, explosion, and kidnap. Subtopics report about different events within this topic.  
-
-### Entity coreference 
-NiDENT annotated only entities, so ```event_mentions.json``` are saved as empty list. MMAX format didn't provide an extra tag to 
-link coreference chains from the event-related documents into cross-document clusters, so we applied a simple yet reliable heuristic 
-to restore CDCR clusters. If at least two non-pronoun mentions or their heads are identical, we merge the chains into clusters. 
