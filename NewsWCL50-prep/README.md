@@ -31,6 +31,9 @@ convert the dataset into the original plain text, remember to replace these symb
 
 Similar to Zhukova et al. (2022), we exclude an ambiguous category "ACTOR-I". 
 
+We propose a train-val-test split for NewsWCL50 in the ```train_val_test_split.json``` file. The split is on the topic level
+and ensures that phrasing diversity within each split is comparable between the splits.
+
 
 ### Topic organization
 News articles in the dataset are organized as following:
