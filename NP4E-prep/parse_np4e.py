@@ -19,7 +19,6 @@ from logger import LOGGER
 path_sample = os.path.join(DATA_PATH, "_sample_doc.json")  # ->root/data/original/_sample_doc.json
 NP4E_PARSING_FOLDER = os.path.join(os.getcwd())
 OUT_PATH = os.path.join(NP4E_PARSING_FOLDER, OUTPUT_FOLDER_NAME)
-CONTEXT_RANGE = 250
 
 nlp = spacy.load('en_core_web_sm')
 
@@ -39,17 +38,6 @@ subtopic_fullname_dict = {
     "israel": "Israel_suicide_bomb",
     "china": "China-Taiwan_hijack"
 }
-
-
-def to_nltk_tree(node):
-    """
-        Converts a sentence to a visually helpful tree-structure output.
-        Can be used to double-check if a determined head is correct.
-    """
-    if node.n_lefts + node.n_rights > 0:
-        return Tree(node.orth_, [to_nltk_tree(child) for child in node.children])
-    else:
-        return node.orth_
 
 
 def conv_files():
@@ -291,32 +279,6 @@ def conv_files():
                         MENTION_NER: mention_ner
                     }, index=[mention_id])], axis=0)
 
-            # newsplease_custom = copy.copy(newsplease_format)
-            #
-            # title = ""
-            # for t in list(doc_df[doc_df[SENT_ID] == 0][TOKEN].values):
-            #     title, _, _ = append_text(title, t)
-            #
-            # text = ""
-            # for t in list(doc_df[doc_df[SENT_ID] > 0][TOKEN].values):
-            #     text, _, _ = append_text(text, t)
-            #
-            # newsplease_custom["title"] = title
-            # newsplease_custom["date_publish"] = None
-            #
-            # newsplease_custom["text"] = text
-            # newsplease_custom["source_domain"] = doc_text_name.split(".xml")[0]
-            # if newsplease_custom["title"][-1] not in string.punctuation:
-            #     newsplease_custom["title"] += "."
-            #
-            # doc_files[doc_text_name.split(".")[0]] = newsplease_custom
-            # if subtopic_name_composite not in os.listdir(result_path):
-            #     os.mkdir(os.path.join(result_path, subtopic_name_composite))
-            #
-            # with open(os.path.join(result_path, subtopic_name_composite, newsplease_custom["source_domain"] + ".json"),
-            #           "w") as file:
-            #     json.dump(newsplease_custom, file)
-
         grouped_dfs = coref_pre_df.groupby([COREF_CHAIN, DOC_ID])
         cand_chains_df = pd.DataFrame(np.zeros((len(grouped_dfs), len(grouped_dfs))),
                                       index=[f'{doc_id_1}/{coref_chain_orig_id_1}'
@@ -324,7 +286,7 @@ def conv_files():
                                       columns=[f'{doc_id_1}/{coref_chain_orig_id_1}'
                                                for (coref_chain_orig_id_1, doc_id_1), group_df_1 in grouped_dfs])
 
-        LOGGER.info("Building matrix of the within-document chains overlap...")
+        LOGGER.info("Building matrix of the cross-document chains overlap...")
         for i, ((coref_chain_orig_id_1, doc_id_1), group_df_1) in tqdm(list(enumerate(grouped_dfs))):
             # no pronouns
             cand_df_1 = group_df_1[group_df_1[MENTION_HEAD_POS] != "PRON"]
@@ -394,6 +356,7 @@ def conv_files():
                 mention[MENTION_TYPE] = mention_type[:3]
                 mention[MENTION_FULL_TYPE] = mention_type
                 mention[DESCRIPTION] = description
+                mention[IS_SINGLETON] = len(sim_mentions_df) == 1
                 mention[COREF_CHAIN] = chain_id
                 if chain_id not in chain_dict:
                     chain_dict[chain_id] = []
@@ -414,7 +377,7 @@ def conv_files():
     df_all_mentions.to_csv(os.path.join(OUT_PATH, MENTIONS_ALL_CSV))
 
     conll_df = conll_df.reset_index(drop=True)
-    make_save_conll(conll_df, df_all_mentions, OUT_PATH)
+    conll_df_labeled = make_save_conll(conll_df, df_all_mentions, OUT_PATH)
 
     with open(os.path.join(out_path, MENTIONS_ENTITIES_JSON), "w") as file:
         json.dump(entity_mentions, file)
@@ -428,6 +391,32 @@ def conv_files():
 
     with open(os.path.join(TMP_PATH, MANUAL_REVIEW_FILE), "w", encoding='utf-8') as file:
         json.dump(need_manual_review_mention_head, file)
+
+
+    LOGGER.info("Splitting the dataset into train/val/test subsets...")
+
+    with open("train_val_test_split.json", "r") as file:
+        train_val_test_dict = json.load(file)
+
+    for split, subtopic_ids in train_val_test_dict.items():
+        conll_df_split = pd.DataFrame()
+        for subtopic_id in subtopic_ids:
+            conll_df_split = pd.concat([conll_df_split,
+                                        conll_df_labeled[conll_df_labeled[TOPIC_SUBTOPIC_DOC].str.contains(f'0/{subtopic_id}')]])
+        event_mentions_split = [m for m in event_mentions if any([subtopic_id in m[SUBTOPIC_ID] for subtopic_id in subtopic_ids])]
+        entity_mentions_split = [m for m in entity_mentions if any([subtopic_id in m[SUBTOPIC_ID] for subtopic_id in subtopic_ids])]
+
+        output_folder_split = os.path.join(OUT_PATH, split)
+        if not os.path.exists(output_folder_split):
+            os.mkdir(output_folder_split)
+
+        with open(os.path.join(output_folder_split, MENTIONS_EVENTS_JSON), 'w', encoding='utf-8') as file:
+            json.dump(event_mentions_split, file)
+
+        with open(os.path.join(output_folder_split, MENTIONS_ENTITIES_JSON), 'w', encoding='utf-8') as file:
+            json.dump(entity_mentions_split, file)
+
+        make_save_conll(conll_df_split, event_mentions_split+entity_mentions_split, output_folder_split, assign_reference_labels=False)
 
     LOGGER.info(f'Done! \nNumber of unique mentions: {len(df_all_mentions)} '
                 f'\nNumber of unique chains: {len(set(df_all_mentions[COREF_CHAIN].values))} ')
