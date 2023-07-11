@@ -15,6 +15,7 @@ NP4E-prep/NP4E/
 NiDENT-prep/NiDENT/
 WECEng-prep/WEC-Eng/
 !WECEng-prep/WEC-Eng/.gitkeep
+!WECEng-prep/WEC-Eng/topics/.gitkeep
 .venv
 venv/
 .idea
