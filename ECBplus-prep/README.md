@@ -25,11 +25,14 @@ https://www.aclweb.org/anthology/L14-1646/
 1) make sure that you downloaded the dataset by running ```python setup.py``` 
 2) execute ```python parse_ecbplus.py```
 
-We take only mentions from the manually validated sentences as described in [Cybulska and Vossen (2015)](https://aclanthology.org/W15-0801/). 
 We assign the subtopic names from [the ECB+ annotation guide](http://www.newsreader-project.eu/files/2013/01/NWR-2014-1.pdf), 
-which are saved in ```subtopic_names.json```. 
-Additionally to the files with the overall dataset, the parsing script uses a file ```train_dev_test_split.json``` with the split was proposed by 
-[Barhom et al. (2019)](https://aclanthology.org/P19-1409/) to create folders with the train/dev/test splits located in the ```\output_data```. 
+which are saved in ```subtopic_names.json```. The parsing script uses a file ```train_dev_test_split.json``` with the split was proposed by 
+[Barhom et al. (2019)](https://aclanthology.org/P19-1409/) to create folders with the train/dev/test splits. 
+
+We create two versions of the dataset: 
+1) original all annotated mentions and clusters (saved into ```\output_data_unvalidated```)
+2) mentions from the manually validated sentences as described in [Cybulska and Vossen (2015)](https://aclanthology.org/W15-0801/)
+(saved into ```\output_data```)
 
 ### Topic organization
 News articles in the dataset are organized as following: 

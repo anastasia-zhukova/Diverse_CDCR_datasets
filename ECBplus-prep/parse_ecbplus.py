@@ -464,10 +464,10 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
     if len(need_manual_review_mention_head):
         LOGGER.warning(f'Mentions ignored: {len(need_manual_review_mention_head)}. The ignored mentions are available here for a manual review: '
                     f'{os.path.join(out_path,MANUAL_REVIEW_FILE)}')
-        with open(os.path.join(out_path, MANUAL_REVIEW_FILE), "w", encoding='utf-8') as file:
+        with open(os.path.join(TMP_PATH, MANUAL_REVIEW_FILE), "w", encoding='utf-8') as file:
             json.dump(need_manual_review_mention_head, file)
 
-    # # take only validated sentences
+    # take only validated sentences
     entity_mention_validated = []
     for mention in entity_mentions:
         subtopic_suf = re.sub(r'\d+', '', mention[SUBTOPIC_ID])
@@ -475,7 +475,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
             continue
         entity_mention_validated.append(mention)
 
-    # # take only validated sentences
+    # take only validated sentences
     event_mention_validated = []
     for mention in event_mentions:
         subtopic_suf = re.sub(r'\d+', '', mention[SUBTOPIC_ID])
@@ -503,7 +503,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
         df_all_mentions.to_csv(os.path.join(save_folder, MENTIONS_ALL_CSV))
 
-        make_save_conll(conll_df, df_all_mentions, save_folder)
+        conll_df_labels = make_save_conll(conll_df, df_all_mentions, save_folder)
 
         LOGGER.info(f'Done! \nNumber of unique mentions: {len(df_all_mentions)} '
                     f'\nNumber of unique chains: {len(set(df_all_mentions[COREF_CHAIN].values))} ')
@@ -534,7 +534,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
             conll_df_split = pd.DataFrame()
             for t_id in topic_ids:
                 conll_df_split = pd.concat([conll_df_split,
-                                            conll_df[conll_df[TOPIC_SUBTOPIC_DOC].str.contains(f'{t_id}/')]], axis=0)
+                                            conll_df_labels[conll_df_labels[TOPIC_SUBTOPIC_DOC].str.contains(f'{t_id}/')]], axis=0)
             make_save_conll(conll_df_split, selected_event_mentions+selected_entity_mentions, split_folder, False)
     LOGGER.info(f'Parsing ECB+ is done!')
     LOGGER.info(f'The annotated mentions ({counter_annotated_mentions}) and parsed mentions ({counter_parsed_mentions}).')
