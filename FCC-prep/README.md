@@ -3,7 +3,8 @@
 Original repository of FCC/FCC-T dataset: https://tudatalib.ulb.tu-darmstadt.de/handle/tudatalib/2305
 
 ### Papers
-* For the original FCC, see Bugert et al. 2020 "Breaking the Subtopic Barrier in Cross-Document Event Coreference Resolution", http://ceur-ws.org/Vol-2593/paper3.pdf
+* For the original FCC, see Bugert et al. 2020 "Breaking the Subtopic Barrier in Cross-Document Event Coreference 
+Resolution", http://ceur-ws.org/Vol-2593/paper3.pdf
   ```
   @inproceedings{bugert2020breaking,
     title={{Breaking the Subtopic Barrier in Cross-Document Event Coreference Resolution}},
@@ -13,7 +14,8 @@ Original repository of FCC/FCC-T dataset: https://tudatalib.ulb.tu-darmstadt.de/
     year={2020}
   }
   ```
-* For the token-level reannotation FCC-T, see Bugert et al. 2021 "Generalizing Cross-Document Event Coreference Resolution Across Multiple Corpora", https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference
+* For the token-level reannotation FCC-T, see Bugert et al. 2021 "Generalizing Cross-Document Event Coreference 
+Resolution Across Multiple Corpora", https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference
   ```
   @article{10.1162/coli_a_00407,
         author = {Bugert, Michael and Reimers, Nils and Gurevych, Iryna},
@@ -34,7 +36,7 @@ Original repository of FCC/FCC-T dataset: https://tudatalib.ulb.tu-darmstadt.de/
 ### To parse FCC + FCC-T
 1) make sure that you obtained the dataset by following the guidelines from the original repository below. All dataset 
 folders need to be placed into ```FCC-prep/FCC``` folder.
-2) execute ```python parse_fcc.py``` 
+2) execute ```python parse_fcc.py```
 
 ### Output format
 
@@ -58,6 +60,8 @@ The regular ```entity_mentions.json``` is hence empty.
 If there is an event with a label "other_event", we create compositional ID per collection to make it a less general event, e.g., 
 ```other_event-uefa_euro_2016```. 
 
+We parsed a version of FCC-T with stacked actions.
+
 ### Entity (non)coreference
 Since there is no coreferences among the entities, all of them are created as singletons but saved into an additional file 
 called ```entity_mentions_attr.json``` . 
@@ -68,8 +72,9 @@ For example, ```chain_id: "OCCaaalll111_participants_aa11"```. To preserve seman
 mention's format, we save the labels in the ```coref_type``` attributes, e.g., ```coref_type: "participants"```. 
 
 ### Subtopics
-Each split might contain a subtopic called "other_event". To make the subtopic less general, we create a compositional subtopic that includes a split name, 
-e.g., "other_event-test". 
+Each split might contain documents that are not assigned to any seminal event. Similar to [Bugert et al. 2021]
+(https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference), we create a new 
+seminal event for such unassigned documents. 
 
 
 

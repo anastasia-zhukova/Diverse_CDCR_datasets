@@ -25,13 +25,18 @@ def conv_files():
     conll_df_fcc_t = pd.DataFrame()
     all_mentions_dict = {"event": [], "entity": [], "event_sentence": []}
     need_manual_review_mention_head = {}
+    other_event_counter = 0
 
     for split in ["dev", "test", "train"]:
         LOGGER.info(f"Reading {split} split...")
         all_mentions_dict_local = {"event": [], "entity": [], "event_sentence": []}
         documents_df = pd.concat([documents_df,
                                   pd.read_csv(os.path.join(source_path, "2020-10-05_FCC_cleaned", split, "documents.csv"), index_col=[0]).fillna("")])
-        documents_df.fillna(f"other_event-{split}", inplace=True)
+        # if a document is not assigned to any seminal event, create a new event
+        for index, row in documents_df.iterrows():
+            if not row["seminal-event"]:
+                documents_df.loc[index, "seminal-event"] = f"other_seminal_event-{other_event_counter}"
+                other_event_counter += 1
         documents_df["subtopic-id"] = [shortuuid.uuid(v) for v in documents_df["seminal-event"].values]
 
         tokens_df = pd.read_csv(os.path.join(source_path, "2020-10-05_FCC_cleaned", split, "tokens.csv"))
@@ -336,16 +341,15 @@ def conv_files():
         }, index=[mention[MENTION_ID]])], axis=0)
     df_all_mentions_sent.to_csv(os.path.join(save_folder_fcc, MENTIONS_ALL_CSV))
 
-    LOGGER.info(f'Parsing of FCC and FCC-T is done!')
+    LOGGER.info(f'Parsing of FCC is done!')
     LOGGER.info(
         f'\nNumber of unique mentions in FCC: {len(df_all_mentions_sent)} '
         f'\nNumber of unique event chains: {len(set(df_all_mentions_sent[COREF_CHAIN].values))} ')
 
+    LOGGER.info(f'Parsing of FCC-T is done!')
     LOGGER.info(
         f'\nNumber of unique mentions: {len(df_all_mentions)} '
         f'\nNumber of unique chains: {len(set(df_all_mentions[COREF_CHAIN].values))} ')
-
-    a = 1
 
 
 if __name__ == '__main__':
