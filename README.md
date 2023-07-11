@@ -36,26 +36,25 @@ Parsing scripts per dataset are contained in each separate folder, whereas the s
 
 The parsing scripts and output folders are located  here:
 
-| Dataset          | Parsing script                          | Output files                               | Train/val/test split      |
-|:-----------------|:----------------------------------------|:-------------------------------------------|---------------------------|
-| ECB+             | ```ECBplus-prep/parse_ecbplus.py```     | ```ECBplus-prep/output_data```             | original (reused)         |
-| ECB+ unvalidated | ```ECBplus-prep/parse_ecbplus.py```     | ```ECBplus-prep/output_data-unvalidated``` | original (reused)         |
-| FCC              | ```FCC-prep/parse_fcc.py```             | ```FCC-prep/output_data_FCC```             | original (reused)         |
-| FCC-T            | ```FCC-prep/parse_fcc.py```             | ```FCC-prep/output_data_FCC-T```           | original (reused)         |
-| GVC              | ```GVC-prep/parse_nident.py```          | ```GVC-prep/output_data```                 | original (reused)         |
-| NewsWCL50        | ```NewsWCL50-prep/parse_newswcl50.py``` | ```NewsWCL50-prep/output_data```           | new (didn't exist before) |
-| MEANTIME         | ```MEANTIME-prep/parse_meantime.py```   | ```MEANTIME-prep/output_data```            | new (didn't exist before) |
-| NP4E             | ```NP4E-prep/parse_np4e.py```           | ```NP4E-prep/output_data```                | new (didn't exist before) |
-| NiDENT           | ```NiDENT-prep/parse_nident.py```       | ```NiDENT-prep/output_data```              | new (didn't exist before) |
+| Dataset          | Coreference target      | Parsing script                          | Output files                               | Train/val/test split      |
+|:-----------------|-------------------------|:----------------------------------------|:-------------------------------------------|---------------------------|
+| ECB+             | (mainly) event + entity | ```ECBplus-prep/parse_ecbplus.py```     | ```ECBplus-prep/output_data```             | original (reused)         |
+| ECB+ unvalidated | (mainly) event + entity | ```ECBplus-prep/parse_ecbplus.py```     | ```ECBplus-prep/output_data-unvalidated``` | original (reused)         |
+| FCC              | event                   | ```FCC-prep/parse_fcc.py```             | ```FCC-prep/output_data_FCC```             | original (reused)         |
+| FCC-T            | event                   | ```FCC-prep/parse_fcc.py```             | ```FCC-prep/output_data_FCC-T```           | original (reused)         |
+| GVC              | event                   | ```GVC-prep/parse_gvc.py```             | ```GVC-prep/output_data```                 | original (reused)         |
+| WEC-Eng          | event                   | ```WECEng-prep/parse_weceng.py```       | ```WECEng-prep/output_data```              | original (reused)         |
+| NewsWCL50        | event + entity          | ```NewsWCL50-prep/parse_newswcl50.py``` | ```NewsWCL50-prep/output_data```           | new (didn't exist before) |
+| MEANTIME         | event + entity          | ```MEANTIME-prep/parse_meantime.py```   | ```MEANTIME-prep/output_data```            | new (didn't exist before) |
+| NP4E             | entity                  | ```NP4E-prep/parse_np4e.py```           | ```NP4E-prep/output_data```                | new (didn't exist before) |
+| NiDENT           | entity                  | ```NiDENT-prep/parse_nident.py```       | ```NiDENT-prep/output_data```              | new (didn't exist before) |
 
-Each dataset contains three output files suitable for a CDCR model: 
-
-Main files:
+Each dataset contains three **main** output files suitable for a CDCR model: 
 1) ```dataset.conll```, i.e., a CoNLL format of the full text corpus with the beginning and end tags, with the newline delimiters between the articles.
-2) ```entity_mentions.json```, i.e., a list of entity mentions. 
-3) ```event_mentions.json```, i.e., a list of event mentions.
+2) ```entity_mentions.json```, i.e., a list of entity mentions with assigned cluster IDs. 
+3) ```event_mentions.json```, i.e., a list of event mentions with assigned cluster IDs.
 
-Same data in the csv format (used to compute statistics of the datasets or have an overview of the datasets):
+Same data in the csv format (used for data analysis, e.g., to compute statistics of the datasets or have an overview of the mentions):
 1) ```conll.csv```, i.e., a CoNLL format in a tabular format without tags and newline delimiters.
 2) ```all_mentions.csv```, i.e., a csv file with all mentions combined.
 
@@ -71,10 +70,10 @@ The articles are organized in the following structure:
         - document
 ```
  **Topic** contains text documents about the same topic, e.g., presidential elections.
-**Subtopic** further organized the documents into _event-specific_ more narrowly related folders, e.g., (rather broad event) presidential elections in the U.S. in 2018. 
+**Subtopic** further organized the documents into _event-specific_ more narrowly related events, e.g., presidential elections in the U.S. in 2018. 
 **Document** is a specific text, e.g., a news article. 
 
-The composion of these attributes as ```topic_id/subtopic_id/doc_id``` will be used as a unique document key within a dataset. 
+The composition of these attributes as ```topic_id/subtopic_id/doc_id``` will be used as a unique document key within a dataset. 
 To make a document unique across the datasets, modify the key into ```dataset/topic_id/subtopic_id/doc_id```.
 
 If a dataset contains only subtopics, but they are all related to one topic, e.g., football, then they are organized under one topic. 
@@ -129,6 +128,9 @@ Example:
 
 ### 2) ***_mentions.json: Annotations and mention context
 The format is adapted and extended from [WEC-Eng](https://huggingface.co/datasets/Intel/WEC-Eng) and from the mention format used by [Barhom et al. 2019](https://github.com/shanybar/event_entity_coref_ecb_plus/tree/master/data/interim/cybulska_setup). 
+
+To extract some mentions' attributes, we parse document sentences by spaCy. To extract a mention head, we align each mention 
+to the corresponding sentences in the documents and extract the head of mention as highest node in the dependency subtree.
 
 | Field              | Type            | Description                                                                                         |
 |--------------------|-----------------|-----------------------------------------------------------------------------------------------------|
