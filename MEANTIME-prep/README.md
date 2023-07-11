@@ -35,6 +35,15 @@ The original dataset contained a split into topics and documents, but each docum
 Thus, we make a name of one article a subtopic and the four corresponding documents in four languages as its representatives.
 The dataset then extensively allows cross-subtopic coreference clusters. 
 
+We propose a train-val-test split for MEANTIME in the ```train_val_test_split.json``` file. The split is on the topic level
+and assigns two topics for training and one per validation and test. 
+
+A mapping of the topic IDs to topic names is the following: 
+1) corpus_airbus 
+2) corpus_apple 
+3) corpus_gm 
+4) corpus_stock
+
 
 ### Topic organization
 News articles in the dataset are organized as following: 
