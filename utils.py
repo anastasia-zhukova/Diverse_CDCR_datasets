@@ -30,6 +30,7 @@ def make_save_conll(conll_df: pd.DataFrame, mentions: Union[List, pd.DataFrame],
                 df_all_mentions = pd.concat([df_all_mentions, pd.DataFrame({
                     attr: str(value) if type(value) == list else value for attr, value in mention.items()
                 }, index=[mention[MENTION_ID]])], axis=0)
+            df_all_mentions.to_csv(os.path.join(output_folder, MENTIONS_ALL_CSV))
 
         df_all_mentions[SENT_ID] = df_all_mentions[SENT_ID].astype(int)
 
