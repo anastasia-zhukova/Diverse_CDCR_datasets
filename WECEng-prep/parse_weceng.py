@@ -30,9 +30,13 @@ def conv_files():
     conll_df = pd.DataFrame()
     event_mentions = []
 
-    for split, file_name in zip(["val", "test", "train"],
-                                ["Dev_Event_gold_mentions_validated.json",
-                                "Test_Event_gold_mentions_validated.json",
+    for split, file_name in zip([
+        # "val",
+        # "test",
+        "train"],
+                                [
+                                    # "Dev_Event_gold_mentions_validated.json",
+                                # "Test_Event_gold_mentions_validated.json",
                                 "Train_Event_gold_mentions.json"]):
         with open(os.path.join(source_path, file_name)) as f:
             mentions_list_init = json.load(f)
@@ -205,7 +209,7 @@ def conv_files():
             context_min_id = 0 if tokens_number[0] - CONTEXT_RANGE < 0 else tokens_number[0] - CONTEXT_RANGE
             context_max_id = min(tokens_number[0] + CONTEXT_RANGE, len(mention_orig[MENTION_CONTEXT]))
 
-            mention = {COREF_CHAIN: mention_orig[COREF_CHAIN],
+            mention = {COREF_CHAIN: str(mention_orig[COREF_CHAIN]),
                        MENTION_NER: mention_orig[MENTION_NER],
                        MENTION_HEAD_POS: mention_orig[MENTION_HEAD_POS],
                        MENTION_HEAD_LEMMA: mention_orig[MENTION_HEAD_LEMMA],
@@ -227,9 +231,9 @@ def conv_files():
                        TOKENS_STR: mention_orig[TOKENS_STR],
                        TOKENS_TEXT: tokens_text,
                        TOPIC_ID: topic_id,
-                       TOPIC: doc_topics_df.loc[mention_orig[DOC_ID], [TOPIC]],
+                       TOPIC: doc_topics_df.loc[mention_orig[DOC_ID], TOPIC],
                        SUBTOPIC_ID: subtopic_id,
-                       SUBTOPIC: doc_topics_df.loc[mention_orig[DOC_ID], [SUBTOPIC]],
+                       SUBTOPIC: doc_topics_df.loc[mention_orig[DOC_ID], SUBTOPIC],
                        COREF_TYPE: IDENTITY,
                        DESCRIPTION: mention_orig["coref_link"],
                        CONLL_DOC_KEY: f'{topic_id}/{subtopic_id}/{doc_id}',
