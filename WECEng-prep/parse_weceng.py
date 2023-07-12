@@ -31,12 +31,12 @@ def conv_files():
     event_mentions = []
 
     for split, file_name in zip([
-        # "val",
-        # "test",
+        "val",
+        "test",
         "train"],
                                 [
-                                    # "Dev_Event_gold_mentions_validated.json",
-                                # "Test_Event_gold_mentions_validated.json",
+                                "Dev_Event_gold_mentions_validated.json",
+                                "Test_Event_gold_mentions_validated.json",
                                 "Train_Event_gold_mentions.json"]):
         with open(os.path.join(source_path, file_name)) as f:
             mentions_list_init = json.load(f)
