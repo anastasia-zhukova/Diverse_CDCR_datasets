@@ -102,8 +102,9 @@ Example:
 #begin document 0/0/0_LL; part 000
 0/0/0_LL 0 0 This -
 0/0/0_LL 0 1 is -
-0/0/0_LL 0 2 Jim (1)
-0/0/0_LL 0 3 . -
+0/0/0_LL 0 2 Jim (1
+0/0/0_LL 0 3 Jones 1)
+0/0/0_LL 0 4 . -
 
 0/0/0_LL 1 0 He (1)
 0/0/0_LL 1 1 likes - 
@@ -114,8 +115,10 @@ Example:
 #begin document 1/1ecb/12; part 000
 1/1ecb/12 0 0 This -
 1/1ecb/12 0 1 is -
-1/1ecb/12 0 2 Anna (2)
-1/1ecb/12 0 3 . -
+1/1ecb/12 0 2 Anna (2
+1/1ecb/12 0 3 Maria -
+1/1ecb/12 0 4 Stevens 2)
+1/1ecb/12 0 5 . -
 
 1/1ecb/12 1 0 She (2)
 1/1ecb/12 1 1 likes - 
