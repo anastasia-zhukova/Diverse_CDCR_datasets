@@ -7,7 +7,8 @@ import pandas as pd
 pd.options.mode.chained_assignment = None
 
 
-def make_save_conll(conll_df: pd.DataFrame, mentions: Union[List, pd.DataFrame], output_folder: str, assign_reference_labels=True) -> pd.DataFrame:
+def make_save_conll(conll_df: pd.DataFrame, mentions: Union[List, pd.DataFrame], output_folder: str,
+                    assign_reference_labels=True, part_id: int = None) -> pd.DataFrame:
     """
     Universal function that converst a dataframe into a simplified ConLL format for coreference resolution.
     Args:
@@ -30,7 +31,11 @@ def make_save_conll(conll_df: pd.DataFrame, mentions: Union[List, pd.DataFrame],
                 df_all_mentions = pd.concat([df_all_mentions, pd.DataFrame({
                     attr: str(value) if type(value) == list else value for attr, value in mention.items()
                 }, index=[mention[MENTION_ID]])], axis=0)
-            df_all_mentions.to_csv(os.path.join(output_folder, MENTIONS_ALL_CSV))
+
+            if part_id is None:
+                df_all_mentions.to_csv(os.path.join(output_folder, MENTIONS_ALL_CSV))
+            else:
+                df_all_mentions.to_csv(os.path.join(output_folder, f"all_mentions_{part_id}.csv"))
 
         df_all_mentions[SENT_ID] = df_all_mentions[SENT_ID].astype(int)
 
@@ -83,8 +88,13 @@ def make_save_conll(conll_df: pd.DataFrame, mentions: Union[List, pd.DataFrame],
     # create a conll string from the conll_df
     LOGGER.info("Generating conll string...")
     outputdoc_str = ""
+    if part_id is None:
+        part_id_to_use = 0
+    else:
+        part_id_to_use = part_id
+
     for (topic_local), topic_df in conll_df.groupby(by=[TOPIC_SUBTOPIC_DOC]):
-        outputdoc_str += f'#begin document ({topic_local}); part 000\n'
+        outputdoc_str += f'#begin document ({topic_local}); part {part_id_to_use}\n'
 
         for (sent_id_local), sent_df in topic_df.groupby(by=[SENT_ID], sort=[SENT_ID]):
             np.savetxt(os.path.join(TMP_PATH, "tmp.txt"), sent_df.values, fmt='%s', delimiter="\t",
@@ -110,9 +120,14 @@ def make_save_conll(conll_df: pd.DataFrame, mentions: Union[List, pd.DataFrame],
         LOGGER.warning(f'Number of opening and closing brackets in conll does not match!')
         LOGGER.warning(f"brackets '(' , ')' : {str(brackets_1)}, {str(brackets_2)}")
 
-    conll_df.to_csv(os.path.join(output_folder, CONLL_CSV))
-    with open(os.path.join(output_folder, 'dataset.conll'), "w", encoding='utf-8') as file:
-        file.write(outputdoc_str)
+    if part_id is None:
+        conll_df.to_csv(os.path.join(output_folder, CONLL_CSV))
+        with open(os.path.join(output_folder, 'dataset.conll'), "w", encoding='utf-8') as file:
+            file.write(outputdoc_str)
+    else:
+        conll_df.to_csv(os.path.join(output_folder, f"conll_{part_id}.csv"))
+        with open(os.path.join(output_folder, f'dataset_{part_id}.conll'), "w", encoding='utf-8') as file:
+            file.write(outputdoc_str)
     return conll_df
 
 

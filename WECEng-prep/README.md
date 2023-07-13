@@ -29,13 +29,21 @@ https://aclanthology.org/2021.naacl-main.198/
 Take topic names from Table 7 of the WEC paper and reconstruct the assignment of the subtopics (Wikipedia titles of the 
 coreference chains which acts as seed/seminal events) to the topics. We create a heuristic of parsing Wikipedia categories 
 of the subtopic Wiki pages and overlapping them with the topics. Afterwards, we performed a manual validation. The assigned 
-topics to the subtopics are located in the ```WEC-Eng/topics``` folder.
+topics to the subtopics are located in the ```WEC-Eng/topics``` folder. 
+
+Since one documents could contain mentions referring to multiple chains, i.e., belong to multiple seminal events, we need 
+ensure that a document has a unique assignment to subtopics. Each document is uniquely assigned to the first subtopic 
+that occurs in each topic file in ```WEC-Eng/topics``` folder. Such a setup makes possible cross-subtopic coreferences, 
+which is a similar setup to MEANTIME and FCC. 
 
 To create CoNLL files, we reconstructed the Wikipedia articles by merging articles' paragraphs from mentions' context. 
 Since the sentence split was not provided, we assign one sentence_id per paragraph, i.e., mention's context. 
 
-To match the logic of the other parsed dataset, we modify mention's context into a window of -+ N words before and after 
+To match the logic of the other parsed dataset, we modify mention's context into a window of -+ N (N=100) words before and after 
 mention's first token.
+
+The size of the CoNLL file of the train split was quite big, so we split it into multiple parts. But event mentions remained in 
+one file per split. A file with entity mentions is empty because the dataset focused on event CDCR. 
 
 
 ### Topic organization
