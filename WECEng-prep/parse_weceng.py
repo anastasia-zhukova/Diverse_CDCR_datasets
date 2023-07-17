@@ -160,7 +160,7 @@ def conv_files():
         doc_chunks = list(divide_chunks(list(context_dict_global.items()), CHUNK_SIZE))
 
         for doc_chunk_id, doc_chunk in enumerate(doc_chunks):
-            LOGGER.info(f"Creating conll for the documents: chunk {doc_chunk_id} out of {len(doc_chunks)}...")
+            LOGGER.info(f"Creating conll for the documents: chunk {doc_chunk_id} out of {len(doc_chunks)-1}...")
             conll_df_local_chunk = pd.DataFrame()
             event_mentions_split_chunk = []
             mentions_in_chunk = []

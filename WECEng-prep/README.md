@@ -54,6 +54,9 @@ News articles in the dataset are organized as following:
         -> documents (wikipedia articles)
    ``` 
 
+### Download WEC-Eng 
+The re-parsed WEC-Eng can be downloaded from [this link](https://drive.google.com/drive/folders/1W8yilLEJo0_HDbIfJ4oWcl70t39tSnWG?usp=drive_link).
+
 ____________________________
 
 # WEC-Eng
