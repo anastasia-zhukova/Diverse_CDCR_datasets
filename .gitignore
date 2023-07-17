@@ -1,12 +1,19 @@
 # Ignore
+NewsWCL50-prep/output_data/test_parsing/
+ECBplus-prep/output_data/test_parsing/
+MEANTIME-prep/output_data/test_parsing/
+NP4E-prep/output_data/test_parsing/
+NiDENT-prep/output_data/test_parsing/
 NewsWCL50-prep/2019_annot/
-NewsWCL50-prep/2019_annot.zip
-ECBplus-prep/__MACOSX
+ECBplus-prep/__MACOSX/
 ECBplus-prep/ECB+/
-ECBplus-prep/ECB+.zip
-MEANTIME-prep/MEANTIME
-MEANTIME-prep/MEANTIME.zip
-MEANTIME-prep/test_parsing 
+GVC-prep/GVC/
+FCC-prep/FCC/
+MEANTIME-prep/meantime_newsreader/
+NP4E-prep/NP4E/
+NiDENT-prep/NiDENT/
+WECEng-prep/WEC-Eng/
+!WECEng-prep/WEC-Eng/.gitkeep
 .venv
 venv/
 .idea
@@ -81,3 +88,6 @@ fabric.properties
 
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
+*.json
+GVC-prep/output_data.7z
+GVC-prep/output_data.zip
