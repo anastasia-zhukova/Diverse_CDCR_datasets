@@ -16,15 +16,10 @@ from utils import *
 from logger import LOGGER
 
 
-path_sample = os.path.join(DATA_PATH, "_sample_doc.json")  # ->root/data/original/_sample_doc.json
 NP4E_PARSING_FOLDER = os.path.join(os.getcwd())
 OUT_PATH = os.path.join(NP4E_PARSING_FOLDER, OUTPUT_FOLDER_NAME)
 
 nlp = spacy.load('en_core_web_sm')
-
-# opens and loads the newsplease-format out of the json file: _sample_doc.json
-with open(path_sample, "r") as file:
-    newsplease_format = json.load(file)
 
 
 source_path = os.path.join(NP4E_PARSING_FOLDER, NP4E_FOLDER_NAME)
