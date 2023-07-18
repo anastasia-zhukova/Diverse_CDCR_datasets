@@ -26,8 +26,7 @@ Parsing scripts per dataset are contained in each separate folder, whereas the s
 ## Installation 
 
 1) __Python 3.8 required__
-
-2) !!! Recommended to create a venv.
+2) Recommended to create a venv.
 3) Install libraries: ```pip install -r requirements.txt```
 4) Download the datasets and required libraries from spacy: ```python setup.py```
 5) Download and install [Perl](https://strawberryperl.com/). Add perl to PATH, restart your computer, and check that perl has been correctly installed.
@@ -37,24 +36,24 @@ Parsing scripts per dataset are contained in each separate folder, whereas the s
 The parsing scripts and output folders are located  here:
 [Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference)
 
-| Dataset                                    | Coreference target      | Parsing script                          | Availability    | Train/val/test splits           | Previous benchmark                                                                                                      |
-|:-------------------------------------------|-------------------------|:----------------------------------------|-----------------|---------------------------------|-------------------------------------------------------------------------------------------------------------------------|
-| [ECB+](ECBplus-prep/README.md)             | (mainly) event + entity | ```ECBplus-prep/parse_ecbplus.py```     | Zenodo & GitHub | previously introduced & reused  | [Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference) |
-| [ECB+ unvalidated](ECBplus-prep/README.md) | (mainly) event + entity | ```ECBplus-prep/parse_ecbplus.py```     | Zenodo & GitHub | previously introduced & reused  | -                                                                                                                       |
-| [FCC](FCC-prep/README.md)                  | event                   | ```FCC-prep/parse_fcc.py```             | Zenodo          | original & reused               | [Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference) |
-| [FCC-T](FCC-prep/README.md)                | event                   | ```FCC-prep/parse_fcc.py```             | Zenodo          | original & reused               | [Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference) |
-| [GVC](GVC-prep/README.md)                  | event                   | ```GVC-prep/parse_gvc.py```             | Zenodo & GitHub | previously introduced & reused  | [Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference) |
-| [WEC-Eng](WECEng-prep/README.md)           | event                   | ```WECEng-prep/parse_weceng.py```       | Zenodo          | original & reused               | -                                                                                                                       |
-| [CD2CR](CD2CR-prep/README.md)              | entity                  | ```CD2CR-prep/parse_cd2cr.py```         | Zenodo & GitHub | original & reused               | -                                                                                                                       |
-| [NewsWCL50](NewsWCL50-prep/README.md)      | event + entity          | ```NewsWCL50-prep/parse_newswcl50.py``` | Zenodo          | new (didn't exist before)       | -                                                                                                                       |
-| [MEANTIME](MEANTIME-prep/README.md)        | event + entity          | ```MEANTIME-prep/parse_meantime.py```   | Zenodo & GitHub | new (didn't exist before)       | -                                                                                                                       |
-| [NP4E](NP4E-prep/README.md)                | entity                  | ```NP4E-prep/parse_np4e.py```           | Zenodo & GitHub | new (didn't exist before)       | -                                                                                                                       |
-| [NiDENT](NiDENT-prep/README.md)            | entity                  | ```NiDENT-prep/parse_nident.py```       | Zenodo          | new (didn't exist before)       | -                                                                                                                       |
+| Dataset                                    | Coreference target      | Parsing script                          | Available versions  | Train/val/test splits           | Previous benchmark                                                                                                      |
+|:-------------------------------------------|-------------------------|:----------------------------------------|---------------------|---------------------------------|-------------------------------------------------------------------------------------------------------------------------|
+| [ECB+](ECBplus-prep/README.md)             | (mainly) event + entity | ```ECBplus-prep/parse_ecbplus.py```     | public & protected  | previously introduced & reused  | [Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference) |
+| [ECB+ unvalidated](ECBplus-prep/README.md) | (mainly) event + entity | ```ECBplus-prep/parse_ecbplus.py```     | public & protected  | previously introduced & reused  | -                                                                                                                       |
+| [FCC](FCC-prep/README.md)                  | event                   | ```FCC-prep/parse_fcc.py```             | protected           | original & reused               | [Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference) |
+| [FCC-T](FCC-prep/README.md)                | event                   | ```FCC-prep/parse_fcc.py```             | protected           | original & reused               | [Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference) |
+| [GVC](GVC-prep/README.md)                  | event                   | ```GVC-prep/parse_gvc.py```             | public & protected  | previously introduced & reused  | [Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference) |
+| [WEC-Eng](WECEng-prep/README.md)           | event                   | ```WECEng-prep/parse_weceng.py```       | public & protected  | original & reused               | -                                                                                                                       |
+| [CD2CR](CD2CR-prep/README.md)              | entity                  | ```CD2CR-prep/parse_cd2cr.py```         | public & protected  | original & reused               | -                                                                                                                       |
+| [NewsWCL50](NewsWCL50-prep/README.md)      | event + entity          | ```NewsWCL50-prep/parse_newswcl50.py``` | protected           | new (didn't exist before)       | -                                                                                                                       |
+| [MEANTIME](MEANTIME-prep/README.md)        | event + entity          | ```MEANTIME-prep/parse_meantime.py```   | public & protected  | new (didn't exist before)       | -                                                                                                                       |
+| [NP4E](NP4E-prep/README.md)                | entity                  | ```NP4E-prep/parse_np4e.py```           | public & protected  | new (didn't exist before)       | -                                                                                                                       |
+| [NiDENT](NiDENT-prep/README.md)            | entity                  | ```NiDENT-prep/parse_nident.py```       | protected           | new (didn't exist before)       | -                                                                                                                       |
 
 Each dataset contains three **main** output files suitable for a CDCR model: 
 1) ```dataset.conll```, i.e., a CoNLL format of the full text corpus with the beginning and end tags, with the newline delimiters between the articles.
-2) ```entity_mentions.json```, i.e., a list of entity mentions with assigned cluster IDs. 
-3) ```event_mentions.json```, i.e., a list of event mentions with assigned cluster IDs.
+2) ```entity_mentions.json```, i.e., a list of entity mentions with assigned coreference chain IDs. 
+3) ```event_mentions.json```, i.e., a list of event mentions with assigned coreference chain IDs.
 
 Same data in the csv format (used for data analysis, e.g., to compute statistics of the datasets or have an overview of the mentions):
 1) ```conll.csv```, i.e., a CoNLL format in a tabular format without tags and newline delimiters.
@@ -88,12 +87,15 @@ If a dataset contains only subtopics, but they are all related to one topic, e.g
 If a dataset contains multiple subtopics but they do not share same topics, then, for each subtopic, separate topics are artificially created.  
 
 
-### Simple setup: binary classification model
+### Simple use case: binary classification model
 To train a simple binary classification mentions, one requires only ```entity_mentions.json``` and ```event_mentions.json``` files. 
 Each file contains a list of mentions. To encode a mention, you need to use the following attributes: 
 1) ```mention_context``` with a list of tokens within which a mention occurs
 2) ```tokens_number_context``` with a list of indexed where a mention occurs in the ```mention_context```, which are needed to position the mention 
 3) ```coref_chain``` that indicates if two mentions are coreferencial if the value is identical between two mentions
+
+Similar to [Cattan et al. 2021](https://aclanthology.org/2021.findings-acl.453/) or [Caciularu et al. 2021](https://aclanthology.org/2021.findings-emnlp.225/), 
+a pair of mentions can be encoded within their contexts and a coroference chain sets a training objective. 
 
 For more information about the format and attributes, see below. 
 
@@ -105,13 +107,13 @@ The original format contains multiple columns that contain information per each 
 We use a simplified format (based on the format of input filed used by [Barhom et al. 2019](https://github.com/shanybar/event_entity_coref_ecb_plus/tree/master/data/interim/cybulska_setup)) 
 that contains tokens, their identifiers in the text (e.g., doc_id, sent_id), and labels of coref chains: 
 
-| Column ID |  Type  | Description                               |
-|:----------|:------:|:------------------------------------------|
-| 0         | string | Composed document id: topic/subtopic/doc  |
-| 1         |  int   | Sentence ID                               |
-| 2         |  int   | Token ID                                  |
-| 3         | string | Token                                     |
-| 4         | string | Coreference chain                         |
+| Column ID |  Type  | Description                                       |
+|:----------|:------:|:--------------------------------------------------|
+| 0         | string | Composed document id: topic_id/subtopic_id/doc_id |
+| 1         |  int   | Sentence ID                                       |
+| 2         |  int   | Token ID                                          |
+| 3         | string | Token                                             |
+| 4         | string | Reference labels, i.e., coreference chain         |
 
 Each document is accompanied with a beginning and end tags, sentences are separated with news lines (warning: some new line delimiters can be tokens themselves (e.g., in NewsWCL50)). 
 
@@ -182,7 +184,7 @@ to the corresponding sentences in the documents and extract the head of mention 
 | is_continuous         | bool            | If all tokens in the annotated mention continuously occur in the text                               |
 | is_singleton          | bool            | If a coreference chain consists of only one mention.                                                |
 | mention_context       | list of strings | -N and +N tokens within one document before and after the mention (N=100).                          |
-| tokens_number_context | list of int     | Positioning of the mention's tokens in the context.                                                 |
+| tokens_number_context | list of int     | Positioning of the mention's tokens within the context.                                             |
 | language              | string          | Optional. A language of the mention. If not provided, the default value will be considered english. |
 | conll_doc_key         | string          | a compositional key for one-to-one mapping documents between .conll and .json files.                |
 
