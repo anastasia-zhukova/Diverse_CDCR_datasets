@@ -368,5 +368,6 @@ if __name__ == '__main__':
 
         make_save_conll(conll_df_split, event_mentions_split+entity_mentions_split, output_folder_split, assign_reference_labels=False)
 
-    LOGGER.info(f'\nNumber of unique mentions: {len(mentions_df_unique)} \nNumber of unique chains: {len(chain_df)} ')
+    LOGGER.info(f'\nNumber of unique mentions: {len(mentions_df_unique)} \n'
+                f'Number of unique chains: {len(set(df_all_mentions[COREF_CHAIN].values))} ')
     LOGGER.info("Parsing of NewsWCL50 is done!")
