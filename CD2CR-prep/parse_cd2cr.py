@@ -210,11 +210,7 @@ def conv_files():
                         f"determine the mention head automatically. {str(tolerance)}")
 
             doc_df = conll_split_df[conll_split_df[DOC_ID] == doc_id]
-            # doc_df.loc[:, "token_id_global"] = list(range(len(doc_df)))
             token_mention_start_id = token_ids_global[0]
-            # token_mention_start_id = list(doc_df.index).index(f'{doc_id}/{token_ids[0]}')
-            # context_min_id = 0 if token_mention_start_id - CONTEXT_RANGE < 0 else token_mention_start_id - CONTEXT_RANGE
-            # context_max_id = min(token_mention_start_id + CONTEXT_RANGE, len(doc_df))
 
             if token_mention_start_id - CONTEXT_RANGE < 0:
                 context_min_id = 0
