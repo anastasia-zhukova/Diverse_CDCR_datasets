@@ -35,12 +35,7 @@ to the chains where there is one ovelap with a proper noun, and merge such cases
 We propose a train-val-test split for NP4E in the ```train_val_test_split.json``` file. The split is on the subtopic level
 and assigns three subtopics for training and one per validation and test. 
 
-A mapping of the subtopic IDs to topic names is the following: 
-0) bukavu
-1) china 
-2) israel 
-3) peru
-4) tajikistan
+A mapping of the subtopic IDs to topic names is the following: 0) bukavu, 1) china, 2) israel, 3) peru, 4) tajikistan.
 
 
 ### Topic organization
