@@ -1,4 +1,4 @@
-# Cross-document coreference resolution (CDCR) datasets with diverse annotation schemes
+# CDCR Benchmark: Cross-document coreference resolution datasets with diverse annotation schemes
 
 The repository contains the code used to report the results in the [LREC 2022 paper Zhukova A., Hamborg F., Gipp B. "Towards Evaluation of Cross-document Coreference Resolution Models Using Datasets with Diverse Annotation Schemes"](https://aclanthology.org/2022.lrec-1.522/).  
 Please use this .bib to cite the paper:
@@ -35,19 +35,21 @@ Parsing scripts per dataset are contained in each separate folder, whereas the s
 ## Dataset information 
 
 The parsing scripts and output folders are located  here:
+[Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference)
 
-| Dataset          | Coreference target      | Parsing script                          | Output files                               | Train/val/test split      |
-|:-----------------|-------------------------|:----------------------------------------|:-------------------------------------------|---------------------------|
-| ECB+             | (mainly) event + entity | ```ECBplus-prep/parse_ecbplus.py```     | ```ECBplus-prep/output_data```             | original (reused)         |
-| ECB+ unvalidated | (mainly) event + entity | ```ECBplus-prep/parse_ecbplus.py```     | ```ECBplus-prep/output_data-unvalidated``` | original (reused)         |
-| FCC              | event                   | ```FCC-prep/parse_fcc.py```             | ```FCC-prep/output_data_FCC```             | original (reused)         |
-| FCC-T            | event                   | ```FCC-prep/parse_fcc.py```             | ```FCC-prep/output_data_FCC-T```           | original (reused)         |
-| GVC              | event                   | ```GVC-prep/parse_gvc.py```             | ```GVC-prep/output_data```                 | original (reused)         |
-| WEC-Eng          | event                   | ```WECEng-prep/parse_weceng.py```       | ```WECEng-prep/output_data```              | original (reused)         |
-| NewsWCL50        | event + entity          | ```NewsWCL50-prep/parse_newswcl50.py``` | ```NewsWCL50-prep/output_data```           | new (didn't exist before) |
-| MEANTIME         | event + entity          | ```MEANTIME-prep/parse_meantime.py```   | ```MEANTIME-prep/output_data```            | new (didn't exist before) |
-| NP4E             | entity                  | ```NP4E-prep/parse_np4e.py```           | ```NP4E-prep/output_data```                | new (didn't exist before) |
-| NiDENT           | entity                  | ```NiDENT-prep/parse_nident.py```       | ```NiDENT-prep/output_data```              | new (didn't exist before) |
+| Dataset                                    | Coreference target      | Parsing script                          | Availability    | Train/val/test splits           | Previous benchmark                                                                                                      |
+|:-------------------------------------------|-------------------------|:----------------------------------------|-----------------|---------------------------------|-------------------------------------------------------------------------------------------------------------------------|
+| [ECB+](ECBplus-prep/README.md)             | (mainly) event + entity | ```ECBplus-prep/parse_ecbplus.py```     | Zenodo & GitHub | previously introduced & reused  | [Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference) |
+| [ECB+ unvalidated](ECBplus-prep/README.md) | (mainly) event + entity | ```ECBplus-prep/parse_ecbplus.py```     | Zenodo & GitHub | previously introduced & reused  | -                                                                                                                       |
+| [FCC](FCC-prep/README.md)                  | event                   | ```FCC-prep/parse_fcc.py```             | Zenodo          | original & reused               | [Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference) |
+| [FCC-T](FCC-prep/README.md)                | event                   | ```FCC-prep/parse_fcc.py```             | Zenodo          | original & reused               | [Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference) |
+| [GVC](GVC-prep/README.md)                  | event                   | ```GVC-prep/parse_gvc.py```             | Zenodo & GitHub | previously introduced & reused  | [Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference) |
+| [WEC-Eng](WECEng-prep/README.md)           | event                   | ```WECEng-prep/parse_weceng.py```       | Zenodo          | original & reused               | -                                                                                                                       |
+| [CD2CR](CD2CR-prep/README.md)              | entity                  | ```CD2CR-prep/parse_cd2cr.py```         | Zenodo & GitHub | original & reused               | -                                                                                                                       |
+| [NewsWCL50](NewsWCL50-prep/README.md)      | event + entity          | ```NewsWCL50-prep/parse_newswcl50.py``` | Zenodo          | new (didn't exist before)       | -                                                                                                                       |
+| [MEANTIME](MEANTIME-prep/README.md)        | event + entity          | ```MEANTIME-prep/parse_meantime.py```   | Zenodo & GitHub | new (didn't exist before)       | -                                                                                                                       |
+| [NP4E](NP4E-prep/README.md)                | entity                  | ```NP4E-prep/parse_np4e.py```           | Zenodo & GitHub | new (didn't exist before)       | -                                                                                                                       |
+| [NiDENT](NiDENT-prep/README.md)            | entity                  | ```NiDENT-prep/parse_nident.py```       | Zenodo          | new (didn't exist before)       | -                                                                                                                       |
 
 Each dataset contains three **main** output files suitable for a CDCR model: 
 1) ```dataset.conll```, i.e., a CoNLL format of the full text corpus with the beginning and end tags, with the newline delimiters between the articles.
@@ -58,11 +60,16 @@ Same data in the csv format (used for data analysis, e.g., to compute statistics
 1) ```conll.csv```, i.e., a CoNLL format in a tabular format without tags and newline delimiters.
 2) ```all_mentions.csv```, i.e., a csv file with all mentions combined.
 
+More details about the formats of these formats see below. 
+
 ### Train/val/test subsets
-If a dataset has **a predefined split** into _**train/ val/ test**_ parts, the ```output_data``` folder will additionally contain corresponding subfolders with a set of files defined above. 
+If each dataset contains **train/ val/ test** splits, which are either reused from the previous research or newly introduced, if not existed before. 
+The ```output_data``` folder contain corresponding subfolders with a set of files defined above.
 
+Each subfolder contains one ```entity_mentions.json``` and one ```event_mentions.json``` file, but ```dataset.conll``` can 
+be split into multiple parts, e.g., ```dataset_1.conll``` and ```dataset_2.conll```. 
 
-### CDCR structure
+### CDCR topic structure
 The articles are organized in the following structure: 
 ```
 - topic
@@ -73,11 +80,22 @@ The articles are organized in the following structure:
 **Subtopic** further organized the documents into _event-specific_ more narrowly related events, e.g., presidential elections in the U.S. in 2018. 
 **Document** is a specific text, e.g., a news article. 
 
-The composition of these attributes as ```topic_id/subtopic_id/doc_id``` will be used as a unique document key within a dataset. 
-To make a document unique across the datasets, modify the key into ```dataset/topic_id/subtopic_id/doc_id```.
+The composition of these attributes as ```topic_id/subtopic_id/doc_id``` will be used as a unique identifier within a dataset. 
+To make the identifier unique across the datasets, e.g., to distinguish between topics with topic_id = 0, 
+modify the key into ```dataset/topic_id/subtopic_id/doc_id```.
 
 If a dataset contains only subtopics, but they are all related to one topic, e.g., football, then they are organized under one topic. 
-If a dataset contains multiple subtopics but they do not share same topics, then for each subtopic separate topics are artificially created.  
+If a dataset contains multiple subtopics but they do not share same topics, then, for each subtopic, separate topics are artificially created.  
+
+
+### Simple setup: binary classification model
+To train a simple binary classification mentions, one requires only ```entity_mentions.json``` and ```event_mentions.json``` files. 
+Each file contains a list of mentions. To encode a mention, you need to use the following attributes: 
+1) ```mention_context``` with a list of tokens within which a mention occurs
+2) ```tokens_number_context``` with a list of indexed where a mention occurs in the ```mention_context```, which are needed to position the mention 
+3) ```coref_chain``` that indicates if two mentions are coreferencial if the value is identical between two mentions
+
+For more information about the format and attributes, see below. 
 
 ## Input formats
 ### 1) (simplified) CoNLL format: Full document texts & annotations
@@ -103,8 +121,12 @@ Example:
 0/0/0_LL 0 0 This -
 0/0/0_LL 0 1 is -
 0/0/0_LL 0 2 Jim (1
-0/0/0_LL 0 3 Jones 1)
-0/0/0_LL 0 4 . -
+0/0/0_LL 0 3 Jones -
+0/0/0_LL 0 4 , -
+0/0/0_LL 0 5 a -
+0/0/0_LL 0 6 police (2)
+0/0/0_LL 0 7 officer 1)
+0/0/0_LL 0 8 . -
 
 0/0/0_LL 1 0 He (1)
 0/0/0_LL 1 1 likes - 
@@ -115,12 +137,12 @@ Example:
 #begin document 1/1ecb/12; part 000
 1/1ecb/12 0 0 This -
 1/1ecb/12 0 1 is -
-1/1ecb/12 0 2 Anna (2
+1/1ecb/12 0 2 Anna (3
 1/1ecb/12 0 3 Maria -
-1/1ecb/12 0 4 Stevens 2)
+1/1ecb/12 0 4 Stevens 3)
 1/1ecb/12 0 5 . -
 
-1/1ecb/12 1 0 She (2)
+1/1ecb/12 1 0 She (3)
 1/1ecb/12 1 1 likes - 
 1/1ecb/12 1 2 singing - 
 1/1ecb/12 1 3 . -
@@ -135,69 +157,72 @@ The format is adapted and extended from [WEC-Eng](https://huggingface.co/dataset
 To extract some mentions' attributes, we parse document sentences by spaCy. To extract a mention head, we align each mention 
 to the corresponding sentences in the documents and extract the head of mention as highest node in the dependency subtree.
 
-| Field              | Type            | Description                                                                                         |
-|--------------------|-----------------|-----------------------------------------------------------------------------------------------------|
-| coref_chain        | string          | Unique identifier of a coreference chain to which this mention belongs to.                          |
-| description        | string          | Description of a coreference chain.                                                                 |
-| coref_type         | string          | Type of a coreference link, e.g., strict indentity.                                                 |
-| mention_id         | string          | Mention ID.                                                                                         |
-| mention_type       | string          | Short form of a mention type, e.g., HUM                                                             |
-| mention_full_type  | string          | Long form of a mention type, e.g., HUMAN_PART_PER                                                   |
-| tokens_str         | string          | A full mention string, i.e., all consequitive chars of the mention as found in the text.            |
-| tokens_text        | list of strings | A mention split into a list of tokens, text of tokens                                               |
-| tokens_numbers     | list of int     | A mention split into a list of tokens, token id of these tokens (as occurred in a sentence).        |
-| mention_head       | string          | A head of mention's phrase, e.g., Barack *Obama*                                                    |
-| mention_head_id    | int             | Token id of the head of mention's phrase                                                            |
-| mention_head_pos   | string          | Token's POS tag of the head of mention's phrase                                                     |
-| mention_head_lemma | string          | Token's lemma of the head of mention's phrase                                                       |
-| sent_id            | int             | Sentence ID                                                                                         |
-| topic_id           | string          | Topic ID                                                                                            |
-| topic              | string          | Topic ID with its description (if any)                                                              |
-| subtopic_id        | string          | Subtopic id (optionally with short name)                                                            |
-| subtopic           | string          | Subtopic ID with its description (if any)                                                           |
-| doc_id             | string          | Document ID                                                                                         |
-| doc                | string          | Document ID with its description (if any)                                                           |
-| is_continuous      | bool            | If all tokens in the annotated mention continuously occur in the text                               |
-| is_singleton       | bool            | If a coreference chain consists of only one mention.                                                |
-| mention_context    | list of strings | -N and +N tokens before and after the mention (N=100).                                              |
-| language           | string          | Optional. A language of the mention. If not provided, the default value will be considered english. |
-| conll_doc_key      | string          | a compositional key for one-to-one mapping documents between .conll and .json files.                |
+| Field                 | Type            | Description                                                                                         |
+|-----------------------|-----------------|-----------------------------------------------------------------------------------------------------|
+| coref_chain           | string          | Unique identifier of a coreference chain to which this mention belongs to.                          |
+| description           | string          | Description of a coreference chain.                                                                 |
+| coref_type            | string          | Type of a coreference link, e.g., strict indentity.                                                 |
+| mention_id            | string          | Mention ID.                                                                                         |
+| mention_type          | string          | Short form of a mention type, e.g., HUM                                                             |
+| mention_full_type     | string          | Long form of a mention type, e.g., HUMAN_PART_PER                                                   |
+| tokens_str            | string          | A full mention string, i.e., all consequitive chars of the mention as found in the text.            |
+| tokens_text           | list of strings | A mention split into a list of tokens, text of tokens                                               |
+| tokens_numbers        | list of int     | A mention split into a list of tokens, token id of these tokens (as occurred in a sentence).        |
+| mention_head          | string          | A head of mention's phrase, e.g., Barack *Obama*                                                    |
+| mention_head_id       | int             | Token id of the head of mention's phrase                                                            |
+| mention_head_pos      | string          | Token's POS tag of the head of mention's phrase                                                     |
+| mention_head_lemma    | string          | Token's lemma of the head of mention's phrase                                                       |
+| sent_id               | int             | Sentence ID                                                                                         |
+| topic_id              | string          | Topic ID                                                                                            |
+| topic                 | string          | Topic ID with its description (if any)                                                              |
+| subtopic_id           | string          | Subtopic id (optionally with short name)                                                            |
+| subtopic              | string          | Subtopic ID with its description (if any)                                                           |
+| doc_id                | string          | Document ID                                                                                         |
+| doc                   | string          | Document ID with its description (if any)                                                           |
+| is_continuous         | bool            | If all tokens in the annotated mention continuously occur in the text                               |
+| is_singleton          | bool            | If a coreference chain consists of only one mention.                                                |
+| mention_context       | list of strings | -N and +N tokens within one document before and after the mention (N=100).                          |
+| tokens_number_context | list of int     | Positioning of the mention's tokens in the context.                                                 |
+| language              | string          | Optional. A language of the mention. If not provided, the default value will be considered english. |
+| conll_doc_key         | string          | a compositional key for one-to-one mapping documents between .conll and .json files.                |
 
 Example: 
-```
-[{
-    "coref_chain": "0_Denuclearization_MISC", 
-    "tokens_number": [33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49], 
-    "score": -1, 
-    "sent_id": 21, 
-    "mention_type": "MISC", 
-    "mention_full_type": "MISC", 
-    "mention_id": "0_L_21_49_VZrL", 
-    "topic_id": "0", 
-    "topic": "0", 
-    "subtopic_id": "0",
-    "subtopic": "0_CIADirectorMikePompeoMeetingNorthKorea", 
-    "doc_id": "0_L", 
-    "doc": "0_L", 
-    "description": "Denuclearization", 
-    "coref_type": "IDENTITY", 
+```json
+[
+  {
+    "coref_chain": "2293469", 
     "mention_ner": "O", 
-    "mention_head_pos": "PUNCT", 
-    "mention_head_lemma": "\"", 
-    "mention_head": "\"", 
-    "mention_head_id": 49, 
+    "mention_head_pos": "PROPN", 
+    "mention_head_lemma": "Tour", 
+    "mention_head": "Tour", 
+    "mention_head_id": 193, 
+    "doc_id": "Wd36WuWE3hRzmH2hRTpdgy", 
+    "doc": "Ice Cube", 
     "is_continuous": true, 
     "is_singleton": false, 
-    "mention_context": ["newspaper", ",", "Munhwa", "Ilbo", ",", "reported", "that", "the", "two", "countries", "were", "negotiating", "an", "announcement", "\"", "to", "ease", "military", "tensions", "and", "end", "a", "military", "confrontation", ",", "\"", "as", "part", "of", "the", "summit", "meeting", "planned", "between", "Mr.", "Kim", "and", "President", "Moon", "Jae", "-", "in", "of", "South", "Korea", ".", "\n", "That", "could", "involve", "pulling", "troops", "out", "of", "the", "Demilitarized", "Zone", ",", "making", "it", "a", "genuinely", "\"", "Demilitarized", "Zone", ".", "\"", "A", "South", "Korean", "government", "official", "later", "played", "down", "the", "report", ",", "saying", "it", "was", "too", "soon", "to", "tell", "what", "a", "joint", "statement", "by", "Mr.", "Moon", "and", "Mr.", "Kim", "would", "contain", ",", "other", "than", "broad", "and", "\"", "abstract", "\"", "statements", "about", "the", "need", "for", "North", "Korea", "to", "\"", "denuclearize", ".", "\"", "\n", "But", "analysts", "said", "South", "Korea", "was", "aiming", "for", "a", "comprehensive", "deal", ",", "in", "which", "the", "North", "agreed", "to", "give", "up", "its", "weapons", "in", "return", "for", "a", "security", "guarantee", ",", "including", "a", "peace", "treaty", ".", "Mr.", "Trump", "'s", "comments", "suggested", "he", "backed", "that", "effort", ".", "\n", "\"", "They", "do", "have", "my", "blessing", "to", "discuss", "the", "end", "of", "the", "war", ",", "\"", "he", "said", ".", "\"", "People", "do", "n't", "realize", "that", "the", "Korean", "War", "has", "not", "ended", ".", "It", "'s", "going", "on", "right", "now", ".", "And", "they", "are", "discussing", "an", "end", "to", "war", ".", "Subject", "to", "a", "deal", ",", "they"], 
-    "tokens_str": "broad and \"abstract\" statements about the need for North Korea to \"denuclearize.\" ", 
-    "tokens_text": ["broad", "and", "\"", "abstract", "\"", "statements", "about", "the", "need", "for", "North", "Korea", "to", "\"", "denuclearize", ".", "\""], 
-    "language": "english", 
-    "conll_doc_key": "0/0/0_L"
-}]
+    "mention_id": "108173", 
+    "mention_type": "EVE",
+    "mention_full_type": "EVENT", 
+    "score": -1.0, 
+    "sent_id": 0, 
+    "mention_context": ["for", "the", "''", "Murder", "Was", "The", "Case", "''", "soundtrack", ",", "and", "also", "contributed", "to", "the", "''", "Office", "Space", "''", "soundtrack", ".", "He", "also", "featured", "on", "Kool", "G", "Rap", "'s", "song", "\"", "Two", "To", "The", "Head", "\"", "from", "the", "Kool", "G", "Rap", "&", "DJ", "Polo", "album", "\"", "Live", "And", "Let", "Die", "\"", ".", "He", "also", "collaborated", "with", "David", "Bowie", "and", "Trent", "Reznor", "from", "Nine", "Inch", "Nails", "for", "a", "remix", "of", "Bowie", "'s", "\"", "I", "'m", "Afraid", "of", "Americans", "\"", ".", "Ice", "Cube", "appeared", "on", "the", "song", "\"", "Children", "of", "the", "Korn", "\"", "by", "the", "band", "Korn", ",", "joining", "them", "on", "the", "Family", "Values", "Tour", "1998", ",", "and", "they", "also", "collaborated", "on", "'", "Fuck", "Dying", "'", "from", "Cube", "'s", "fifth", "album", ".", "He", "also", "lent", "his", "voice", "to", "British", "DJ", "Paul", "Oakenfold", "'s", "solo", "debut", "album", ",", "''", "Bunkka", "''", ",", "on", "the", "track", "\"", "Get", "Em", "Up", "\"", ".", "Ice", "Cube", "appeared", "in", "several", "songs", "in", "WC", "Guilty", "by", "Affiliation", "like", "\"", "Keep", "it", "100", "\"", ",", "\"", "80", "'s", "babies", "\"", "and", "\"", "Jack", "and", "the", "bean", "stalk", "\"", ".", "Ice", "Cube", "also", "appeared", "in", "D.A.Z.", "in", "the", "song", "\"", "Iz", "You", "Ready", "to", "die", "\"", "and", "in", "DJ", "Quik"], 
+    "tokens_number_context": [100, 101, 102, 103], 
+    "tokens_number": [191, 192, 193, 194], 
+    "tokens_str": "Family Values Tour 1998", 
+    "tokens_text": ["Family", "Values", "Tour", "1998"], 
+    "topic_id": "4", 
+    "topic": "Concert", 
+    "subtopic_id": "4A4Hs78SQWhihhpMAZt65s", 
+    "subtopic": "Family Values Tour 1998", 
+    "coref_type": "IDENTITY", 
+    "description": "Family Values Tour 1998", 
+    "conll_doc_key": "4/4A4Hs78SQWhihhpMAZt65s/Wd36WuWE3hRzmH2hRTpdgy"
+  }
+]
 ```
 
 
-## Metrics for the dataset comparison
+## Dataset comparison
 
 The following values enable comparison of the CDCR datasets on dataset, topic+subtopic, and language (optional) levels.    
 
