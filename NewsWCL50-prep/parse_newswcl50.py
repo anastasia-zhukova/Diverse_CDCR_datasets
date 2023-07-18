@@ -183,6 +183,13 @@ if __name__ == '__main__':
                         context_min_id = max(min(found_tokens_global_ids) - CONTEXT_RANGE, 0)
                         context_max_id = min(max(found_tokens_global_ids) + CONTEXT_RANGE, len(mention_head_token.doc) - 1)
                         mention_context_str = [t.text for t in mention_head_token.doc[context_min_id:context_max_id]]
+
+                        if min(found_tokens_global_ids) - CONTEXT_RANGE < 0:
+                            tokens_number_context = found_tokens_global_ids
+                        else:
+                            context_min_id = min(found_tokens_global_ids) - CONTEXT_RANGE
+                            tokens_number_context = [int(t - context_min_id) for t in found_tokens_global_ids]
+
                         mentions_dict[mention_id] = {COREF_CHAIN: coref_chain,
                                                      TOKENS_NUMBER: found_token_ids,
                                                      DOC_ID: doc_name,
@@ -206,6 +213,7 @@ if __name__ == '__main__':
                                                      IS_CONTINIOUS: bool(check_continuous([t.i for t in found_tokens])),
                                                      IS_SINGLETON: False,
                                                      MENTION_CONTEXT: mention_context_str,
+                                                     TOKENS_NUMBER_CONTEXT: tokens_number_context,
                                                      TOKENS_STR: "".join([t.text_with_ws for t in found_tokens]),
                                                      TOKENS_TEXT: [t.text for t in found_tokens],
                                                      CONLL_DOC_KEY: f'{topic_id}/{topic_id}/{doc_name}'
