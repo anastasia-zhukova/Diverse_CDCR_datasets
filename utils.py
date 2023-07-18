@@ -1,5 +1,7 @@
+import os
 from typing import Tuple, Union, List
 import re
+import shutil
 from tqdm import tqdm
 from setup import  *
 import numpy as np
@@ -163,3 +165,42 @@ def append_text(text, word) -> Tuple[str, str, bool]:
             set(word).intersection(set("0123456789"))) > 0 else space
 
     return text + space + word, word, space == ""
+
+
+def form_benchmark():
+    """
+    Takes all specified datasets and places into one folder for upload.
+    """
+    LOGGER.info("Creating a CDCR benchmark (protected)...")
+    benchmark_folder = os.path.join(TMP_PATH, "CDCR_benchmark")
+    if not os.path.exists(benchmark_folder):
+        os.mkdir(benchmark_folder)
+
+    for dataset_name, source_folder in tqdm(DIRECTORIES_TO_SUMMARIZE.items()):
+        dataset = dataset_name.split("-")[0].replace("_", "-")
+        output_folder = os.path.join(benchmark_folder, dataset)
+        shutil.copytree(source_folder, output_folder)
+
+    LOGGER.info("Archiving the datasets...")
+    shutil.make_archive(os.path.join(TMP_PATH, "CDCR_benchmark"), 'zip', os.path.join(TMP_PATH, "CDCR_benchmark"))
+
+    LOGGER.info("Creating a CDCR benchmark (public)...")
+    benchmark_folder = os.path.join(TMP_PATH, "CDCR_benchmark_public")
+    if not os.path.exists(benchmark_folder):
+        os.mkdir(benchmark_folder)
+
+    for dataset_name, source_folder in tqdm(DIRECTORIES_TO_SUMMARIZE.items()):
+        dataset = dataset_name.split("-")[0].replace("_", "-")
+        if dataset in ["NewsWCL50", "NiDENT", "FCC", "FCC-T"]:
+            continue
+
+        output_folder = os.path.join(benchmark_folder, dataset)
+        shutil.copytree(source_folder, output_folder)
+
+    LOGGER.info("Archiving the datasets...")
+    shutil.make_archive(os.path.join(TMP_PATH, "CDCR_benchmark_public"), 'zip', os.path.join(TMP_PATH, "CDCR_benchmark_public"))
+    LOGGER.info("Completed creating a CDCR benchmark!")
+
+
+if __name__ == '__main__':
+    form_benchmark()
