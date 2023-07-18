@@ -247,9 +247,22 @@ def conv_files():
                         f"determine the mention head automatically. {str(tolerance)}")
 
             token_mention_start_id = list(doc_df.index).index(f'{doc_id}/{word_start}')
-            context_min_id = 0 if token_mention_start_id - CONTEXT_RANGE < 0 else token_mention_start_id - CONTEXT_RANGE
-            context_max_id = min(token_mention_start_id + CONTEXT_RANGE, len(doc_df))
+            # context_min_id = 0 if token_mention_start_id - CONTEXT_RANGE < 0 else token_mention_start_id - CONTEXT_RANGE
+            # context_max_id = min(token_mention_start_id + CONTEXT_RANGE, len(doc_df))
 
+            doc_df.loc[:, "token_id_global"] = list(range(len(doc_df)))
+
+            if token_mention_start_id - CONTEXT_RANGE < 0:
+                context_min_id = 0
+                tokens_number_context = list(
+                    doc_df[(doc_df[SENT_ID] == sent_id) & (doc_df[TOKEN_ID].isin(token_ids))]["token_id_global"])
+            else:
+                context_min_id = token_mention_start_id - CONTEXT_RANGE
+                global_token_ids = list(
+                    doc_df[(doc_df[SENT_ID] == sent_id) & (doc_df[TOKEN_ID].isin(token_ids))]["token_id_global"])
+                tokens_number_context = [int(t - context_min_id) for t in global_token_ids]
+
+            context_max_id = min(token_mention_start_id + CONTEXT_RANGE, len(doc_df))
             mention_context_str = list(doc_df.iloc[context_min_id:context_max_id][TOKEN].values)
 
             # add to mentions if the variables are correct ( do not add for manual review needed )
@@ -277,6 +290,7 @@ def conv_files():
                     SCORE: -1.0,
                     SENT_ID: int(sent_id),
                     MENTION_CONTEXT: mention_context_str,
+                    TOKENS_NUMBER_CONTEXT: tokens_number_context,
                     TOKENS_NUMBER: [int(t) for t in token_ids],
                     TOKENS_STR: token_str,
                     TOKENS_TEXT: tokens_text,

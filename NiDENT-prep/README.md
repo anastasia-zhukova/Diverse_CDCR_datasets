@@ -48,12 +48,7 @@ to restore CDCR clusters. If at least two non-pronoun mentions or their heads ar
 We propose a train-val-test split for NiDENT in the ```train_val_test_split.json``` file. The split is on the subtopic level
 and assigns three subtopics for training and one per validation and test. 
 
-A mapping of the subtopic IDs to topic names is the following: 
-0) bukavu
-1) china 
-2) israel 
-3) peru
-4) tajikistan
+A mapping of the subtopic IDs to topic names is the following: 0) bukavu, 1) china, 2) israel, 3) peru, 4) tajikistan.
 
 ### Topic organization
 News articles in the dataset are organized as following: 
