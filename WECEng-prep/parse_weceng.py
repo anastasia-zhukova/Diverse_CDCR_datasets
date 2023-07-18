@@ -166,8 +166,6 @@ def conv_files():
             mentions_in_chunk = []
 
             for doc_name, context_dict in tqdm(doc_chunk, total=len(doc_chunk)):
-                # overlap_df = pd.DataFrame(np.zeros((len(context_dict), len(context_dict))),
-                #                                    index=list(context_dict), columns=list(context_dict))
                 overlap_dict = {}
                 used_context = set()
                 mentions_in_chunk.extend(list(context_dict))
@@ -213,23 +211,6 @@ def conv_files():
                             REFERENCE: "-"
                         }, index=[f'{doc_id}/{sent_id}/{token_id}'])])
 
-                        # TODO remove after no longer needed for the similar datasets with context only
-                            # overlap_df.loc[m_id_1, m_id_2] = 1
-                        # matcher = difflib.SequenceMatcher(None, context_1, context_2)
-                        # matches = matcher.get_matching_blocks()
-                        # for match in matches:
-                        #     apos, bpos, size = match
-                        #     # if bpos == 0 and size > 5:
-                        #     if bpos == 0 and apos + size == len(context_1):
-                        #         overlap_df.loc[m_id_1, m_id_2] = size
-                        #         print(context_1[apos:apos + size], apos, bpos, size)
-                        #         # break
-                        #     if apos == 0 and bpos + size == len(context_2):
-                        #     # if apos == 0 and size > 5:
-                        #         overlap_df.loc[m_id_1, m_id_2] = size
-                        #         print(context_2[apos:apos + size], apos, bpos, size)
-                                # break
-
             LOGGER.info(f"Creating mentions of the chunk with missing attributes...")
             for mention_index in mentions_in_chunk:
                 mention_orig = mention_init_dict[mention_index]
@@ -247,7 +228,7 @@ def conv_files():
                     tokens_number_context = tokens_number
                 else:
                     context_min_id = tokens_number[0] - CONTEXT_RANGE
-                    tokens_number_context = [t - context_min_id - 1 for t in tokens_number]
+                    tokens_number_context = [t - context_min_id for t in tokens_number]
 
                 context_max_id = min(tokens_number[0] + CONTEXT_RANGE, len(mention_orig[MENTION_CONTEXT]))
                 context = mention_orig[MENTION_CONTEXT][context_min_id: context_max_id]
@@ -311,14 +292,6 @@ def conv_files():
                                                                part_id=doc_chunk_id)
             conll_df = pd.concat([conll_df, conll_df_local_chunk_labeled])
 
-        # with open(os.path.join(save_path, MENTIONS_EVENTS_JSON), "w") as file:
-        #     json.dump(event_mentions_split, file)
-        #
-        # with open(os.path.join(save_path, MENTIONS_ENTITIES_JSON), "w") as file:
-        #     json.dump([], file)
-
-        # conll_df_local_labeled = make_save_conll(conll_df_local, event_mentions_local, save_path)
-        # conll_df = pd.concat([conll_df, conll_df_local_labeled])
         event_mentions.extend(event_mentions_split)
 
     with open(os.path.join(OUT_PATH, MENTIONS_EVENTS_JSON), "w") as file:

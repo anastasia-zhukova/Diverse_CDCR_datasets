@@ -1,6 +1,6 @@
 # Parsing WEC-Eng
 
-Original repository: https://huggingface.co/datasets/Intel/WEC-Eng. 
+Original repository of WEC-Eng: https://huggingface.co/datasets/Intel/WEC-Eng. 
 
 ### Paper 
 https://aclanthology.org/2021.naacl-main.198/
@@ -24,7 +24,7 @@ https://aclanthology.org/2021.naacl-main.198/
 
 ### To parse WEC-Eng 
 1) make sure that you downloaded the dataset by running ```python setup.py``` 
-2) execute ```python weceng.py```
+2) execute ```python parse_weceng.py```
 
 Take topic names from Table 7 of the WEC paper and reconstruct the assignment of the subtopics (Wikipedia titles of the 
 coreference chains which acts as seed/seminal events) to the topics. We create a heuristic of parsing Wikipedia categories 
