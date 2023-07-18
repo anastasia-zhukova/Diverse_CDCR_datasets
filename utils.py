@@ -202,5 +202,40 @@ def form_benchmark():
     LOGGER.info("Completed creating a CDCR benchmark!")
 
 
+def check_mention_attributes(mention: dict, dataset_name: str):
+    required_fields = {COREF_CHAIN, MENTION_NER, MENTION_HEAD_POS, MENTION_HEAD_LEMMA, MENTION_HEAD, MENTION_HEAD_ID, DOC_ID, DOC,
+     IS_CONTINIOUS, IS_SINGLETON, MENTION_ID, MENTION_TYPE, MENTION_FULL_TYPE, SCORE, SENT_ID, MENTION_CONTEXT,
+     TOKENS_NUMBER_CONTEXT, TOKENS_NUMBER, TOKENS_STR, TOKENS_TEXT, TOPIC_ID, TOPIC, SUBTOPIC_ID, SUBTOPIC, COREF_TYPE,
+     DESCRIPTION, CONLL_DOC_KEY}
+
+    diff = required_fields - set(mention)
+    if len(diff):
+        LOGGER.warning(f'Mentions from the dataset {dataset_name} doesn\'t have the following attributes: '
+                       f'{diff}. Reparse the dataset to include this attribute to match the dataset output format!')
+    else:
+        LOGGER.info(f'Success: Dataset {dataset_name} adheres to the output format.')
+
+
+def conll_to_newsplease_json(path: str):
+    # TODO export conll into a collection of json files
+    newsplease_sample = {
+      "authors": [],
+      "date_download": None,
+      "date_modify": None,
+      "date_publish": None,
+      "description": "",
+      "filename": None,
+      "image_url": None,
+      "language": "en",
+      "localpath": None,
+      "source_domain": "",
+      "text": "",
+      "title": "",
+      "title_page": None,
+      "title_rss": None,
+      "url": None
+    }
+    pass
+
 if __name__ == '__main__':
     form_benchmark()

@@ -7,11 +7,14 @@ import json
 import subprocess
 import nltk
 import string
+import random
 import numpy as np
 from typing import Dict, List
 from nltk.corpus import stopwords
 from tqdm import tqdm
 from datetime import datetime
+
+from utils import check_mention_attributes
 
 
 nltk.download('stopwords')
@@ -26,9 +29,6 @@ P = "P"
 R = "R"
 F1 = "F1"
 TRUE_LABEL, PRED_LABEL = "label_true", "label_pred"
-
-with open(os.path.join(os.getcwd(), SAMPLE_MENTION_JSON), "r") as file:
-    sample_mention = json.load(file)
 
 
 def phrasing_diversity_calc(mentions: List[Dict]) -> float:
@@ -176,7 +176,7 @@ def conll_lemma_baseline(mentions: List[dict]) -> float:
     return float(format(f1_conll, '.3f'))
 
 
-if __name__ == '__main__':
+def create_summary():
     for i, dataset in enumerate(list(DIRECTORIES_TO_SUMMARIZE)):
         print(f'{i}: {dataset.split("-")[0]}')
 
@@ -208,12 +208,6 @@ if __name__ == '__main__':
                 LOGGER.info(f'Processing {full_filename}...')
                 with open(full_filename, encoding='utf-8', mode='r') as file:
                     mentions_read_list = json.load(file)
-
-                # for v in mentions_read_list:
-                #     missed_attributes = set(sample_mention.keys()) - set(v.keys())
-                #     if len(missed_attributes):
-                #         LOGGER.warning(f'Dataset {dataset_folder.split("-")[0]} misses mentions\' attributes {missed_attributes} '
-                #                        f'and this may cause troubles in the script execution')
 
                 df_tmp = pd.DataFrame(mentions_read_list, index=list(range(len(mentions_read_list))))
                 df_tmp[TYPE] = [mention_type] * len(df_tmp)
@@ -363,3 +357,31 @@ if __name__ == '__main__':
 
     LOGGER.info(f'Summary computed over {len(selected_dir_to_summarize)} datasets ({str(selected_dir_to_summarize)}) '
                 f'is completed.')
+
+
+def check_datasets(dataset_dict: dict):
+    """
+    Checks if a randomly selected mention from each dataset to test has all required attributes.
+    Args:
+        dataset_dict: a dictionary with a format {dataset: dataset_folder}
+
+    """
+    LOGGER.info("Verifying a structure of mentions files...")
+    for dataset_name_orig, dataset_folder in dataset_dict.items():
+        dataset_name = dataset_name_orig.split("-")[0]
+
+        for file_name in [MENTIONS_ENTITIES_JSON, MENTIONS_EVENTS_JSON]:
+            with open(os.path.join(dataset_folder, file_name), "r") as file:
+                mentions = json.load(file)
+
+            if not len(mentions):
+                continue
+
+            mention = random.choices(mentions, k=1)
+            check_mention_attributes(mention[0], dataset_name)
+    LOGGER.info("Verification is complete. ")
+
+
+if __name__ == '__main__':
+    check_datasets(DIRECTORIES_TO_SUMMARIZE)
+    create_summary()
