@@ -159,34 +159,34 @@ The format is adapted and extended from [WEC-Eng](https://huggingface.co/dataset
 To extract some mentions' attributes, we parse document sentences by spaCy. To extract a mention head, we align each mention 
 to the corresponding sentences in the documents and extract the head of mention as highest node in the dependency subtree.
 
-| Field                 | Type            | Description                                                                                         |
-|-----------------------|-----------------|-----------------------------------------------------------------------------------------------------|
-| coref_chain           | string          | Unique identifier of a coreference chain to which this mention belongs to.                          |
-| description           | string          | Description of a coreference chain.                                                                 |
-| coref_type            | string          | Type of a coreference link, e.g., strict indentity.                                                 |
-| mention_id            | string          | Mention ID.                                                                                         |
-| mention_type          | string          | Short form of a mention type, e.g., HUM                                                             |
-| mention_full_type     | string          | Long form of a mention type, e.g., HUMAN_PART_PER                                                   |
-| tokens_str            | string          | A full mention string, i.e., all consequitive chars of the mention as found in the text.            |
-| tokens_text           | list of strings | A mention split into a list of tokens, text of tokens                                               |
-| tokens_numbers        | list of int     | A mention split into a list of tokens, token id of these tokens (as occurred in a sentence).        |
-| mention_head          | string          | A head of mention's phrase, e.g., Barack *Obama*                                                    |
-| mention_head_id       | int             | Token id of the head of mention's phrase                                                            |
-| mention_head_pos      | string          | Token's POS tag of the head of mention's phrase                                                     |
-| mention_head_lemma    | string          | Token's lemma of the head of mention's phrase                                                       |
-| sent_id               | int             | Sentence ID                                                                                         |
-| topic_id              | string          | Topic ID                                                                                            |
-| topic                 | string          | Topic ID with its description (if any)                                                              |
-| subtopic_id           | string          | Subtopic id (optionally with short name)                                                            |
-| subtopic              | string          | Subtopic ID with its description (if any)                                                           |
-| doc_id                | string          | Document ID                                                                                         |
-| doc                   | string          | Document ID with its description (if any)                                                           |
-| is_continuous         | bool            | If all tokens in the annotated mention continuously occur in the text                               |
-| is_singleton          | bool            | If a coreference chain consists of only one mention.                                                |
-| mention_context       | list of strings | -N and +N tokens within one document before and after the mention (N=100).                          |
+| Field                | Type            | Description                                                                                         |
+|----------------------|-----------------|-----------------------------------------------------------------------------------------------------|
+| coref_chain          | string          | Unique identifier of a coreference chain to which this mention belongs to.                          |
+| description          | string          | Description of a coreference chain.                                                                 |
+| coref_type           | string          | Type of a coreference link, e.g., strict indentity.                                                 |
+| mention_id           | string          | Mention ID.                                                                                         |
+| mention_type         | string          | Short form of a mention type, e.g., HUM                                                             |
+| mention_full_type    | string          | Long form of a mention type, e.g., HUMAN_PART_PER                                                   |
+| tokens_str           | string          | A full mention string, i.e., all consequitive chars of the mention as found in the text.            |
+| tokens_text          | list of strings | A mention split into a list of tokens, text of tokens                                               |
+| tokens_number        | list of int     | A mention split into a list of tokens, token id of these tokens (as occurred in a sentence).        |
+| mention_head         | string          | A head of mention's phrase, e.g., Barack *Obama*                                                    |
+| mention_head_id      | int             | Token id of the head of mention's phrase                                                            |
+| mention_head_pos     | string          | Token's POS tag of the head of mention's phrase                                                     |
+| mention_head_lemma   | string          | Token's lemma of the head of mention's phrase                                                       |
+| sent_id              | int             | Sentence ID                                                                                         |
+| topic_id             | string          | Topic ID                                                                                            |
+| topic                | string          | Topic ID with its description (if any)                                                              |
+| subtopic_id          | string          | Subtopic id (optionally with short name)                                                            |
+| subtopic             | string          | Subtopic ID with its description (if any)                                                           |
+| doc_id               | string          | Document ID                                                                                         |
+| doc                  | string          | Document ID with its description (if any)                                                           |
+| is_continuous        | bool            | If all tokens in the annotated mention continuously occur in the text                               |
+| is_singleton         | bool            | If a coreference chain consists of only one mention.                                                |
+| mention_context      | list of strings | -N and +N tokens within one document before and after the mention (N=100).                          |
 | tokens_number_context | list of int     | Positioning of the mention's tokens within the context.                                             |
-| language              | string          | Optional. A language of the mention. If not provided, the default value will be considered english. |
-| conll_doc_key         | string          | a compositional key for one-to-one mapping documents between .conll and .json files.                |
+| language             | string          | Optional. A language of the mention. If not provided, the default value will be considered english. |
+| conll_doc_key        | string          | a compositional key for one-to-one mapping documents between .conll and .json files.                |
 
 Example: 
 ```json
