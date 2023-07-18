@@ -261,18 +261,34 @@ def conv_files():
                                                 f"determine the mention head automatically. {str(tolerance)}")
 
                                     token_mention_start_id = int(mention_tokens_ids_global[0])
-                                    context_min_id = 0 if token_mention_start_id - CONTEXT_RANGE < 0 else token_mention_start_id - CONTEXT_RANGE
-                                    context_max_id = min(token_mention_start_id + CONTEXT_RANGE, len(doc_df))
+                                    # context_min_id = 0 if token_mention_start_id - CONTEXT_RANGE < 0 else token_mention_start_id - CONTEXT_RANGE
 
+                                    doc_df.loc[:, "token_id_global"] = list(range(len(doc_df)))
+
+                                    if token_mention_start_id - CONTEXT_RANGE < 0:
+                                        context_min_id = 0
+                                        tokens_number_context = list(
+                                            doc_df[(doc_df[SENT_ID] == sent_id) & (doc_df[TOKEN_ID].isin(token_ids))][
+                                                "token_id_global"])
+                                    else:
+                                        context_min_id = token_mention_start_id - CONTEXT_RANGE
+                                        global_token_ids = list(
+                                            doc_df[(doc_df[SENT_ID] == sent_id) & (doc_df[TOKEN_ID].isin(token_ids))][
+                                                "token_id_global"])
+                                        tokens_number_context = [int(t - context_min_id) for t in global_token_ids]
+
+                                    context_max_id = min(token_mention_start_id + CONTEXT_RANGE, len(doc_df))
                                     mention_context_str = list(doc_df.iloc[context_min_id:context_max_id][TOKEN].values)
-                                    a = 1
 
                                     # add to mentions if the variables are correct ( do not add for manual review needed )
                                     if mention_id not in need_manual_review_mention_head:
                                         mention_ner = mention_head.ent_type_ if mention_head.ent_type_ != "" else "O"
+                                        mention_text = ""
+                                        for t in mention_tokens_ids_global:
+                                            mention_text, _, _ = append_text(mention_text, token_dict[t]["text"])
+
                                         mentions[subelem.attrib["m_id"]] = {"type": subelem.tag,
-                                                                            "text": " ".join(
-                                                                                [token_dict[t]["text"] for t in mention_tokens_ids_global]),
+                                                                            "text": mention_text,
                                                                             "sent_doc": doc,
                                                                             "source": path.split("\\")[-1].split("-")[0],
                                                                             LANGUAGE: language,
@@ -288,10 +304,10 @@ def conv_files():
                                                                             DOC: doc_id_full,
                                                                             SENT_ID: int(sent_id),
                                                                             MENTION_CONTEXT: mention_context_str,
+                                                                            TOKENS_NUMBER_CONTEXT: tokens_number_context,
                                                                             SUBTOPIC: subtopic_full,
                                                                             TOPIC_SUBTOPIC_DOC: topic_subtopic_doc,
                                                                             TOPIC: topic_id_compose}
-                                        a = 1
 
                                 else:
                                     # form coreference chain
@@ -398,7 +414,7 @@ def conv_files():
 
         for m_d, m in chain_vals["mentions"].items():
             token_numbers = [int(t) for t in m[TOKENS_NUMBER]]
-            mention_id = f'{m["doc_id"]}_{str(chain_id)}_{str(m["sent_id"])}_{str(m[MENTION_HEAD_ID])}_{m["source"]}'
+            mention_id = f'{m["doc_id"]}_{str(chain_id)}_{str(m["sent_id"])}_{shortuuid.uuid(m["text"])}'
 
             try:
                 mention_type = meantime_types[chain_id[:3]]
@@ -423,6 +439,7 @@ def conv_files():
                        SCORE: -1.0,
                        SENT_ID: m["sent_id"],
                        MENTION_CONTEXT: m[MENTION_CONTEXT],
+                       TOKENS_NUMBER_CONTEXT: m[TOKENS_NUMBER_CONTEXT],
                        TOKENS_NUMBER: token_numbers,
                        TOKENS_STR: m["text"],
                        TOKENS_TEXT: m[TOKENS_TEXT],
