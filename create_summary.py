@@ -14,18 +14,6 @@ from tqdm import tqdm
 from datetime import datetime
 
 
-DIRECTORIES_TO_SUMMARIZE = {
-       NEWSWCL50: os.path.join(os.getcwd(), NEWSWCL50, OUTPUT_FOLDER_NAME),
-       ECB_PLUS: os.path.join(os.getcwd(), ECB_PLUS, OUTPUT_FOLDER_NAME),
-       "ECBplus_unvalidated": os.path.join(os.getcwd(), ECB_PLUS, "output_data-unvalidated"),
-       MEANTIME: os.path.join(os.getcwd(), MEANTIME, OUTPUT_FOLDER_NAME),
-       NP4E: os.path.join(os.getcwd(), NP4E, OUTPUT_FOLDER_NAME),
-       NIDENT: os.path.join(os.getcwd(), NIDENT, OUTPUT_FOLDER_NAME),
-       GVC: os.path.join(os.getcwd(), GVC, OUTPUT_FOLDER_NAME),
-       FCC: os.path.join(os.getcwd(), FCC, OUTPUT_FOLDER_NAME+"_FCC"),
-       "FCC_T": os.path.join(os.getcwd(), FCC, OUTPUT_FOLDER_NAME+"_FCC-T")
-}
-
 nltk.download('stopwords')
 
 MUC = "_MUC"
@@ -197,8 +185,6 @@ if __name__ == '__main__':
         selected_dir_to_summarize = list(DIRECTORIES_TO_SUMMARIZE)
     else:
         selected_dataset_ids = [int(part.strip()) for part in input_str.split(',')]
-        # directories_dict = {i: {name: dir} for i, (name, dir) in enumerate(DIRECTORIES_TO_SUMMARIZE.items())}
-        # selected_dir_to_summarize = [directories_dict[i] for i in selected_dataset_ids]
         selected_dir_to_summarize = [list(DIRECTORIES_TO_SUMMARIZE.items())[i] for i in selected_dataset_ids]
 
     LOGGER.info(f'Selected dataset to summarize: {selected_dir_to_summarize}')

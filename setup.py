@@ -18,6 +18,7 @@ NP4E_FOLDER_NAME = "NP4E"
 WECENG_FOLDER_NAME = "WEC-Eng"
 GVC_FOLDER_NAME = "GVC"
 FCC_FOLDER_NAME = "FCC"
+CD2CR_FOLDER_NAME = "CD2CR"
 MEANTIME_FOLDER_NAME = "meantime_newsreader"
 MEANTIME_FOLDER_NAME_ENGLISH = "meantime_newsreader_english_oct15"
 MEANTIME_FOLDER_NAME_DUTCH = "meantime_newsreader_dutch_dec15"
@@ -37,6 +38,7 @@ NP4E = "NP4E-prep"
 WEC_ENG = "WECEng-prep"
 GVC = "GVC-prep"
 FCC = "FCC-prep"
+CD2CR = "CD2CR-prep"
 
 # FILES
 SAMPLE_DOC_JSON = "_sample_doc.json"
@@ -150,6 +152,21 @@ ZIP = "zip"
 LINK = "link"
 
 
+DIRECTORIES_TO_SUMMARIZE = {
+       NEWSWCL50: os.path.join(os.getcwd(), NEWSWCL50, OUTPUT_FOLDER_NAME),
+       ECB_PLUS: os.path.join(os.getcwd(), ECB_PLUS, OUTPUT_FOLDER_NAME),
+       "ECBplus_unvalidated": os.path.join(os.getcwd(), ECB_PLUS, "output_data-unvalidated"),
+       MEANTIME: os.path.join(os.getcwd(), MEANTIME, OUTPUT_FOLDER_NAME),
+       NP4E: os.path.join(os.getcwd(), NP4E, OUTPUT_FOLDER_NAME),
+       NIDENT: os.path.join(os.getcwd(), NIDENT, OUTPUT_FOLDER_NAME),
+       GVC: os.path.join(os.getcwd(), GVC, OUTPUT_FOLDER_NAME),
+       FCC: os.path.join(os.getcwd(), FCC, OUTPUT_FOLDER_NAME+"_FCC"),
+       "FCC_T": os.path.join(os.getcwd(), FCC, OUTPUT_FOLDER_NAME+"_FCC-T"),
+       CD2CR: os.path.join(os.getcwd(), CD2CR, OUTPUT_FOLDER_NAME),
+       WEC_ENG: os.path.join(os.getcwd(), WEC_ENG, OUTPUT_FOLDER_NAME)
+}
+
+
 if __name__ == '__main__':
     datasets = {
         ECB_PLUS: {
@@ -177,20 +194,15 @@ if __name__ == '__main__':
            ZIP: os.path.join(TMP_PATH, NP4E_FOLDER_NAME + ".zip"),
            FOLDER: os.path.join(os.getcwd(), NP4E)
         },
-        NIDENT: {
-            LINK: "https://drive.google.com/uc?export=download&confirm=pbef&id=1BtjKwRGW0dWm4AqdkYRtwS7IGys1jnQx",
-            ZIP: os.path.join(TMP_PATH, NIDENT_FOLDER_NAME + ".zip"),
-            FOLDER: os.path.join(os.getcwd(), NIDENT)
-        },
-        FCC: {
-            LINK: "https://drive.google.com/uc?export=download&confirm=pbef&id=1ZBe0JZAI-hJ-QzXcunDOzpfcl5s-1eTF",
-            ZIP: os.path.join(TMP_PATH, FCC_FOLDER_NAME + ".zip"),
-            FOLDER: os.path.join(os.getcwd(), FCC)
-        },
         GVC: {
             LINK: "https://raw.githubusercontent.com/cltl/GunViolenceCorpus/master/;https://raw.githubusercontent.com/UKPLab/cdcr-beyond-corpus-tailored/master/resources/data/gun_violence/",
             ZIP: os.path.join(TMP_PATH, GVC_FOLDER_NAME + ".zip"),
             FOLDER: os.path.join(os.getcwd(), GVC, GVC_FOLDER_NAME)
+        },
+        CD2CR: {
+            LINK: "https://raw.githubusercontent.com/ravenscroftj/cdcrtool/master/CDCR_Corpus/",
+            ZIP: "",
+            FOLDER: os.path.join(os.getcwd(), CD2CR, CD2CR_FOLDER_NAME)
         }
     }
 
@@ -300,6 +312,18 @@ if __name__ == '__main__':
             # download required spacy packages
             if not spacy.util.is_package(SPACY_EN):
                 spacy.cli.download(SPACY_EN)
+
+        elif dataset == CD2CR:
+            for file_name in ["train_entities.json", "train.conll", "test_entities.json", "test.conll",
+                              "dev_entities.json", "dev.conll", "sci_papers.json", "news_urls.json",
+                              "checklist_conll_testset.csv"]:
+                gdown.download(f'{dataset_params[LINK]}{file_name}',
+                               os.path.join(dataset_params[FOLDER], file_name), quiet=False)
+
+            # download required spacy packages
+            if not spacy.util.is_package(SPACY_EN):
+                spacy.cli.download(SPACY_EN)
+
         else:
             NotImplementedError(f'There is no data download script implemented for the dataset {dataset}. Please make sure '
                                 f'that you have manully downloaded the raw data before parsing it. ')
