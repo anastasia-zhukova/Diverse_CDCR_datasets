@@ -26,6 +26,7 @@ NiDENT-prep/output_data/
 WECEng-prep/WEC-Eng/
 !WECEng-prep/WEC-Eng/.gitkeep
 !WECEng-prep/WEC-Eng/topics/.gitkeep
+CEREC-prep/cerec/
 .venv
 venv/
 .idea

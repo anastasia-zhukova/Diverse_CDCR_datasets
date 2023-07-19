@@ -19,6 +19,7 @@ WECENG_FOLDER_NAME = "WEC-Eng"
 GVC_FOLDER_NAME = "GVC"
 FCC_FOLDER_NAME = "FCC"
 CD2CR_FOLDER_NAME = "CD2CR"
+CEREC_FOLDER_NAME = "cerec"
 MEANTIME_FOLDER_NAME = "meantime_newsreader"
 MEANTIME_FOLDER_NAME_ENGLISH = "meantime_newsreader_english_oct15"
 MEANTIME_FOLDER_NAME_DUTCH = "meantime_newsreader_dutch_dec15"
@@ -39,6 +40,7 @@ WEC_ENG = "WECEng-prep"
 GVC = "GVC-prep"
 FCC = "FCC-prep"
 CD2CR = "CD2CR-prep"
+CEREC = "CEREC-prep"
 
 # FILES
 SAMPLE_DOC_JSON = "_sample_doc.json"
@@ -163,7 +165,8 @@ DIRECTORIES_TO_SUMMARIZE = {
        FCC: os.path.join(os.getcwd(), FCC, OUTPUT_FOLDER_NAME+"_FCC"),
        "FCC_T": os.path.join(os.getcwd(), FCC, OUTPUT_FOLDER_NAME+"_FCC-T"),
        CD2CR: os.path.join(os.getcwd(), CD2CR, OUTPUT_FOLDER_NAME),
-       WEC_ENG: os.path.join(os.getcwd(), WEC_ENG, OUTPUT_FOLDER_NAME)
+       WEC_ENG: os.path.join(os.getcwd(), WEC_ENG, OUTPUT_FOLDER_NAME),
+       CEREC: os.path.join(os.getcwd(), CEREC, OUTPUT_FOLDER_NAME)
 }
 
 
@@ -203,6 +206,11 @@ if __name__ == '__main__':
             LINK: "https://raw.githubusercontent.com/ravenscroftj/cdcrtool/master/CDCR_Corpus/",
             ZIP: "",
             FOLDER: os.path.join(os.getcwd(), CD2CR, CD2CR_FOLDER_NAME)
+        },
+        CEREC: {
+            LINK: "https://github.com/paragdakle/emailcoref/raw/master/data/COLING/cerec.zip",
+            ZIP: os.path.join(TMP_PATH, CEREC_FOLDER_NAME + ".zip"),
+            FOLDER: os.path.join(os.getcwd(), CEREC)
         }
     }
 
@@ -319,6 +327,15 @@ if __name__ == '__main__':
                               "checklist_conll_testset.csv"]:
                 gdown.download(f'{dataset_params[LINK]}{file_name}',
                                os.path.join(dataset_params[FOLDER], file_name), quiet=False)
+
+            # download required spacy packages
+            if not spacy.util.is_package(SPACY_EN):
+                spacy.cli.download(SPACY_EN)
+
+        elif dataset == CEREC:
+            gdown.download(dataset_params[LINK], dataset_params[ZIP], quiet=False)
+            with zipfile.ZipFile(dataset_params[ZIP], 'r') as zip_ref:
+                zip_ref.extractall(dataset_params[FOLDER])
 
             # download required spacy packages
             if not spacy.util.is_package(SPACY_EN):

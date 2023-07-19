@@ -419,5 +419,5 @@ def check_datasets(dataset_dict: dict):
 
 
 if __name__ == '__main__':
-    # check_datasets(DIRECTORIES_TO_SUMMARIZE)
+    check_datasets(DIRECTORIES_TO_SUMMARIZE)
     create_summary()
