@@ -40,9 +40,6 @@ with open(os.path.join(ECB_PARSING_FOLDER, "train_val_test_split.json"), "r") as
 with open(os.path.join(ECB_PARSING_FOLDER, "subtopic_names.json"), "r") as file:
     subtopic_names_dict = json.load(file)
 
-with open(path_sample, "r") as file:
-    newsplease_format = json.load(file)
-
 
 def to_nltk_tree(node):
     if node.n_lefts + node.n_rights > 0:
@@ -134,13 +131,12 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                             mention_tokens_ids_global.sort(key=int)  # sort tokens by their id
                             doc_df = conll_df[(conll_df[TOPIC_SUBTOPIC_DOC] == topic_subtopic_doc)]
 
-                            tokens_str = ""
-                            for t in mention_tokens_ids_global:
-                                tokens_str, _, _ = append_text(tokens_str, token_dict[t][TEXT])
-
                             # if "tokens" has values -> fill the "mention" dict with the value of the corresponding m_id
                             if len(mention_tokens_ids_global):
                                 mention_id = shortuuid.uuid()
+                                if len(set(mention_tokens_ids_global)) < len(mention_tokens_ids_global):
+                                    mention_tokens_ids_global = sorted(list(set(mention_tokens_ids_global)))
+
                                 sent_id = int(token_dict[mention_tokens_ids_global[0]][SENT])
                                 counter_annotated_mentions += 1
 
@@ -153,9 +149,11 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
 
                                 # tokenize the mention text
                                 tokens_text, token_ids = [], []
+                                tokens_str = ""
                                 for t_id in mention_tokens_ids_global:
                                     tokens_text.append(token_dict[t_id][TEXT])
                                     token_ids.append(int(token_dict[t_id][NUM]))
+                                    tokens_str, _, _ = append_text(tokens_str, token_dict[t_id][TEXT])
 
                                 tolerance = 0
                                 token_found = {t: None for t in token_ids}
@@ -256,9 +254,21 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                             f"determine the mention head automatically. {str(tolerance)}")
 
                                 token_mention_start_id = token_ids[0]
-                                context_min_id = 0 if token_mention_start_id - CONTEXT_RANGE < 0 else token_mention_start_id - CONTEXT_RANGE
-                                context_max_id = min(token_mention_start_id + CONTEXT_RANGE, len(doc_df))
+                                doc_df.loc[:, "token_id_global"] = list(range(len(doc_df)))
 
+                                if token_mention_start_id - CONTEXT_RANGE < 0:
+                                    context_min_id = 0
+                                    tokens_number_context = list(
+                                        doc_df[(doc_df[SENT_ID] == sent_id) & (doc_df[TOKEN_ID].isin(token_ids))][
+                                            "token_id_global"])
+                                else:
+                                    context_min_id = token_mention_start_id - CONTEXT_RANGE
+                                    global_token_ids = list(
+                                        doc_df[(doc_df[SENT_ID] == sent_id) & (doc_df[TOKEN_ID].isin(token_ids))][
+                                            "token_id_global"])
+                                    tokens_number_context = [int(t - context_min_id) for t in global_token_ids]
+
+                                context_max_id = min(token_mention_start_id + CONTEXT_RANGE, len(doc_df))
                                 mention_context_str = list(doc_df.iloc[context_min_id:context_max_id][TOKEN].values)
 
                                 if mention_id not in need_manual_review_mention_head:
@@ -277,6 +287,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                                                       DOC: topic_file.split(".")[0],
                                                                       SENT_ID: sent_id,
                                                                       MENTION_CONTEXT: mention_context_str,
+                                                                      TOKENS_NUMBER_CONTEXT: tokens_number_context,
                                                                       TOPIC_SUBTOPIC_DOC: topic_subtopic_doc,
                                                                       TOPIC: topic_subtopic_doc}
                                     counter_parsed_mentions += 1
@@ -390,12 +401,6 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                         DESCRIPTION:  m[TOKENS_STR],
                                     })
 
-            # try:
-            #     assert counter_parsed_metions == counter_annotated_mentions
-            # except AssertionError:
-            #     LOGGER.warning(f'Document {subtopic_id}: Not everything from the annotated mentions '
-            #                    f'({counter_annotated_mentions}) was parsed ({counter_parsed_metions}).')
-
             coref_dics[topic_id] = coref_dict
 
             entity_mentions_local = []
@@ -412,10 +417,9 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                 for m in chain_vals[MENTIONS].values():
                     sent_id = int(m[SENT_ID])
 
-                    # create variable "mention_id" out of doc_id+_+chain_id+_+sent_id+_+first value of TOKENS_NUMBER of "m"
+                    # create variable "mention_id"
                     token_numbers = [int(t) for t in m[TOKENS_NUMBER]]
-                    mention_id = m[DOC] + "_" + str(chain_id) + "_" + str(m[SENT_ID]) + "_" + str(
-                        m[TOKENS_NUMBER][0]) + "_" + shortuuid.uuid()[:4]
+                    mention_id = f'{m[DOC]}_{str(chain_id)}_{str(m[SENT_ID])}_{str(m[TOKENS_NUMBER][0])}_{shortuuid.uuid()[:4]}'
 
                     not_unique_heads.append(m[MENTION_HEAD_LEMMA])
 
@@ -437,6 +441,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                SCORE: -1.0,
                                SENT_ID: sent_id,
                                MENTION_CONTEXT: m[MENTION_CONTEXT],
+                               TOKENS_NUMBER_CONTEXT: m[TOKENS_NUMBER_CONTEXT],
                                TOKENS_NUMBER: token_numbers,
                                TOKENS_STR: m[TOKENS_STR],
                                TOKENS_TEXT: m[TOKENS_TEXT],
