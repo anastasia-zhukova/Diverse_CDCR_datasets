@@ -112,15 +112,19 @@ def make_save_conll(conll_df: pd.DataFrame, mentions: Union[List, pd.DataFrame],
     # Check if the brackets ( ) are correct
     brackets_1 = 0
     brackets_2 = 0
-    try:
-        for i, row in conll_df.iterrows():  # only count brackets in reference column (exclude token text)
-            brackets_1 += str(row[REFERENCE]).count("(")
-            brackets_2 += str(row[REFERENCE]).count(")")
-        assert brackets_1 == brackets_2
-
-    except AssertionError:
-        LOGGER.warning(f'Number of opening and closing brackets in conll does not match!')
-        LOGGER.warning(f"brackets '(' , ')' : {str(brackets_1)}, {str(brackets_2)}")
+    doc_id_prev = ""
+    for i, row in conll_df.iterrows():
+        if row[TOPIC_SUBTOPIC_DOC] != doc_id_prev:
+            if brackets_1 != brackets_2:
+                LOGGER.warning(f'Number of opening and closing brackets in conll does not match!')
+                LOGGER.warning(f"brackets '(' , ')' : {str(brackets_1)}, {str(brackets_2)} at row {doc_id_prev} "
+                               f"in the file {output_folder}")
+            brackets_1 = 0
+            brackets_2 = 0
+            doc_id_prev = row[TOPIC_SUBTOPIC_DOC]
+            # only count brackets in reference column (exclude token text)
+        brackets_1 += str(row[REFERENCE]).count("(")
+        brackets_2 += str(row[REFERENCE]).count(")")
 
     if part_id is None:
         conll_df.to_csv(os.path.join(output_folder, CONLL_CSV))
