@@ -69,7 +69,6 @@ def conv_files():
             doc_id, orig_sent_id = original_key.split(".")
 
         chain_id = re.sub("\D+", "", chain_value)
-        coref_dict[chain_id] = coref_dict.get(chain_id, 0) + 1
         subtopic_id = subtopic_structure_dict[doc_id]
         topic_subtopic_doc = f'{topic_id}/{subtopic_id}/{doc_id}'
 
@@ -87,6 +86,7 @@ def conv_files():
             doc_title_dict[doc_id].append(token)
 
         if chain_value.strip() == f'({chain_id}' or chain_value.strip() == f'({chain_id})':
+            coref_dict[chain_id] = coref_dict.get(chain_id, 0) + 1
             mention_id = shortuuid.uuid(original_key)
             if chain_id == "0":
                 chain_id = mention_id
@@ -250,9 +250,19 @@ def conv_files():
 
         doc_df = conll_df[conll_df[DOC_ID] == doc_id]
         token_mention_start_id = list(doc_df.index).index(f'{doc_id}/{sent_id}/{word_start}')
-        context_min_id = 0 if token_mention_start_id - CONTEXT_RANGE < 0 else token_mention_start_id - CONTEXT_RANGE
-        context_max_id = min(token_mention_start_id + CONTEXT_RANGE, len(doc_df))
+        doc_df.loc[:, "token_id_global"] = list(range(len(doc_df)))
 
+        if token_mention_start_id - CONTEXT_RANGE < 0:
+            context_min_id = 0
+            tokens_number_context = list(
+                doc_df[(doc_df[SENT_ID] == sent_id) & (doc_df[TOKEN_ID].isin(token_ids))]["token_id_global"])
+        else:
+            context_min_id = token_mention_start_id - CONTEXT_RANGE
+            global_token_ids = list(
+                doc_df[(doc_df[SENT_ID] == sent_id) & (doc_df[TOKEN_ID].isin(token_ids))]["token_id_global"])
+            tokens_number_context = [int(t - context_min_id) for t in global_token_ids]
+
+        context_max_id = min(token_mention_start_id + CONTEXT_RANGE, len(doc_df))
         mention_context_str = list(doc_df.iloc[context_min_id:context_max_id][TOKEN].values)
 
         # add to mentions if the variables are correct ( do not add for manual review needed )
@@ -273,6 +283,7 @@ def conv_files():
                 MENTION_FULL_TYPE: mention_type,
                 SCORE: -1.0,
                 MENTION_CONTEXT: mention_context_str,
+                TOKENS_NUMBER_CONTEXT: tokens_number_context,
                 TOKENS_NUMBER: token_ids,
                 TOKENS_STR: token_str,
                 TOKENS_TEXT: tokens_text
@@ -309,6 +320,9 @@ def conv_files():
 
     LOGGER.info(f'Splitting GVC into train/dev/test subsets...')
     for subset, subtopic_ids in train_dev_test_split_dict.items():
+        if subset == "dev":
+            subset = "val"
+
         LOGGER.info(f'Creating data for {subset} subset...')
         split_folder = os.path.join(OUT_PATH, subset)
         if subset not in os.listdir(OUT_PATH):
