@@ -29,7 +29,8 @@ Since the dataset contained newline delimiters in the original texts to separate
 To ensure that these symbols do cause troubles in parsing CoNLL format, we saved them as ```\\n```. So if you want to 
 convert the dataset into the original plain text, remember to replace these symbols with the correct ```\n```. 
 
-Similar to Zhukova et al. (2022), we exclude an ambiguous category "ACTOR-I". 
+To make the annotation scheme adhere more closely to the definitions of event and entity coreference, when parsing the dataset, 
+we exclude an ambiguous category "ACTOR-I". 
 
 We propose a train-val-test split for NewsWCL50 in the ```train_val_test_split.json``` file. The split is on the topic level
 and ensures that phrasing diversity within each split is comparable between the splits.
