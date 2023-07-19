@@ -215,9 +215,19 @@ def conv_files():
                 word_start = mention_row["token-idx-from"] if "token-idx-from" in mention_init_df.columns else 0
                 doc_df = conll_df_local[conll_df_local[DOC_ID] == doc_id]
                 token_mention_start_id = list(doc_df.index).index(f'{doc_id}/{mention_row["sentence-idx"]}/{word_start}')
-                context_min_id = 0 if token_mention_start_id-CONTEXT_RANGE < 0 else token_mention_start_id-CONTEXT_RANGE
-                context_max_id = min(token_mention_start_id + CONTEXT_RANGE, len(doc_df))
+                doc_df.loc[:, "token_id_global"] = list(range(len(doc_df)))
 
+                if token_mention_start_id - CONTEXT_RANGE < 0:
+                    context_min_id = 0
+                    tokens_number_context = list(
+                        doc_df[(doc_df[SENT_ID] == mention_row["sentence-idx"]) & (doc_df[TOKEN_ID].isin(token_ids))]["token_id_global"])
+                else:
+                    context_min_id = token_mention_start_id - CONTEXT_RANGE
+                    global_token_ids = list(
+                        doc_df[(doc_df[SENT_ID] == mention_row["sentence-idx"]) & (doc_df[TOKEN_ID].isin(token_ids))]["token_id_global"])
+                    tokens_number_context = [int(t - context_min_id) for t in global_token_ids]
+
+                context_max_id = min(token_mention_start_id + CONTEXT_RANGE, len(doc_df))
                 mention_context_str = list(doc_df.iloc[context_min_id:context_max_id][TOKEN].values)
 
                 # add to mentions if the variables are correct ( do not add for manual review needed )
@@ -247,6 +257,7 @@ def conv_files():
                                SCORE: -1.0,
                                SENT_ID: mention_row["sentence-idx"],
                                MENTION_CONTEXT: mention_context_str,
+                               TOKENS_NUMBER_CONTEXT: tokens_number_context,
                                TOKENS_NUMBER: [int(t) for t in token_ids],
                                TOKENS_STR: token_str,
                                TOKENS_TEXT: tokens_text,
@@ -263,6 +274,9 @@ def conv_files():
                     all_mentions_dict[mention_annot_type].append(mention)
 
         conll_df_local.reset_index(drop=True, inplace=True)
+        if split == "dev":
+            split = "val"
+
         save_folder_fcc_t = os.path.join(FCC_PARSING_FOLDER, f'{OUTPUT_FOLDER_NAME}_FCC-T', split)
         if not os.path.exists(os.path.join(FCC_PARSING_FOLDER, f'{OUTPUT_FOLDER_NAME}_FCC-T')):
             os.mkdir(os.path.join(FCC_PARSING_FOLDER, f'{OUTPUT_FOLDER_NAME}_FCC-T'))
