@@ -1,7 +1,0 @@
-,dataset,topic/subtopic_name,language,topics,articles,tokens,coref_chain,mentions,event_mentions,entity_mentions,singletons,cross-topic-chains,cross-topic-mentions,average_size_all,phrasing_diversity_weighted_all,unique_lemmas_all,F1_CONLL_all,average_size_wo_singl,phrasing_diversity_weighted_wo_singl,unique_lemmas_wo_singl,F1_CONLL_wo_singl
-NP4E\0\0_bukavu\,NP4E,0/0_bukavu,,1,16,9040,113,1206,0,1206,0,0,0,10.673,0.983,2.708,62.587,10.673,0.983,2.708,62.587
-NP4E\0\1_china\,NP4E,0/1_china,,1,19,6904,75,885,0,885,0,0,0,11.8,1.484,2.827,61.223,11.8,1.484,2.827,61.223
-NP4E\0\2_israel\,NP4E,0/2_israel,,1,20,11029,149,1285,0,1285,0,0,0,8.624,0.643,2.389,65.437,8.624,0.643,2.389,65.437
-NP4E\0\3_peru\,NP4E,0/3_peru,,1,19,12746,199,1741,0,1741,0,0,0,8.749,1.797,2.704,59.843,8.749,1.797,2.704,59.843
-NP4E\0\4_tajikistan\,NP4E,0/4_tajikistan,,1,20,10141,132,1440,0,1440,0,0,0,10.909,1.546,2.606,61.773,10.909,1.546,2.606,61.773
-NP4E\\\,NP4E,/,,1,94,49860,668,6557,0,6557,0,0,0,9.816,1.324,2.629,62.173,9.816,1.324,2.629,62.173

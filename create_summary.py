@@ -178,13 +178,13 @@ def conll_lemma_baseline(mentions: List[dict]) -> float:
     return float(format(f1_conll, '.3f'))
 
 
-def create_summary():
+def create_summary(compute_f1: bool = True):
     for i, dataset in enumerate(list(DIRECTORIES_TO_SUMMARIZE)):
         print(f'{i}: {dataset.split("-")[0]}')
 
     input_str = input("List dataset IDs with comma separation which to include into the summary or print \"all\" to summarize all: ")
     if "all" in input_str:
-        selected_dir_to_summarize = list(DIRECTORIES_TO_SUMMARIZE)
+        selected_dir_to_summarize = list(DIRECTORIES_TO_SUMMARIZE.items())
     else:
         selected_dataset_ids = [int(part.strip()) for part in input_str.split(',')]
         selected_dir_to_summarize = [list(DIRECTORIES_TO_SUMMARIZE.items())[i] for i in selected_dataset_ids]
@@ -193,6 +193,7 @@ def create_summary():
 
     summary_df = pd.DataFrame()
     chain_df_all = pd.DataFrame()
+    now_ = datetime.now()
 
     # read annotated mentions and corresponding texts
     for dataset_name, dataset_folder in selected_dir_to_summarize:
@@ -258,7 +259,7 @@ def create_summary():
                 chain_df.loc[chain_id_value, UNIQUE_LEMMAS] = len(
                     set([v.lower() for v in mentions_df[
                         (mentions_df[COREF_CHAIN] == chain) & (mentions_df[TOPIC_ID] == topic_id)][MENTION_HEAD_LEMMA].values]))
-            elif topic_id and language:
+            elif language:
                 chain_mentions = [v for v in all_mentions_list if v[COREF_CHAIN] == chain and v[LANGUAGE] == language]
                 chain_df.loc[chain_id_value, UNIQUE_LEMMAS] = len(
                     set([v.lower() for v in mentions_df[
@@ -297,16 +298,16 @@ def create_summary():
             else:
                 tokens_len = len(df_conll)
 
-            cross_topic_chains_df = group_df[[COREF_CHAIN, TOPIC_ID, DOC_ID]].groupby([COREF_CHAIN, TOPIC_ID]).count().reset_index()
-            cross_topic_chains = 0
-            cross_topic_mentions = 0
-            for chain_id in set(cross_topic_chains_df[COREF_CHAIN]):
-                ct_df = cross_topic_chains_df[cross_topic_chains_df[COREF_CHAIN] == chain_id]
+            cross_subtopic_chains_df = group_df[[COREF_CHAIN, SUBTOPIC_ID, DOC_ID]].groupby([COREF_CHAIN, SUBTOPIC_ID]).count().reset_index()
+            cross_subtopic_chains = 0
+            cross_subtopic_mentions = 0
+            for chain_id in set(cross_subtopic_chains_df[COREF_CHAIN]):
+                ct_df = cross_subtopic_chains_df[cross_subtopic_chains_df[COREF_CHAIN] == chain_id]
                 if len(ct_df) > 1:
-                    cross_topic_chains += 1
-                    cross_topic_mentions += np.sum(ct_df[DOC_ID].values)
+                    cross_subtopic_chains += 1
+                    cross_subtopic_mentions += np.sum(ct_df[DOC_ID].values)
 
-            doc_len = len(set(group_df[DOC_ID].values))
+            doc_len = len(set(group_df[CONLL_DOC_KEY].values))
 
             # general statistics
             summary_dict = {
@@ -322,8 +323,8 @@ def create_summary():
                 MENTIONS: len(group_df),
                 "mean_mention_density": round(len(group_df) / doc_len, 2),
                 SINGLETONS: len(group_df[group_df[IS_SINGLETON]]),
-                "cross-topic-chains": cross_topic_chains,
-                "cross-topic-mentions": cross_topic_mentions,
+                "cross-subtopic-chains": cross_subtopic_chains,
+                "cross-subtopic-mentions": cross_subtopic_mentions,
                 f'{COREF_CHAIN}_{ENTITY}': len(coref_chains_entities),
                 f'{COREF_CHAIN}_{EVENT}': len(coref_chains_events),
                 f'{MENTIONS}_{ENTITY}': len(group_df[group_df[TYPE] == ENTITY]),
@@ -351,45 +352,44 @@ def create_summary():
 
                 summary_dict["lexical_ambiguity" + suff] = round(np.mean(chains_use_lemma), 2)
 
-                if topic_id:
-                    # compute the metric only on the test subset
-                    found_mentions = [v for v in all_mentions_list if v[COREF_CHAIN] in coref_chains
-                                                     and v[TOPIC_ID] == topic_id
-                                                     and mentions_df.loc[v[MENTION_ID], "split"] == "test"]
-                    if len(found_mentions):
-                        conll_f1 = conll_lemma_baseline(found_mentions)
-                        summary_dict[F1 + CONLL + suff] = conll_f1
-                    else:
-                        summary_dict[F1 + CONLL + suff] = 0
-                    # if suff not in conll_f1_dict[dataset]:
-                    #     conll_f1_dict[dataset][suff] = []
-                    # conll_f1_dict[dataset][suff].append(conll_f1)
-
-                elif language:
-                    # compute the metric only on the test subset
-                    conll_f1_dict_lang = {}
-                    for t in set(mentions_df[TOPIC_ID].values):
+                if compute_f1:
+                    if topic_id and not language:
+                        # compute the metric only on the test subset
                         found_mentions = [v for v in all_mentions_list if v[COREF_CHAIN] in coref_chains
-                                                         and v.get(LANGUAGE, language) == language
-                                                         and v[TOPIC_ID] == t
+                                                         and v[TOPIC_ID] == topic_id
                                                          and mentions_df.loc[v[MENTION_ID], "split"] == "test"]
                         if len(found_mentions):
-                            conll_f1_dict_lang[t] = conll_lemma_baseline(found_mentions)
-                    summary_dict[F1 + CONLL + suff] = float(format(np.mean(list(conll_f1_dict_lang.values()), '.3f')))
+                            conll_f1 = conll_lemma_baseline(found_mentions)
+                            summary_dict[F1 + CONLL + suff] = conll_f1
+                        else:
+                            summary_dict[F1 + CONLL + suff] = 0
 
-                else:
-                    # compute the metric only on the test subset
-                    conll_f1 = conll_lemma_baseline([v for v in all_mentions_list if v[COREF_CHAIN] in coref_chains
-                                                     and mentions_df.loc[v[MENTION_ID], "split"] == "test"])
-                    summary_dict[F1 + CONLL + suff] = conll_f1
+                    elif topic_id and language:
+                        # compute the metric only on the test subset
+                        # compute mean f1 conll across the topics
+                        conll_f1_dict_lang = {}
+                        for t in set(mentions_df[TOPIC_ID].values):
+                            found_mentions = [v for v in all_mentions_list if v[COREF_CHAIN] in coref_chains
+                                                             and v.get(LANGUAGE, language) == language
+                                                             and v[TOPIC_ID] == t
+                                                             and mentions_df.loc[v[MENTION_ID], "split"] == "test"]
+                            if len(found_mentions):
+                                conll_f1_dict_lang[t] = conll_lemma_baseline(found_mentions)
+                        summary_dict[F1 + CONLL + suff] = float(format(np.mean(list(conll_f1_dict_lang.values()), '.3f')))
+
+                    else:
+                        # compute the metric only on the test subset
+                        conll_f1 = conll_lemma_baseline([v for v in all_mentions_list if v[COREF_CHAIN] in coref_chains
+                                                         and mentions_df.loc[v[MENTION_ID], "split"] == "test"])
+                        # res_df = summary_df[(summary_df[DATASET_NAME] == dataset) & (summary_df[F1 + CONLL + suff]) > 0]
+                        # conll_f1 = np.mean(res_df[F1 + CONLL + suff].values)
+                        summary_dict[F1 + CONLL + suff] = conll_f1
 
             summary_df = pd.concat([summary_df, pd.DataFrame(summary_dict, index=[f'{dataset}\\{topic_id}\\{language}'])], axis=0)
         chain_df_all = pd.concat([chain_df_all, chain_df], axis=0)
-
-    #output the chains statistics
-    now_ = datetime.now()
-    chain_df_all.reset_index().to_csv(os.path.join(os.getcwd(), SUMMARY_FOLDER, f'{now_.strftime("%Y-%m-%d_%H-%M-%S")}_{SUMMARY_CHAINS_CSV}'))
-    summary_df.to_csv(os.path.join(os.getcwd(), SUMMARY_FOLDER, f'{now_.strftime("%Y-%m-%d_%H-%M-%S")}_{SUMMARY_TOPICS_CSV}'))
+        # save the dataset statistics after each dataset
+        chain_df_all.reset_index().to_csv(os.path.join(os.getcwd(), SUMMARY_FOLDER, f'{now_.strftime("%Y-%m-%d_%H-%M-%S")}_{SUMMARY_CHAINS_CSV}'))
+        summary_df.to_csv(os.path.join(os.getcwd(), SUMMARY_FOLDER, f'{now_.strftime("%Y-%m-%d_%H-%M-%S")}_{SUMMARY_TOPICS_CSV}'))
 
     LOGGER.info(f'Summary computed over {len(selected_dir_to_summarize)} datasets ({str(selected_dir_to_summarize)}) '
                 f'is completed.')
@@ -420,4 +420,4 @@ def check_datasets(dataset_dict: dict):
 
 if __name__ == '__main__':
     check_datasets(DIRECTORIES_TO_SUMMARIZE)
-    create_summary()
+    create_summary(compute_f1=False)
