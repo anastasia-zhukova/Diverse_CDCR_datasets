@@ -241,5 +241,6 @@ def conll_to_newsplease_json(path: str):
     }
     pass
 
+
 if __name__ == '__main__':
     form_benchmark()

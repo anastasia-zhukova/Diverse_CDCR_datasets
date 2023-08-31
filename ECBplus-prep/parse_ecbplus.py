@@ -253,9 +253,9 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                             f"Mention with ID {doc_id}/{mention_id} ({tokens_str}) needs manual review. Could not "
                                             f"determine the mention head automatically. {str(tolerance)}")
 
-                                token_mention_start_id = token_ids[0]
                                 doc_df.loc[:, "token_id_global"] = list(range(len(doc_df)))
 
+                                token_mention_start_id = doc_df[(doc_df[SENT_ID] == sent_id) & (doc_df[TOKEN_ID] == token_ids[0])]["token_id_global"][0]
                                 if token_mention_start_id - CONTEXT_RANGE < 0:
                                     context_min_id = 0
                                     tokens_number_context = list(
@@ -488,7 +488,8 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
             continue
         event_mention_validated.append(mention)
 
-    for save_options in [[entity_mentions, event_mentions, os.path.join(ECB_PARSING_FOLDER, OUTPUT_FOLDER_NAME+"-unvalidated")],
+    for save_options in [
+        # [entity_mentions, event_mentions, os.path.join(ECB_PARSING_FOLDER, OUTPUT_FOLDER_NAME+"-unvalidated")],
                          [entity_mention_validated, event_mention_validated, out_path]]:
         entity_m, event_m, save_folder = save_options
         LOGGER.info(f'Saving ECB+ into {save_folder}...')
