@@ -6,6 +6,7 @@ from logger import LOGGER
 import pandas as pd
 import os
 import json
+import spacy
 import subprocess
 import nltk
 import string
@@ -15,6 +16,7 @@ from typing import Dict, List
 from nltk.corpus import stopwords
 from tqdm import tqdm
 from datetime import datetime
+from spacy.tokens import Doc
 
 from utils import check_mention_attributes
 
@@ -345,9 +347,10 @@ def create_summary(compute_f1: bool = True):
                                                                   for index, row in selected_chains_df.iterrows()]) / \
                                                                      sum(selected_chains_df[MENTIONS].values), 2)
                 summary_dict[UNIQUE_LEMMAS + "_avg" + suff] = round(np.mean(selected_chains_df[UNIQUE_LEMMAS].values), 2)
-                summary_dict[UNIQUE_LEMMAS + "_sum" + suff] = np.sum(selected_chains_df[UNIQUE_LEMMAS].values)
+                # summary_dict[UNIQUE_LEMMAS + "_sum" + suff] = np.sum(selected_chains_df[UNIQUE_LEMMAS].values)
+                summary_dict[UNIQUE_LEMMAS + "_sum" + suff] = len(set(mentions_df[mentions_df[COREF_CHAIN].isin(list(selected_chains_df[COREF_CHAIN].values))][MENTION_HEAD_LEMMA].values))
                 chains_use_lemma = []
-                for head, group_df_lemma in mentions_df[mentions_df[COREF_CHAIN].isin(coref_chains)].groupby(MENTION_HEAD_LEMMA):
+                for head, group_df_lemma in mentions_df[mentions_df[COREF_CHAIN].isin(list(selected_chains_df[COREF_CHAIN].values))].groupby(MENTION_HEAD_LEMMA):
                     chains_use_lemma.append(len(set(group_df_lemma[COREF_CHAIN].values)))
 
                 summary_dict["lexical_ambiguity" + suff] = round(np.mean(chains_use_lemma), 2)
@@ -416,6 +419,15 @@ def check_datasets(dataset_dict: dict):
             mention = random.choices(mentions, k=1)
             check_mention_attributes(mention[0], dataset_name)
     LOGGER.info("Verification is complete. ")
+
+
+def lda_datasets():
+    nlp = spacy.load('en_core_web_sm')
+    text = "She went to school, while living in Tokyo."
+    words = text.split()
+    doc = Doc(nlp.vocab, words)
+    "".join([t.text + t.whitespace_ for t in doc])
+    pass
 
 
 if __name__ == '__main__':
