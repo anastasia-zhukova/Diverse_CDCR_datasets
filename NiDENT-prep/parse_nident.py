@@ -216,7 +216,7 @@ def conv_files():
                                 continue
 
                         mention_head = t
-                        if mention_head.pos_ == "DET":
+                        if mention_head.pos_ in ["DET", "PUNCT"]:
                             mention_head = None
                             continue
 
@@ -308,72 +308,22 @@ def conv_files():
                     DOC_ID: doc_id,
                     MENTION_ID: mention_id,
                     TOKENS_STR: token_str,
+                    MENTION_CONTEXT: str(mention_context_str),
+                    TOKENS_NUMBER_CONTEXT: str(tokens_number_context),
                     MENTION_HEAD: mention_head.text,
                     MENTION_HEAD_POS: mention_head.pos_,
                     MENTION_NER: mention_ner
                 }, index=[mention_id])], axis=0)
 
-    for subtopic_id, mentions in coref_pre_dict.items():
-        LOGGER.info(f'Reconstructing CDCR chains for {subtopic_id} subtopic...')
-        coref_pre_df_subtopic = coref_pre_df[coref_pre_df[SUBTOPIC_ID] == subtopic_id]
-        grouped_dfs = coref_pre_df_subtopic.groupby([COREF_CHAIN, DOC_ID])
-        cand_chains_df = pd.DataFrame(np.zeros((len(grouped_dfs), len(grouped_dfs))),
-                                      index=[f'{doc_id_1}/{coref_chain_orig_id_1}'
-                                             for (coref_chain_orig_id_1, doc_id_1), group_df_1 in grouped_dfs],
-                                      columns=[f'{doc_id_1}/{coref_chain_orig_id_1}'
-                                               for (coref_chain_orig_id_1, doc_id_1), group_df_1 in grouped_dfs])
+    try:
+        with open(os.path.join(NIDENT_PARSING_FOLDER, "mapping.json"), "r") as file:
+            chain_dict = json.load(file)
 
-        LOGGER.info("Building matrix of the cross-document chains overlap...")
-        for i, ((coref_chain_orig_id_1, doc_id_1), group_df_1) in tqdm(list(enumerate(grouped_dfs))):
-            # no pronouns
-            cand_df_1 = group_df_1[group_df_1[MENTION_HEAD_POS] != "PRON"]
-            # check full mentions and their heads
-            mentions_n_heads_1 = set(cand_df_1[TOKENS_STR].values).union(set(cand_df_1[MENTION_HEAD].values))
+        for unified_chain_id, orig_chain_vals in chain_dict.items():
+            chain_mentions_df = coref_pre_df[coref_pre_df[COREF_CHAIN].isin(orig_chain_vals)]
 
-            for j, ((coref_chain_orig_id_2, doc_id_2), group_df_2) in enumerate(grouped_dfs):
-                cand_df_2 = group_df_2[group_df_2[MENTION_HEAD_POS] != "PRON"]
-                if j <= i:
-                    continue
-
-                # check full mentions and their heads
-                mentions_n_heads_2 = set(cand_df_2[TOKENS_STR].values).union(set(cand_df_2[MENTION_HEAD].values))
-                overlap = mentions_n_heads_1.intersection(mentions_n_heads_2)
-                overlap_size = len(overlap)
-
-                if len(overlap) == 1:
-                    # handle a special case when there is only one overlap and it is a proper noun: give a bit bigger
-                    # size to pass the upcoming check
-                    if list(overlap)[0][0].isupper():
-                        overlap_size = 1.5
-                cand_chains_df.loc[f'{doc_id_1}/{coref_chain_orig_id_1}', f'{doc_id_2}/{coref_chain_orig_id_2}'] = overlap_size
-                cand_chains_df.loc[ f'{doc_id_2}/{coref_chain_orig_id_2}', f'{doc_id_1}/{coref_chain_orig_id_1}'] = overlap_size
-
-        chain_dict = {}
-        checked_sets = set()
-        for col in tqdm(cand_chains_df.columns):
-            if col in checked_sets:
-                continue
-
-            to_check = {col}
-            # first: candidates that are similar to the seed chain
-            to_check = to_check.union(set(cand_chains_df[cand_chains_df[col] >= 2].index))
-            # second: candidates that are similar to the similar chains to the seed chain
-            to_check = to_check.union(set(cand_chains_df.loc[list(to_check)][cand_chains_df.loc[list(to_check)][col] > 1].index))
-
-            sim_mentions_df = pd.DataFrame()
-            for cand_key in to_check:
-                if cand_key in checked_sets:
-                    continue
-
-                doc_id, coref_chain = cand_key.split("/")
-                sim_mentions_df = pd.concat([sim_mentions_df,
-                                             coref_pre_df[(coref_pre_df[DOC_ID] == doc_id)
-                                                          & (coref_pre_df[COREF_CHAIN] == coref_chain)]], axis=0)
             # ignore chains that consist only of pronouns
-            non_pron_df = sim_mentions_df[sim_mentions_df[MENTION_HEAD_POS] != "PRON"]
-            if not len(non_pron_df):
-                continue
-
+            non_pron_df = chain_mentions_df[chain_mentions_df[MENTION_HEAD_POS] != "PRON"]
             mention_type_df = non_pron_df.groupby(MENTION_NER).count()
             if len(mention_type_df) == 1:
                 mention_type = mention_type_df[COREF_CHAIN].idxmax()
@@ -387,22 +337,27 @@ def conv_files():
 
             mention_type = mention_type if mention_type != "O" else "OTHER"
             description = non_pron_df.groupby(TOKENS_STR).count()[COREF_CHAIN].idxmax()
-            chain_id = f'{mention_type[:3]}{shortuuid.uuid()}'
-            for mention_index, mention_row in sim_mentions_df.iterrows():
+            chain_id = f'{mention_type[:3]}_{unified_chain_id}'
+
+            for mention_index, mention_row in chain_mentions_df.iterrows():
+                subtopic_id = mention_row[SUBTOPIC_ID]
                 mention = coref_pre_dict[subtopic_id][f'{mention_row[DOC_ID]}/{mention_row[COREF_CHAIN]}/{mention_index}']
                 # overwrite attributes related to the chain properties
                 mention[MENTION_TYPE] = mention_type[:3]
                 mention[MENTION_FULL_TYPE] = mention_type
                 mention[DESCRIPTION] = description
                 mention[COREF_CHAIN] = chain_id
-                mention[IS_SINGLETON] = len(sim_mentions_df) == 1
-                if chain_id not in chain_dict:
-                    chain_dict[chain_id] = []
-                chain_dict[chain_id].append(mention)
+                mention[IS_SINGLETON] = len(chain_mentions_df) == 1
 
                 # nident only has entities
                 entity_mentions.append(mention)
-            checked_sets = checked_sets.union(to_check)
+
+    except FileNotFoundError:
+        coref_pre_df.to_csv(os.path.join(TMP_PATH, "nident_wdcr_chains.csv"))
+        raise FileNotFoundError("A mapping file to merge chains from within-document coreference to cross-document is missing. "
+                                "Use a 'tmp/nident_wdcr_chains.csv' file to create a dictionary file with "
+                                "{unified_chain_id: [list of original 'doc_id/chain_id']} named 'mapping.json', "
+                                "place it into the NiDENT folder with the script and restart the script.")
 
     event_mentions = []
     df_all_mentions = pd.DataFrame()

@@ -42,8 +42,8 @@ Original repository of English NiDENT dataset: http://clic.ub.edu/corpus/en/
 3. execute ```python parse_nident.py``` 
 
 NiDENT annotated only entities, so ```event_mentions.json``` are saved as empty list. MMAX format didn't provide an extra tag to 
-link coreference chains from the event-related documents into cross-document clusters, so we applied a simple yet reliable heuristic 
-to restore CDCR clusters. If at least two non-pronoun mentions or their heads are identical, we merge the chains into clusters. 
+link coreference chains from the event-related documents into cross-document clusters. We performed manual annotation to merge the within-document
+chains into cross-document clusters.
 
 We propose a train-val-test split for NiDENT in the ```train_val_test_split.json``` file. The split is on the subtopic level
 and assigns three subtopics for training and one per validation and test. 
