@@ -239,7 +239,7 @@ def conv_files():
                     chain_id = mention_type[:3] + mention_row["chain-id"] if "event" in mention_annot_type \
                             else f'{mention_type[:3] + mention_row["chain-id"]}_{srl_type}_{shortuuid.uuid(mention_head.lemma_)[:4]}'
                     subtopic_id = documents_df.loc[doc_id, "subtopic-id"]
-                    is_singleton = len(mention_init_df[mention_init_df["event"] == chain_id]) == 1 if "event" in mention_init_df.columns else True
+                    is_singleton = len(mention_init_df[mention_init_df["chain-id"] == mention_row["chain-id"]]) == 1 if "event" in mention_init_df.columns else True
 
                     mention = {COREF_CHAIN: chain_id,
                                MENTION_NER: mention_ner,
