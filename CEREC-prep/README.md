@@ -24,13 +24,16 @@ https://aclanthology.org/2020.coling-main.30/
 1) make sure that you downloaded the dataset by running ```python setup.py``` 
 2) execute ```python parse_cerec.py```
 
-We assign the two original .conll files into the train/val/test splits as following: 
+We assign the original .conll files into the train/val/test splits as following: 
 
 | Split | File                            | Number of email threads |
 |-------|---------------------------------|-------------------------|
-| train | ```cerec.conll```               | randomly selected 100   |
+| train | ```seed.conll```                | 43                      |
 | val   | ```cerec.validation.20.conll``` | 20                      |
 | test  | ```cerec.validation.14.conll``` | 14                      |
+
+Instead of a large file ```cerec.conll``` with 6001 annotated threads, we take a file with chunk that was used for the 
+model training in the original paper.  
 
 We form document_id as a composition of a message identified (see below), a speaker, and a document index, which is unique 
 across all splits. We exclude tokens that belong to a speaker "SYSTEM". 

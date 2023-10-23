@@ -21,7 +21,7 @@ def parse_conll():
     doc_enumeration = -1
     random.seed(41)
 
-    for split, source_file in zip(["train", "test", "val"], ["cerec.conll", "cerec.validation.14.conll",
+    for split, source_file in zip(["train", "test", "val"], ["seed.conll", "cerec.validation.14.conll",
                                                               "cerec.validation.20.conll"
                                                               ]):
         LOGGER.info(f"Reading CoNLL for {split} split...")
@@ -33,18 +33,6 @@ def parse_conll():
         with open(os.path.join(source_path, source_file), "r", encoding="utf-8") as file:
             conll_text = file.readlines()
 
-        if split == "train":
-            # make a subset of all data
-            train_subtopic_ids = []
-            topic_counter = 0
-            for line_id, line in enumerate(conll_text):
-                if line.startswith("#begin"):
-                    train_subtopic_ids.append(topic_counter)
-                    topic_counter += 1
-            selected_subtopics = random.sample(train_subtopic_ids, k=100)
-        else:
-            selected_subtopics = list(range(int(source_file.split(".")[-2])))
-
         subtopic = ""
         subtopic_id = ""
         sent_id = 0
@@ -53,16 +41,11 @@ def parse_conll():
         token_id = 0
         mention_id_list = []
         orig_sent_id_prev = ""
-        subtopic_counter = -1
 
         for line_id, line in tqdm(enumerate(conll_text), total=len(conll_text)):
             if line.startswith("#begin"):
                 subtopic = re.sub("#begin document ", "", line)
                 subtopic_id = shortuuid.uuid(subtopic)
-                subtopic_counter += 1
-                continue
-
-            if subtopic_counter not in selected_subtopics:
                 continue
 
             if line.startswith("#end"):
@@ -144,6 +127,9 @@ def parse_conll():
                         if mention_id_base in v:
                             mention_id_compose = v
                             break
+
+                    if not mention_id_compose:
+                        mention_id_compose = mention_id_list[-1]
 
                     # mentions_dict[mention_id_compose]["words"].append((token, token_id))
                     # mention = mentions_dict[mention_id_compose]
