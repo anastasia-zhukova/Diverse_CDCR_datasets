@@ -142,7 +142,7 @@ def conv_files():
             for token in tokens_text:
                 token_str, word_fixed, no_whitespace = append_text(token_str, token)
 
-            mention_id = shortuuid.uuid(f'{coref_id}{token_str}{markable_id}')
+            mention_id = shortuuid.uuid(f'{coref_id}{doc_id}{token_str}{markable_id}')
 
             sent_id = list(markable_df[SENT_ID].values)[0]
 
@@ -174,7 +174,7 @@ def conv_files():
                             prev_id = token.i
                             to_break = True
                             break
-                        elif token.text.startswith(t):
+                        elif token.text.startswith(t) and len(t) > 1:
                             token_found[t_id] = token.i
                             prev_id = token.i
                             to_break = True
@@ -268,6 +268,11 @@ def conv_files():
             # add to mentions if the variables are correct ( do not add for manual review needed )
             if f'{doc_id}/{mention_id}' not in need_manual_review_mention_head:
                 mention_ner = mention_head.ent_type_ if mention_head.ent_type_ != "" else "O"
+                mention_head_text = sent_tokens[int(mention_head_id)]
+                if mention_head_text not in tokens_text:
+                    LOGGER.warning(
+                        f"Mention head {mention_head_text} is not among the mention's tokens {tokens_text}!")
+                    pass
 
                 if subtopic_id not in coref_pre_dict:
                     coref_pre_dict[subtopic_id] = {}
@@ -277,7 +282,8 @@ def conv_files():
                     MENTION_NER: mention_ner,
                     MENTION_HEAD_POS: mention_head.pos_,
                     MENTION_HEAD_LEMMA: mention_head.lemma_,
-                    MENTION_HEAD: mention_head.text,
+                    MENTION_HEAD: mention_head_text,
+                    # MENTION_HEAD: mention_head.text,
                     MENTION_HEAD_ID: int(mention_head_id),
                     DOC_ID: doc_id,
                     DOC: doc_id,
@@ -310,20 +316,30 @@ def conv_files():
                     TOKENS_STR: token_str,
                     MENTION_CONTEXT: str(mention_context_str),
                     TOKENS_NUMBER_CONTEXT: str(tokens_number_context),
-                    MENTION_HEAD: mention_head.text,
+                    MENTION_HEAD: mention_head_text,
                     MENTION_HEAD_POS: mention_head.pos_,
                     MENTION_NER: mention_ner
                 }, index=[mention_id])], axis=0)
 
-    try:
-        with open(os.path.join(NIDENT_PARSING_FOLDER, "mapping.json"), "r") as file:
-            chain_dict = json.load(file)
+    # get the unified chain_id
+    LOGGER.info('Assemble mentions under unique_chain_id... ')
+    chain_mapping_dict_df = pd.read_csv(os.path.join(NIDENT_PARSING_FOLDER, NIDENT_FOLDER_NAME, "nident_mapping.csv"))
+    chain_mapping_dict_df.dropna(inplace=True)
+    chain_mapping_dict_df = chain_mapping_dict_df[[SUBTOPIC_ID, DOC_ID, COREF_CHAIN, "unified_id"]].drop_duplicates()
 
-        for unified_chain_id, orig_chain_vals in chain_dict.items():
-            chain_mentions_df = coref_pre_df[coref_pre_df[COREF_CHAIN].isin(orig_chain_vals)]
+    for unified_chain_id in chain_mapping_dict_df["unified_id"].unique():
+        attributes_chain_df = chain_mapping_dict_df[chain_mapping_dict_df["unified_id"] == unified_chain_id]
 
-            # ignore chains that consist only of pronouns
-            non_pron_df = chain_mentions_df[chain_mentions_df[MENTION_HEAD_POS] != "PRON"]
+        chain_mentions_df = pd.DataFrame()
+        for key_index, key_row in attributes_chain_df.iterrows():
+            chain_mentions_df = pd.concat([chain_mentions_df,
+                                           coref_pre_df[(coref_pre_df[COREF_CHAIN] == key_row[COREF_CHAIN]) &
+                                                        (coref_pre_df[DOC_ID] == str(key_row[DOC_ID])) &
+                                                        (coref_pre_df[SUBTOPIC_ID] == key_row[SUBTOPIC_ID])]])
+
+        # overwrite mention type with the typed derived on a mentions composing a chain
+        non_pron_df = chain_mentions_df[chain_mentions_df[MENTION_HEAD_POS] != "PRON"]
+        if len(non_pron_df):
             mention_type_df = non_pron_df.groupby(MENTION_NER).count()
             if len(mention_type_df) == 1:
                 mention_type = mention_type_df[COREF_CHAIN].idxmax()
@@ -334,30 +350,26 @@ def conv_files():
                 else:
                     # next best
                     mention_type = mention_type_df.index[1]
-
             mention_type = mention_type if mention_type != "O" else "OTHER"
             description = non_pron_df.groupby(TOKENS_STR).count()[COREF_CHAIN].idxmax()
-            chain_id = f'{mention_type[:3]}_{unified_chain_id}'
+        else:
+            mention_type = "OTHER"
+            description = chain_mentions_df.groupby(TOKENS_STR).count()[COREF_CHAIN].idxmax()
 
-            for mention_index, mention_row in chain_mentions_df.iterrows():
-                subtopic_id = mention_row[SUBTOPIC_ID]
-                mention = coref_pre_dict[subtopic_id][f'{mention_row[DOC_ID]}/{mention_row[COREF_CHAIN]}/{mention_index}']
-                # overwrite attributes related to the chain properties
-                mention[MENTION_TYPE] = mention_type[:3]
-                mention[MENTION_FULL_TYPE] = mention_type
-                mention[DESCRIPTION] = description
-                mention[COREF_CHAIN] = chain_id
-                mention[IS_SINGLETON] = len(chain_mentions_df) == 1
+        chain_id = f'{mention_type[:3]}_{unified_chain_id}'
 
-                # nident only has entities
-                entity_mentions.append(mention)
+        for mention_index, mention_row in chain_mentions_df.iterrows():
+            subtopic_id = mention_row[SUBTOPIC_ID]
+            mention = coref_pre_dict[subtopic_id][f'{mention_row[DOC_ID]}/{mention_row[COREF_CHAIN]}/{mention_index}']
+            # overwrite attributes related to the chain properties
+            mention[MENTION_TYPE] = mention_type[:3]
+            mention[MENTION_FULL_TYPE] = mention_type
+            mention[DESCRIPTION] = description
+            mention[COREF_CHAIN] = chain_id
+            mention[IS_SINGLETON] = len(chain_mentions_df) == 1
 
-    except FileNotFoundError:
-        coref_pre_df.to_csv(os.path.join(TMP_PATH, "nident_wdcr_chains.csv"))
-        raise FileNotFoundError("A mapping file to merge chains from within-document coreference to cross-document is missing. "
-                                "Use a 'tmp/nident_wdcr_chains.csv' file to create a dictionary file with "
-                                "{unified_chain_id: [list of original 'doc_id/chain_id']} named 'mapping.json', "
-                                "place it into the NiDENT folder with the script and restart the script.")
+            # nident only has entities
+            entity_mentions.append(mention)
 
     event_mentions = []
     df_all_mentions = pd.DataFrame()
