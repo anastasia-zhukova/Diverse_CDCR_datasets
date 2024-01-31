@@ -52,7 +52,7 @@ def to_nltk_tree(node):
         return node.orth_
 
 
-def conv_files():
+def conv_files(languages_to_parse: List[str]=[EN, ES, NL, IT]):
     doc_files = {}
     entity_mentions = []
     event_mentions = []
@@ -62,6 +62,9 @@ def conv_files():
     coref_dict = {}
 
     for lang_key in lang_paths.keys():
+        if lang_key not in languages_to_parse:
+            continue
+
         source_path = lang_paths[lang_key]["source"]
         nlp = lang_paths[lang_key]["nlp"]
         language = source_path[-34:].split("_")[2]
@@ -518,4 +521,4 @@ def conv_files():
 
 
 if __name__ == '__main__':
-    conv_files()
+    conv_files([EN])
