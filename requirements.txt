@@ -8,5 +8,4 @@ tqdm~=4.62.3
 huggingface_hub==0.14.1
 typing_extensions==4.4.0
 wikipedia == 1.4.0
-# spacy model
-https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.4.1/en_core_web_sm-3.4.1.tar.gz
+pyarrow == 14.0.2

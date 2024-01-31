@@ -23,9 +23,14 @@ NP4E-prep/NP4E/
 NiDENT-prep/NiDENT/
 NiDENT-prep/output_data/
 !NiDENT-prep/output_data/.gitkeep
+!NiDENT-prep/NiDENT/nident_mapping.csv
 WECEng-prep/WEC-Eng/
 !WECEng-prep/WEC-Eng/.gitkeep
 !WECEng-prep/WEC-Eng/topics/.gitkeep
+HyperCoref-prep/HyperCoref/
+!HyperCoref-prep/HyperCoref/.gitkeep
+HyperCoref-prep/output_data/
+!HyperCoref-prep/output_data/.gitkeep
 CEREC-prep/cerec/
 .venv
 venv/

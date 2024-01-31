@@ -20,6 +20,7 @@ GVC_FOLDER_NAME = "GVC"
 FCC_FOLDER_NAME = "FCC"
 CD2CR_FOLDER_NAME = "CD2CR"
 CEREC_FOLDER_NAME = "cerec"
+HYPERCOREF_FOLDER_NAME = "HyperCoref"
 MEANTIME_FOLDER_NAME = "meantime_newsreader"
 MEANTIME_FOLDER_NAME_ENGLISH = "meantime_newsreader_english_oct15"
 MEANTIME_FOLDER_NAME_DUTCH = "meantime_newsreader_dutch_dec15"
@@ -41,6 +42,7 @@ GVC = "GVC-prep"
 FCC = "FCC-prep"
 CD2CR = "CD2CR-prep"
 CEREC = "CEREC-prep"
+HYPERCOREF = "HyperCoref-prep"
 
 # FILES
 SAMPLE_DOC_JSON = "_sample_doc.json"
@@ -160,13 +162,14 @@ DIRECTORIES_TO_SUMMARIZE = {
        # "ECBplus_unvalidated": os.path.join(os.getcwd(), ECB_PLUS, "output_data-unvalidated"),
        MEANTIME: os.path.join(os.getcwd(), MEANTIME, OUTPUT_FOLDER_NAME),
        NP4E: os.path.join(os.getcwd(), NP4E, OUTPUT_FOLDER_NAME),
-       # NIDENT: os.path.join(os.getcwd(), NIDENT, OUTPUT_FOLDER_NAME),
+       NIDENT: os.path.join(os.getcwd(), NIDENT, OUTPUT_FOLDER_NAME),
        GVC: os.path.join(os.getcwd(), GVC, OUTPUT_FOLDER_NAME),
        # FCC: os.path.join(os.getcwd(), FCC, OUTPUT_FOLDER_NAME+"_FCC"),
        "FCC_T": os.path.join(os.getcwd(), FCC, OUTPUT_FOLDER_NAME+"_FCC-T"),
        CD2CR: os.path.join(os.getcwd(), CD2CR, OUTPUT_FOLDER_NAME),
        WEC_ENG: os.path.join(os.getcwd(), WEC_ENG, OUTPUT_FOLDER_NAME),
-       CEREC: os.path.join(os.getcwd(), CEREC, OUTPUT_FOLDER_NAME)
+       CEREC: os.path.join(os.getcwd(), CEREC, OUTPUT_FOLDER_NAME),
+       # HYPERCOREF: os.path.join(os.getcwd(), HYPERCOREF, OUTPUT_FOLDER_NAME)
 }
 
 

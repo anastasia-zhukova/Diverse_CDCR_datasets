@@ -214,6 +214,8 @@ def create_summary(compute_f1: bool = True):
                 for mention in mentions_read_list:
                     # enforced unique mentions
                     mention[MENTION_ID] = f'{mention[MENTION_ID]}_{shortuuid.uuid()[:6]}'
+                    # make sure that there is no backslashes
+                    mention[COREF_CHAIN] = mention[COREF_CHAIN].replace("/", "-")
                     if LANGUAGE not in mention:
                         mention[LANGUAGE] = "english"
 
@@ -321,7 +323,7 @@ def create_summary(compute_f1: bool = True):
                 "documents": doc_len,
                 TOKENS: tokens_len,
                 "mean_doc_size": round(tokens_len / doc_len, 2),
-                COREF_CHAIN: len(coref_chains),
+                COREF_CHAIN: len(coref_chains) - len(group_df[group_df[IS_SINGLETON]]),
                 MENTIONS: len(group_df),
                 "mean_mention_density": round(len(group_df) / doc_len, 2),
                 SINGLETONS: len(group_df[group_df[IS_SINGLETON]]),

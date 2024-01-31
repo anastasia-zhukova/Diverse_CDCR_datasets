@@ -29,23 +29,24 @@ Parsing scripts per dataset are contained in each separate folder, whereas the s
 2) Recommended to create a venv.
 3) Install libraries: ```pip install -r requirements.txt```
 4) Download the datasets and required libraries from spacy: ```python setup.py```
-5) Download and install [Perl](https://strawberryperl.com/). Add perl to PATH, restart your computer, and check that perl has been correctly installed.
+5) (optional) Download and install [Perl](https://strawberryperl.com/). Add perl to PATH, restart your computer, and check that perl has been correctly installed.
 
 ## Dataset information 
 
-| Dataset                                    | Coreference target | Parsing script                          | Available versions | Train/val/test splits          | Previous benchmark                                                                                                      |
-|:-------------------------------------------|--------------------|:----------------------------------------|--------------------|--------------------------------|-------------------------------------------------------------------------------------------------------------------------|
-| [ECB+](ECBplus-prep/README.md)             | event + entity     | ```ECBplus-prep/parse_ecbplus.py```     | public & protected | previously introduced & reused | [Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference) |
-| [FCC](FCC-prep/README.md)                  | event              | ```FCC-prep/parse_fcc.py```             | protected          | original & reused              | [Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference) |
-| [FCC-T](FCC-prep/README.md)                | event              | ```FCC-prep/parse_fcc.py```             | protected          | original & reused              | [Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference) |
-| [GVC](GVC-prep/README.md)                  | event              | ```GVC-prep/parse_gvc.py```             | public & protected | previously introduced & reused | [Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference) |
-| [WEC-Eng](WECEng-prep/README.md)           | event              | ```WECEng-prep/parse_weceng.py```       | public & protected | original & reused              | [Eirew et al. 2021](https://aclanthology.org/2021.naacl-main.198/)                                                      |
-| [CD2CR](CD2CR-prep/README.md)              | entity             | ```CD2CR-prep/parse_cd2cr.py```         | public & protected | original & reused              | -                                                                                                                       |
-| [CEREC](CEREC-prep/README.md)              | entity             | ```CEREC-prep/parse_cerec.py```         | public & protected | original & reused              | -                                                                                                                       |
-| [NewsWCL50](NewsWCL50-prep/README.md)      | event + entity     | ```NewsWCL50-prep/parse_newswcl50.py``` | protected          | new (didn't exist before)      | -                                                                                                                       |
-| [MEANTIME](MEANTIME-prep/README.md)        | event + entity     | ```MEANTIME-prep/parse_meantime.py```   | public & protected | new (didn't exist before)      | -                                                                                                                       |
-| [NP4E](NP4E-prep/README.md)                | entity             | ```NP4E-prep/parse_np4e.py```           | public & protected | new (didn't exist before)      | -                                                                                                                       |
-| [NiDENT](NiDENT-prep/README.md)            | entity             | ```NiDENT-prep/parse_nident.py```       | protected          | new (didn't exist before)      | -                                                                                                                       |
+| Dataset                                 | Coreference target | Parsing script                            | Available versions | Train/val/test splits          | Previous benchmark                                                                                                      |
+|:----------------------------------------|--------------------|:------------------------------------------|--------------------|--------------------------------|-------------------------------------------------------------------------------------------------------------------------|
+| [ECB+](ECBplus-prep/README.md)          | event + entity     | ```ECBplus-prep/parse_ecbplus.py```       | public & protected | previously introduced & reused | [Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference) |
+| [FCC](FCC-prep/README.md)               | event              | ```FCC-prep/parse_fcc.py```               | protected          | original & reused              | [Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference) |
+| [FCC-T](FCC-prep/README.md)             | event              | ```FCC-prep/parse_fcc.py```               | protected          | original & reused              | [Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference) |
+| [GVC](GVC-prep/README.md)               | event              | ```GVC-prep/parse_gvc.py```               | public & protected | previously introduced & reused | [Bugert et al. 2021](https://direct.mit.edu/coli/article/47/3/575/102774/Generalizing-Cross-Document-Event-Coreference) |
+| [WEC-Eng](WECEng-prep/README.md)        | event              | ```WECEng-prep/parse_weceng.py```         | public & protected | original & reused              | [Eirew et al. 2021](https://aclanthology.org/2021.naacl-main.198/)                                                      |
+| [HyperCoref](HyperCoref-prep/README.md) | event              | ```HyperCoref-prep/parse-hypercoref.py``` | protected          | original & reused              | [Bugert et al. 2021a](https://aclanthology.org/2021.emnlp-main.38/)                                                                                                 |
+| [CD2CR](CD2CR-prep/README.md)           | entity             | ```CD2CR-prep/parse_cd2cr.py```           | public & protected | original & reused              | -                                                                                                                       |
+| [CEREC](CEREC-prep/README.md)           | entity             | ```CEREC-prep/parse_cerec.py```           | public & protected | original & reused              | -                                                                                                                       |
+| [NewsWCL50](NewsWCL50-prep/README.md)   | event + entity     | ```NewsWCL50-prep/parse_newswcl50.py```   | protected          | new (didn't exist before)      | -                                                                                                                       |
+| [MEANTIME](MEANTIME-prep/README.md)     | event + entity     | ```MEANTIME-prep/parse_meantime.py```     | public & protected | new (didn't exist before)      | -                                                                                                                       |
+| [NP4E](NP4E-prep/README.md)             | entity             | ```NP4E-prep/parse_np4e.py```             | public & protected | new (didn't exist before)      | -                                                                                                                       |
+| [NiDENT](NiDENT-prep/README.md)         | entity             | ```NiDENT-prep/parse_nident.py```         | protected          | new (didn't exist before)      | -                                                                                                                       |
 
 Each dataset contains three **main** output files suitable for a CDCR model: 
 1) ```dataset.conll```, i.e., a CoNLL format of the full text corpus with the beginning and end tags, with the newline delimiters between the articles.
@@ -91,8 +92,8 @@ Each file contains a list of mentions. To encode a mention, you need to use the 
 2) ```tokens_number_context``` with a list of indexed where a mention occurs in the ```mention_context```, which are needed to position the mention 
 3) ```coref_chain``` that indicates if two mentions are coreferencial if the value is identical between two mentions
 
-Similar to [Cattan et al. 2021](https://aclanthology.org/2021.findings-acl.453/) or [Caciularu et al. 2021](https://aclanthology.org/2021.findings-emnlp.225/), 
-a pair of mentions can be encoded within their contexts and a coroference chain sets a training objective. 
+Similar to [Eirew et al. 2021](https://aclanthology.org/2021.naacl-main.198/), 
+a pair of mentions can be encoded within their contexts and a coreference chain sets a training objective. 
 
 For more information about the format and attributes, see below. 
 
@@ -108,11 +109,12 @@ that contains tokens, their identifiers in the text (e.g., doc_id, sent_id), and
 |:----------|:------:|:--------------------------------------------------|
 | 0         | string | Composed document id: topic_id/subtopic_id/doc_id |
 | 1         |  int   | Sentence ID                                       |
-| 2         |  int   | Token ID                                          |
+| 2         |  int   | Token ID  (within sentence)                       |
 | 3         | string | Token                                             |
 | 4         | string | Reference labels, i.e., coreference chain         |
 
-Each document is accompanied with a beginning and end tags, sentences are separated with news lines (warning: some new line delimiters can be tokens themselves (e.g., in NewsWCL50)). 
+Each document is accompanied with a beginning and end tags, sentences are separated with news lines (warning: some new line delimiters can be tokens themselves, e.g., in NewsWCL50, 
+but they are saved as ```\\n```). 
 
 Example: 
 ```
@@ -156,34 +158,34 @@ The format is adapted and extended from [WEC-Eng](https://huggingface.co/dataset
 To extract some mentions' attributes, we parse document sentences by spaCy. To extract a mention head, we align each mention 
 to the corresponding sentences in the documents and extract the head of mention as highest node in the dependency subtree.
 
-| Field                | Type            | Description                                                                                         |
-|----------------------|-----------------|-----------------------------------------------------------------------------------------------------|
-| coref_chain          | string          | Unique identifier of a coreference chain to which this mention belongs to.                          |
-| description          | string          | Description of a coreference chain.                                                                 |
-| coref_type           | string          | Type of a coreference link, e.g., strict indentity.                                                 |
-| mention_id           | string          | Mention ID.                                                                                         |
-| mention_type         | string          | Short form of a mention type, e.g., HUM                                                             |
-| mention_full_type    | string          | Long form of a mention type, e.g., HUMAN_PART_PER                                                   |
-| tokens_str           | string          | A full mention string, i.e., all consequitive chars of the mention as found in the text.            |
-| tokens_text          | list of strings | A mention split into a list of tokens, text of tokens                                               |
-| tokens_number        | list of int     | A mention split into a list of tokens, token id of these tokens (as occurred in a sentence).        |
-| mention_head         | string          | A head of mention's phrase, e.g., Barack *Obama*                                                    |
-| mention_head_id      | int             | Token id of the head of mention's phrase                                                            |
-| mention_head_pos     | string          | Token's POS tag of the head of mention's phrase                                                     |
-| mention_head_lemma   | string          | Token's lemma of the head of mention's phrase                                                       |
-| sent_id              | int             | Sentence ID                                                                                         |
-| topic_id             | string          | Topic ID                                                                                            |
-| topic                | string          | Topic ID with its description (if any)                                                              |
-| subtopic_id          | string          | Subtopic id (optionally with short name)                                                            |
-| subtopic             | string          | Subtopic ID with its description (if any)                                                           |
-| doc_id               | string          | Document ID                                                                                         |
-| doc                  | string          | Document ID with its description (if any)                                                           |
-| is_continuous        | bool            | If all tokens in the annotated mention continuously occur in the text                               |
-| is_singleton         | bool            | If a coreference chain consists of only one mention.                                                |
-| mention_context      | list of strings | -N and +N tokens within one document before and after the mention (N=100).                          |
-| tokens_number_context | list of int     | Positioning of the mention's tokens within the context.                                             |
-| language             | string          | Optional. A language of the mention. If not provided, the default value will be considered english. |
-| conll_doc_key        | string          | a compositional key for one-to-one mapping documents between .conll and .json files.                |
+| Field                | Type              | Description                                                                                         |
+|----------------------|-------------------|-----------------------------------------------------------------------------------------------------|
+| coref_chain          | string            | Unique identifier of a coreference chain to which this mention belongs to.                          |
+| description          | string            | Description of a coreference chain.                                                                 |
+| coref_type           | string            | Type of a coreference link, e.g., strict indentity.                                                 |
+| mention_id           | string            | Mention ID.                                                                                         |
+| mention_type         | string            | Short form of a mention type, e.g., HUM                                                             |
+| mention_full_type    | string            | Long form of a mention type, e.g., HUMAN_PART_PER                                                   |
+| tokens_str           | string            | A full mention string, i.e., all consequitive chars of the mention as found in the text.            |
+| tokens_text          | list of strings   | A mention split into a list of tokens, text of tokens                                               |
+| tokens_number        | list of int       | A mention split into a list of tokens, token id of these tokens (as occurred in a sentence).        |
+| mention_head         | string            | A head of mention's phrase, e.g., Barack *Obama*                                                    |
+| mention_head_id      | int               | Token id of the head of mention's phrase                                                            |
+| mention_head_pos     | string            | Token's POS tag of the head of mention's phrase                                                     |
+| mention_head_lemma   | string            | Token's lemma of the head of mention's phrase                                                       |
+| sent_id              | int               | Sentence ID                                                                                         |
+| topic_id             | string            | Topic ID                                                                                            |
+| topic                | string            | Topic ID with its description (if any)                                                              |
+| subtopic_id          | string            | Subtopic id (optionally with short name)                                                            |
+| subtopic             | string            | Subtopic ID with its description (if any)                                                           |
+| doc_id               | string            | Document ID                                                                                         |
+| doc                  | string            | Document ID with its description (if any)                                                           |
+| is_continuous        | bool              | If all tokens in the annotated mention continuously occur in the text                               |
+| is_singleton         | bool              | If a coreference chain consists of only one mention.                                                |
+| mention_context      | list of strings   | -N and +N tokens within one document before and after the mention (N=100).                          |
+| tokens_number_context | list of int      | Positioning of the mention's tokens within the context.                                             |
+| language             | string            | Optional. A language of the mention. If not provided, the default value will be considered english. |
+| conll_doc_key        | string            | a compositional key for one-to-one mapping documents between .conll and .json files.                |
 
 Example: 
 ```json
@@ -241,7 +243,7 @@ The following values enable comparison of the CDCR datasets on dataset, topic+su
 | unique_lemmas_wo_singl               | float    | -//- Calculated on non-singleton chains.                                                                                                                                                  |
 | phrasing_diversity_weighted_all      | float    | Lexical diversity measurement: phrasing diversity (see LREC paper). Measures diversity of the mentions given variation and frequency of the chains' mentions. Calculated on all mentions. |
 | phrasing_diversity_weighted_wo_singl | float    | -//- Calculated on non-singleton chains.                                                                                                                                                  |
-| F1_CONLL_all                         | float    | F1 CoNLL (average of B3, MUC, and CEAF_e) calculated on the simple same-lemma baseline. Calculated on all coref chains.                                                                   |
+| F1_CONLL_all                         | float    | (currently deactivated) F1 CoNLL (average of B3, MUC, and CEAF_e) calculated on the simple same-lemma baseline. Calculated on all coref chains.                                           |
 | F1_CONLL_wo_singl                    | float    | -//- Calculated on non-singleton chains.                                                                                                                                                  |
 
 The results of dataset comparison is available in ```/summary``` folder.
