@@ -95,8 +95,6 @@ def parse_hypercoref_data():
     need_manual_review_mention_head = {}
 
     for publisher_folder_name in os.listdir(source_path):
-        if publisher_folder_name.startswith("abc"):
-            continue
 
         if os.path.isfile(os.path.join(source_path, publisher_folder_name)):
             continue
@@ -378,7 +376,7 @@ def parse_hypercoref_data():
     LOGGER.info(
         f'\nNumber of unique mentions: {len(event_mentions)} '
         f'\nNumber of unique chains: {len(set(df_all_mentions[COREF_CHAIN].values))} ')
-    LOGGER.info(f'Parsing of WEC-Eng is done!')
+    LOGGER.info(f'Parsing of HyperCoref is done!')
 
 
 if __name__ == '__main__':

@@ -1,0 +1,6 @@
+,dataset,topic,language,topics,subtopics,documents,tokens,mean_doc_size,coref_chain,mentions,mean_mention_density,singletons,cross-subtopic-chains,cross-subtopic-mentions,coref_chain_entity,coref_chain_event,mentions_entity,mentions_event,singletons_entity,singletons_event,average_size_all,phrasing_diversity_weighted_all,unique_lemmas_avg_all,unique_lemmas_sum_all,lexical_ambiguity_all,average_size_wo_singl,phrasing_diversity_weighted_wo_singl,unique_lemmas_avg_wo_singl,unique_lemmas_sum_wo_singl,lexical_ambiguity_wo_singl
+MEANTIME\0\,MEANTIME,0,,1,30,30,9909,330.3,220,1707,56.9,594,46,664,276,538,1010,697,159,435,2.1,1.65,1.31,589,1.87,5.21,2.0,2.17,279,1.73
+MEANTIME\1\,MEANTIME,1,,1,30,30,10343,344.77,168,1620,54.0,567,40,705,236,499,1026,594,132,435,2.2,1.78,1.3,507,1.96,6.36,2.2,2.33,263,1.57
+MEANTIME\2\,MEANTIME,2,,1,30,30,10063,335.43,185,1855,61.83,578,38,853,195,568,1122,733,109,469,2.43,1.68,1.33,489,2.11,6.97,1.99,2.37,264,1.71
+MEANTIME\3\,MEANTIME,3,,1,30,30,9916,330.53,143,1259,41.97,552,46,477,139,556,603,656,67,485,1.81,1.32,1.22,383,2.34,5.12,1.58,2.13,177,1.85
+MEANTIME\\,MEANTIME,,,4,120,120,40231,335.26,684,6441,53.67,2291,164,2746,814,2161,3761,2680,467,1824,2.17,1.65,1.29,1347,2.88,6.07,2.01,2.26,757,2.09

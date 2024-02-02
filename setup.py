@@ -169,7 +169,7 @@ DIRECTORIES_TO_SUMMARIZE = {
        CD2CR: os.path.join(os.getcwd(), CD2CR, OUTPUT_FOLDER_NAME),
        WEC_ENG: os.path.join(os.getcwd(), WEC_ENG, OUTPUT_FOLDER_NAME),
        CEREC: os.path.join(os.getcwd(), CEREC, OUTPUT_FOLDER_NAME),
-       # HYPERCOREF: os.path.join(os.getcwd(), HYPERCOREF, OUTPUT_FOLDER_NAME)
+       HYPERCOREF: os.path.join(os.getcwd(), HYPERCOREF, OUTPUT_FOLDER_NAME)
 }
 
 
