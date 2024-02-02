@@ -174,7 +174,7 @@ def convert_files(topic_number_to_convert=3, check_with_list=True):
                                                 prev_id = token.i
                                                 to_break = True
                                                 break
-                                            elif token.text.startswith(t):
+                                            elif token.text.startswith(t) and len(t) > 1:
                                                 token_found[t_id] = token.i
                                                 prev_id = token.i
                                                 to_break = True
