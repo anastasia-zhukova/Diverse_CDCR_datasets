@@ -1,6 +1,6 @@
 # Parsing NiDENT 
 
-Original repository of English NiDENT dataset: http://clic.ub.edu/corpus/en/
+Original repository of English NiDENT dataset: https://clic.ub.edu/corpus/en/nident
 
 ### Papers
 * Concept of near-identity https://aclanthology.org/L10-1103/ 
